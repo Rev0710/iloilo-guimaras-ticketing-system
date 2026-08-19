@@ -1,14 +1,23 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
+
 const connectDB = require("./config/database");
+const authRoutes = require("./routes/authRoutes");
 
 dotenv.config();
 
 const app = express();
 
+// Middleware
 app.use(cors());
 app.use(express.json());
+
+// MongoDB
+connectDB();
+
+// Routes
+app.use("/api/auth", authRoutes);
 
 // Test route
 app.get("/", (req, res) => {
@@ -20,16 +29,6 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-const startServer = async () => {
-    try {
-        await connectDB();
-
-        app.listen(PORT, () => {
-            console.log(`Server running on http://localhost:${PORT}`);
-        });
-    } catch (error) {
-        console.error("Failed to start server:", error.message);
-    }
-};
-
-startServer();
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+});
