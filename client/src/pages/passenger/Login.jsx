@@ -7,19 +7,67 @@ const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [rememberMe, setRememberMe] = useState(false);
+    const [loading, setLoading] = useState(false);
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
 
-        console.log({
-            email,
-            password,
-            rememberMe,
-        });
+        if (!email || !password) {
+            alert("Please enter your email and password.");
+            return;
+        }
 
-        // Temporary navigation.
-        // Real authentication will be connected to MongoDB later.
-        navigate("/dashboard");
+        try {
+            setLoading(true);
+
+            const response = await fetch(
+                "http://localhost:5000/api/auth/login",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        email,
+                        password,
+                    }),
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                alert(data.message || "Login failed.");
+                return;
+            }
+
+            // Save JWT token
+            if (rememberMe) {
+                localStorage.setItem("token", data.token);
+                localStorage.setItem(
+                    "user",
+                    JSON.stringify(data.user)
+                );
+            } else {
+                sessionStorage.setItem("token", data.token);
+                sessionStorage.setItem(
+                    "user",
+                    JSON.stringify(data.user)
+                );
+            }
+
+            alert("Login successful!");
+
+            navigate("/dashboard");
+        } catch (error) {
+            console.error("Login Error:", error);
+
+            alert(
+                "Unable to connect to the server. Please make sure the backend is running."
+            );
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -28,6 +76,7 @@ const Login = () => {
             <div className="auth-container">
 
                 <button
+                    type="button"
                     className="back-button"
                     onClick={() => navigate("/")}
                 >
@@ -49,6 +98,7 @@ const Login = () => {
 
                 <form onSubmit={handleSubmit}>
 
+                    {/* EMAIL */}
                     <div className="form-group">
                         <label htmlFor="email">
                             Email Address
@@ -66,6 +116,7 @@ const Login = () => {
                         />
                     </div>
 
+                    {/* PASSWORD */}
                     <div className="form-group">
                         <label htmlFor="password">
                             Password
@@ -83,9 +134,11 @@ const Login = () => {
                         />
                     </div>
 
+                    {/* LOGIN OPTIONS */}
                     <div className="login-options">
 
                         <label className="remember-option">
+
                             <input
                                 type="checkbox"
                                 checked={rememberMe}
@@ -99,26 +152,35 @@ const Login = () => {
                             <span>
                                 Remember me
                             </span>
+
                         </label>
 
                         <button
                             type="button"
                             className="forgot-password"
+                            onClick={() =>
+                                alert(
+                                    "Forgot password functionality will be added later."
+                                )
+                            }
                         >
                             Forgot Password?
                         </button>
 
                     </div>
 
+                    {/* SIGN IN BUTTON */}
                     <button
                         type="submit"
                         className="primary-button"
+                        disabled={loading}
                     >
-                        Sign In
+                        {loading ? "Signing In..." : "Sign In"}
                     </button>
 
                 </form>
 
+                {/* SOCIAL LOGIN */}
                 <div className="divider">
                     <span>OR</span>
                 </div>
@@ -128,6 +190,11 @@ const Login = () => {
                     <button
                         type="button"
                         className="social-button"
+                        onClick={() =>
+                            alert(
+                                "Google login will be added later."
+                            )
+                        }
                     >
                         <strong>G</strong>
                         Continue with Google
@@ -136,6 +203,11 @@ const Login = () => {
                     <button
                         type="button"
                         className="social-button"
+                        onClick={() =>
+                            alert(
+                                "Apple login will be added later."
+                            )
+                        }
                     >
                         <strong>●</strong>
                         Continue with Apple
@@ -143,6 +215,7 @@ const Login = () => {
 
                 </div>
 
+                {/* REGISTER LINK */}
                 <p className="account-text">
                     Don't have an account?
                 </p>
@@ -154,6 +227,7 @@ const Login = () => {
                     Create an account
                 </Link>
 
+                {/* FOOTER */}
                 <div className="auth-footer">
                     <span>Terms</span>
                     <span>Privacy</span>
