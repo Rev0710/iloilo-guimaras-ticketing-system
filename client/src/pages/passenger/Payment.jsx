@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React,{ useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const Payment = () => {
@@ -6,22 +6,25 @@ const Payment = () => {
     const location = useLocation();
 
     /*
-     * Get trip information from navigation state.
-     * If state is unavailable, recover it from sessionStorage.
+     * GET TRIP DETAILS
+     *
+     * First get data from navigation state.
+     * If unavailable, recover it from sessionStorage.
      */
-    const savedTrip =
-        sessionStorage.getItem("tripDetails");
+    const savedTrip = sessionStorage.getItem("tripDetails");
 
     const trip =
         location.state?.trip ||
         (savedTrip ? JSON.parse(savedTrip) : null);
 
+    /*
+     * Default payment method
+     */
     const [paymentMethod, setPaymentMethod] =
         useState("gcash");
 
     /*
-     * If no trip information exists,
-     * return the user to Book Trip.
+     * If trip information is missing
      */
     if (!trip) {
         return (
@@ -34,12 +37,13 @@ const Payment = () => {
                     </h2>
 
                     <button
-                        className="continue-button"
+                        type="button"
+                        className="back-trip-button"
                         onClick={() =>
                             navigate("/book-trip")
                         }
                     >
-                        Back to Trip Details
+                        ← Back to Trip Details
                     </button>
 
                 </div>
@@ -49,51 +53,45 @@ const Payment = () => {
     }
 
     /*
-     * Get the actual passenger count
-     * selected on the Trip Details page.
+     * PASSENGERS
+     *
+     * This comes directly from the Trip Details page.
      */
     const passengers = Number(
         trip.passengers || 1
     );
 
     /*
-     * Fare per passenger.
+     * FARES
      */
     const passengerRate = 40;
+    const motorcycleFare = 150;
+    const ppaFee = 65;
 
     /*
-     * Motorcycle fare.
-    /*
- * Motorcycle fare.
- */
-const motorcycleFare = 150;
-
-/*
- * PPA / Philippine Ports Authority fee.
- */
-const ppaFee = 65;
-
-/*
- * Calculate passenger fare dynamically.
- */
-const passengerFare =
-    passengers * passengerRate;
-
-/*
- * Calculate total fare.
- */
-const totalFare =
-    passengerFare + motorcycleFare + ppaFee;
+     * Passenger fare changes automatically
+     * depending on passenger count.
+     */
+    const passengerFare =
+        passengers * passengerRate;
 
     /*
-     * Format date for display.
+     * TOTAL FARE
+     */
+    const totalFare =
+        passengerFare +
+        motorcycleFare +
+        ppaFee;
+
+    /*
+     * FORMAT DATE
      */
     const formattedDate = trip.date
         ? new Date(
             `${trip.date}T00:00:00`
-            ).toLocaleDateString(
+        ).toLocaleDateString(
             "en-US",
-        {
+            {
                 year: "numeric",
                 month: "long",
                 day: "numeric",
@@ -102,8 +100,7 @@ const totalFare =
         : "";
 
     /*
-     * Convert 24-hour time into a readable
-     * AM/PM format.
+     * FORMAT TIME
      */
     const formatTime = (time) => {
 
@@ -126,18 +123,24 @@ const totalFare =
     };
 
     /*
-     * Go back to Trip Details.
+     * BACK TO TRIP DETAILS
      *
-     * The information is already stored in
-     * sessionStorage, so the form will recover
-     * the previous values instead of starting over.
+     * The existing trip information is preserved.
      */
     const handleBackToTripDetails = () => {
-        navigate("/book-trip");
+
+        navigate("/book-trip", {
+            state: {
+                trip: trip,
+            },
+        });
     };
 
     /*
-     * Book Now
+     * BOOK NOW
+     *
+     * Payment page stops here.
+     * The Confirmation page handles the next step.
      */
     const handleBookNow = () => {
 
@@ -149,19 +152,54 @@ const totalFare =
         }
 
         /*
-         * For now, this is only a demonstration.
-         *
-         * Later we will connect this button to
-         * the actual GCash / Maya / Card payment
-         * gateway and backend booking system.
+         * For the current student demonstration,
+         * GCash is the available payment method.
          */
-        alert(
-            `Booking confirmed for ${passengers} passenger${
-                passengers > 1 ? "s" : ""
-            }.\n\nTotal Fare: ₱${totalFare.toFixed(
-                2
-            )}`
+        if (paymentMethod !== "gcash") {
+
+            alert(
+                "For the current student demo, please select GCash."
+            );
+
+            return;
+        }
+
+        /*
+         * Create payment information.
+         */
+        const paymentDetails = {
+            paymentMethod,
+            amount: totalFare,
+            currency: "PHP",
+            status: "PENDING",
+        };
+
+        /*
+         * Save payment details temporarily.
+         */
+        sessionStorage.setItem(
+            "paymentDetails",
+            JSON.stringify(paymentDetails)
         );
+
+        /*
+         * Save the latest trip information too.
+         */
+        sessionStorage.setItem(
+            "tripDetails",
+            JSON.stringify(trip)
+        );
+
+        /*
+         * Go to the SEPARATE confirmation page.
+         */
+        navigate("/gcash-payment",{
+            state: {
+                trip: trip,
+                payment: paymentDetails,
+                totalFare: totalFare,
+            },
+        });
     };
 
     return (
@@ -171,11 +209,13 @@ const totalFare =
 
                 {/* LOGO */}
                 <div className="payment-logo">
-    <img
-        src="https://scontent.fcgy2-2.fna.fbcdn.net/v/t1.15752-9/775468126_1793367781697550_3767041847597317415_n.png?stp=dst-png&cstp=mx532x469&ctp=s532x469&_nc_cat=103&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeEKTnmoEB20Fs5gE6WYWTxBd_QaoqEL1HV39BqioQvUdc9ZjhsVKyPy19OQYcSyO20Y_14PqMHIf2M01vrRKE4U&_nc_ohc=fK0ygs4SALUQ7kNvwEhUgQl&_nc_oc=Adr97yUKqKQuY-Rb-Lpj__Sjoqm7YY75sVczdULR8n8AbUyhy3oVy9DJ-YO_YUPfnTE&_nc_zt=23&_nc_ht=scontent.fcgy2-2.fna&_nc_ss=7a2a8&oh=03_Q7cD6AFmBhmkMTNembwVy95XQOYfaHONnpCT7udBE1IJnmNvHg&oe=6AB20956"
-        alt="GuimarasGo Logo"
-    />
-</div>
+
+                    <img
+                        src="https://scontent.fcgy2-2.fna.fbcdn.net/v/t1.15752-9/775468126_1793367781697550_3767041847597317415_n.png?stp=dst-png&cstp=mx532x469&ctp=s532x469&_nc_cat=103&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeEKTnmoEB20Fs5gE6WYWTxBd_QaoqEL1HV39BqioQvUdc9ZjhsVKyPy19OQYcSyO20Y_14PqMHIf2M01vrRKE4U&_nc_ohc=fK0ygs4SALUQ7kNvwEhUgQl&_nc_oc=Adr97yUKqKQuY-Rb-Lpj__Sjoqm7YY75sVczdULR8n8AbUyhy3oVy9DJ-YO_YUPfnTE&_nc_zt=23&_nc_ht=scontent.fcgy2-2.fna&_nc_ss=7a2a8&oh=03_Q7cD6AFmBhmkMTNembwVy95XQOYfaHONnpCT7udBE1IJnmNvHg&oe=6AB20956"
+                        alt="GuimarasGo Logo"
+                    />
+
+                </div>
 
                 {/* HEADING */}
                 <div className="payment-heading">
@@ -203,9 +243,7 @@ const totalFare =
                                 : ""
                         }`}
                         onClick={() =>
-                            setPaymentMethod(
-                                "gcash"
-                            )
+                            setPaymentMethod("gcash")
                         }
                     >
 
@@ -225,8 +263,7 @@ const totalFare =
 
                         </div>
 
-                        {paymentMethod ===
-                            "gcash" && (
+                        {paymentMethod === "gcash" && (
                             <div className="selected-dot">
                                 ●
                             </div>
@@ -243,9 +280,7 @@ const totalFare =
                                 : ""
                         }`}
                         onClick={() =>
-                            setPaymentMethod(
-                                "maya"
-                            )
+                            setPaymentMethod("maya")
                         }
                     >
 
@@ -265,8 +300,7 @@ const totalFare =
 
                         </div>
 
-                        {paymentMethod ===
-                            "maya" && (
+                        {paymentMethod === "maya" && (
                             <div className="selected-dot">
                                 ●
                             </div>
@@ -283,9 +317,7 @@ const totalFare =
                                 : ""
                         }`}
                         onClick={() =>
-                            setPaymentMethod(
-                                "card"
-                            )
+                            setPaymentMethod("card")
                         }
                     >
 
@@ -305,8 +337,7 @@ const totalFare =
 
                         </div>
 
-                        {paymentMethod ===
-                            "card" && (
+                        {paymentMethod === "card" && (
                             <div className="selected-dot">
                                 ●
                             </div>
@@ -316,7 +347,7 @@ const totalFare =
 
                 </div>
 
-                {/* SECURE PAYMENT NOTICE */}
+                {/* SECURE PAYMENT */}
                 <div className="secure-payment">
 
                     <div className="secure-icon">
@@ -330,16 +361,12 @@ const totalFare =
                         </strong>
 
                         <p>
-                            You will be redirected to{" "}
-                            {paymentMethod ===
-                            "gcash"
-                                ? "GCash"
-                                : paymentMethod ===
-                                  "maya"
-                                ? "Maya"
-                                : "your card provider"}{" "}
-                            to complete your payment
-                            securely.
+                            {paymentMethod === "gcash"
+                                ? "You will continue to the GCash testing payment."
+                                : paymentMethod === "maya"
+                                ? "Maya payment will be available in a future integration."
+                                : "Card payment will be available in a future integration."
+                            }
                         </p>
 
                     </div>
@@ -390,9 +417,19 @@ const totalFare =
                         </span>
 
                         <strong>
-                            {formatTime(
-                                trip.time
-                            )}
+                            {formatTime(trip.time)}
+                        </strong>
+
+                    </div>
+
+                    <div className="trip-row">
+
+                        <span>
+                            Passengers
+                        </span>
+
+                        <strong>
+                            {passengers}
                         </strong>
 
                     </div>
@@ -441,46 +478,40 @@ const totalFare =
 
                         <span>
                             ₱
-                            {passengerFare.toFixed(
-                                2
-                            )}
+                            {passengerFare.toFixed(2)}
                         </span>
 
                     </div>
 
                     {/* MOTORCYCLE */}
-<div className="fare-row">
+                    <div className="fare-row">
 
-    <span>
-        Motorcycle
-    </span>
+                        <span>
+                            Motorcycle
+                        </span>
 
-    <span>
-        ₱
-        {motorcycleFare.toFixed(
-            2
-        )}
-    </span>
+                        <span>
+                            ₱
+                            {motorcycleFare.toFixed(2)}
+                        </span>
 
-</div>
+                    </div>
 
-{/* PPA FEE */}
-<div className="fare-row">
+                    {/* PPA */}
+                    <div className="fare-row">
 
-    <span>
-        PPA Fee
-    </span>
+                        <span>
+                            PPA Fee
+                        </span>
 
-    <span>
-        ₱
-        {ppaFee.toFixed(
-            2
-        )}
-    </span>
+                        <span>
+                            ₱
+                            {ppaFee.toFixed(2)}
+                        </span>
 
-</div>
+                    </div>
 
-<div className="fare-divider"></div>
+                    <div className="fare-divider"></div>
 
                     {/* TOTAL */}
                     <div className="fare-total">
@@ -491,9 +522,7 @@ const totalFare =
 
                         <strong>
                             ₱
-                            {totalFare.toFixed(
-                                2
-                            )}
+                            {totalFare.toFixed(2)}
                         </strong>
 
                     </div>
@@ -509,7 +538,7 @@ const totalFare =
                     Book NOW
                 </button>
 
-                {/* BACK */}
+                {/* BACK TO TRIP */}
                 <button
                     type="button"
                     className="back-trip-button"
@@ -543,7 +572,7 @@ const totalFare =
                     width: 100%;
                     max-width: 650px;
                     margin: 0 auto;
-                    padding: 0 0 35px;
+                    padding: 25px 0 35px;
                     background: #ffffff;
                     border-radius: 24px;
                     box-shadow:
@@ -555,25 +584,17 @@ const totalFare =
                 /* LOGO */
 
                 .payment-logo {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.payment-logo img {
-    width: 110px;
-    height: auto;
-    max-height: 90px;
-    object-fit: contain;
-    display: block;
-}
-                .logo-orange {
-                    color: #f28c28;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    margin-bottom: 18px;
                 }
 
-                .logo-green {
-                    color: #2bb673;
+                .payment-logo img {
+                    width: 70px;
+                    height: 55px;
+                    object-fit: contain;
+                    display: block;
                 }
 
                 /* HEADING */
@@ -592,7 +613,7 @@ const totalFare =
                 }
 
                 .payment-heading p {
-                    margin-top: 10px;
+                    margin: 10px 0 0;
                     color: #777777;
                     font-size: 15px;
                 }
@@ -637,28 +658,30 @@ const totalFare =
                     border-radius: 9px;
                     font-size: 20px;
                     font-weight: 800;
+                    flex-shrink: 0;
                 }
 
                 .gcash-icon {
-                    background: #e8f4ff;
-                    color: #1685d8;
+                    background: #e9f4ff;
+                    color: #087ee8;
                 }
 
                 .maya-icon {
-                    background: #e9f8ef;
-                    color: #16a05a;
+                    background: #eaf8ef;
+                    color: #16a34a;
                 }
 
                 .card-icon {
-                    background: #eeeeee;
+                    background: #f0f0f0;
+                    color: #2185c5;
                     font-size: 18px;
                 }
 
                 .payment-info {
+                    flex: 1;
                     display: flex;
                     flex-direction: column;
-                    gap: 5px;
-                    flex: 1;
+                    gap: 4px;
                 }
 
                 .payment-info strong {
@@ -679,11 +702,12 @@ const totalFare =
                 /* SECURE PAYMENT */
 
                 .secure-payment {
-                    margin: 22px 34px 12px;
+                    margin: 22px 34px 0;
                     padding: 18px;
                     display: flex;
+                    align-items: flex-start;
                     gap: 14px;
-                    background: #f5f8fb;
+                    background: #f5f7fa;
                     border-radius: 14px;
                 }
 
@@ -692,19 +716,21 @@ const totalFare =
                 }
 
                 .secure-payment strong {
+                    display: block;
                     color: #111111;
                     font-size: 14px;
+                    margin-bottom: 6px;
                 }
 
                 .secure-payment p {
-                    margin: 8px 0 0;
+                    margin: 0;
                     color: #666666;
                     font-size: 12px;
-                    line-height: 1.6;
+                    line-height: 1.5;
                 }
 
                 .secure-text {
-                    margin: 15px 34px 25px;
+                    margin: 18px 34px 0;
                     text-align: center;
                     color: #777777;
                     font-size: 11px;
@@ -713,45 +739,53 @@ const totalFare =
                 /* TRIP SUMMARY */
 
                 .trip-summary {
-                    margin: 0 34px 25px;
-                    padding: 18px;
-                    background: #fafafa;
-                    border-radius: 12px;
+                    margin: 28px 34px 0;
+                    padding: 20px;
+                    border: 1px solid #eeeeee;
+                    border-radius: 14px;
+                    background: #ffffff;
                 }
 
                 .trip-summary h2 {
-                    margin: 0 0 15px;
-                    font-size: 17px;
+                    margin: 0 0 18px;
                     color: #111111;
+                    font-size: 18px;
                 }
 
                 .trip-row {
                     display: flex;
                     justify-content: space-between;
+                    align-items: center;
                     gap: 15px;
-                    padding: 7px 0;
-                    font-size: 13px;
+                    padding: 10px 0;
+                    border-bottom: 1px solid #f0f0f0;
+                }
+
+                .trip-row:last-child {
+                    border-bottom: none;
                 }
 
                 .trip-row span {
                     color: #777777;
+                    font-size: 13px;
                 }
 
                 .trip-row strong {
                     color: #222222;
+                    font-size: 13px;
                     text-align: right;
                 }
 
                 /* FARE */
 
                 .fare-section {
-                    margin: 0 34px;
+                    margin: 24px 34px 0;
                 }
 
                 .fare-section h2 {
-                    margin: 0 0 22px;
-                    font-size: 17px;
+                    margin: 0 0 16px;
                     color: #111111;
+                    font-size: 18px;
                 }
 
                 .fare-row {
@@ -760,6 +794,10 @@ const totalFare =
                     padding: 9px 0;
                     color: #555555;
                     font-size: 14px;
+                }
+
+                .fare-row span:last-child {
+                    color: #333333;
                 }
 
                 .fare-divider {
@@ -772,7 +810,7 @@ const totalFare =
                 .fare-total {
                     display: flex;
                     justify-content: space-between;
-                    padding: 10px 0 18px;
+                    padding-top: 8px;
                     color: #111111;
                     font-size: 16px;
                 }
@@ -782,9 +820,9 @@ const totalFare =
                 .book-now-button {
                     width: calc(100% - 68px);
                     height: 54px;
-                    margin: 0 34px;
+                    margin: 26px 34px 0;
                     border: none;
-                    border-radius: 11px;
+                    border-radius: 10px;
                     background: #333333;
                     color: #ffffff;
                     font-size: 16px;
@@ -802,7 +840,8 @@ const totalFare =
 
                 .back-trip-button {
                     display: block;
-                    margin: 20px auto 0;
+                    margin: 18px auto 0;
+                    padding: 5px 10px;
                     border: none;
                     background: transparent;
                     color: #777777;
@@ -824,6 +863,7 @@ const totalFare =
 
                     .payment-container {
                         border-radius: 18px;
+                        padding-bottom: 30px;
                     }
 
                     .payment-methods {
@@ -854,6 +894,18 @@ const totalFare =
                         width: calc(100% - 40px);
                         margin-left: 20px;
                         margin-right: 20px;
+                    }
+
+                    .payment-heading h1 {
+                        font-size: 25px;
+                    }
+
+                    .trip-row {
+                        align-items: flex-start;
+                    }
+
+                    .trip-row strong {
+                        max-width: 55%;
                     }
 
                 }

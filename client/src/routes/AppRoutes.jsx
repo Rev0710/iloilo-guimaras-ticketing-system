@@ -1,3 +1,4 @@
+import React from "react";
 import { Routes, Route } from "react-router-dom";
 
 import LandingPage from "../pages/public/LandingPage";
@@ -6,6 +7,8 @@ import Register from "../pages/passenger/Register";
 import Dashboard from "../pages/passenger/Dashboard";
 import BookTrip from "../pages/passenger/BookTrip";
 import Payment from "../pages/passenger/Payment";
+import GCashPayment from "../pages/passenger/GCashPayment";
+import Confirmation from "../pages/passenger/Confirmation";
 
 const AppRoutes = () => {
     return (
@@ -39,6 +42,18 @@ const AppRoutes = () => {
             <Route
                 path="/payment"
                 element={<Payment />}
+            />
+
+            {/* GCASH TEST PAYMENT */}
+            <Route
+                path="/gcash-payment"
+                element={<GCashPayment />}
+            />
+
+            {/* BOOKING CONFIRMATION */}
+            <Route
+                path="/confirmation"
+                element={<Confirmation />}
             />
 
         </Routes>

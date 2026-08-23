@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import React,{ useState } from "react";
 
 const Dashboard = () => {
     const navigate = useNavigate();
