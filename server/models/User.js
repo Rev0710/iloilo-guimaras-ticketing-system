@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema(
         fullName: {
             type: String,
             required: true,
-            trim: true,
+            trim: true
         },
 
         email: {
@@ -13,28 +13,22 @@ const userSchema = new mongoose.Schema(
             required: true,
             unique: true,
             lowercase: true,
-            trim: true,
+            trim: true
         },
 
         phoneNumber: {
             type: String,
             required: true,
-            trim: true,
+            trim: true
         },
 
         password: {
             type: String,
-            required: true,
-        },
-
-        role: {
-            type: String,
-            enum: ["passenger", "admin"],
-            default: "passenger",
-        },
+            required: true
+        }
     },
     {
-        timestamps: true,
+        timestamps: true
     }
 );
 

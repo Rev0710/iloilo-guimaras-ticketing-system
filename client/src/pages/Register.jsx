@@ -95,7 +95,7 @@ const Register = () => {
                 agreeTerms: false,
             });
 
-            // Navigate to Login
+            // Go to login
             navigate("/login");
 
         } catch (error) {
@@ -128,15 +128,8 @@ const Register = () => {
 
                 {/* LOGO */}
                 <div className="auth-logo">
-
-                    <span className="logo-orange">
-                        GO
-                    </span>
-
-                    <span className="logo-green">
-                        .
-                    </span>
-
+                    <span className="logo-orange">GO</span>
+                    <span className="logo-green">.</span>
                 </div>
 
                 {/* HEADING */}
@@ -284,14 +277,11 @@ const Register = () => {
 
                 </form>
 
-                {/* DIVIDER */}
+                {/* SOCIAL LOGIN */}
                 <div className="divider">
-
                     <span>OR</span>
-
                 </div>
 
-                {/* SOCIAL REGISTRATION */}
                 <div className="social-login">
 
                     <button

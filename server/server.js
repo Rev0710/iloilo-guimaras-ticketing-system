@@ -1,25 +1,40 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
-
 const connectDB = require("./config/database");
-const authRoutes = require("./routes/authRoutes");
 
+// Load environment variables
 dotenv.config();
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// ===============================
+// MIDDLEWARE
+// ===============================
+
+// Allow requests from your React/Vite frontend
+app.use(
+    cors({
+        origin: [
+            "http://localhost:5173",
+            "http://localhost:5174"
+        ],
+        credentials: true
+    })
+);
+
 app.use(express.json());
 
-// MongoDB
+// ===============================
+// MONGODB CONNECTION
+// ===============================
+
 connectDB();
 
-// Routes
-app.use("/api/auth", authRoutes);
+// ===============================
+// TEST ROUTE
+// ===============================
 
-// Test route
 app.get("/", (req, res) => {
     res.json({
         message: "Iloilo-Guimaras Ferry Ticketing API is running!",
@@ -27,8 +42,22 @@ app.get("/", (req, res) => {
     });
 });
 
+// ===============================
+// AUTH ROUTES
+// ===============================
+
+const authRoutes = require("./routes/authRoutes");
+
+app.use("/api/auth", authRoutes);
+
+// ===============================
+// SERVER
+// ===============================
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(
+        `Server running on http://localhost:${PORT}`
+    );
 });

@@ -59,7 +59,6 @@ const Login = () => {
             alert("Login successful!");
 
             navigate("/dashboard");
-
         } catch (error) {
             console.error("Login Error:", error);
 
@@ -76,7 +75,6 @@ const Login = () => {
 
             <div className="auth-container">
 
-                {/* BACK BUTTON */}
                 <button
                     type="button"
                     className="back-button"
@@ -85,29 +83,23 @@ const Login = () => {
                     ←
                 </button>
 
-                {/* LOGO */}
                 <div className="auth-logo">
                     <span className="logo-orange">GO</span>
                     <span className="logo-green">.</span>
                 </div>
 
-                {/* HEADING */}
                 <div className="auth-heading">
-
                     <h1>Welcome Back</h1>
 
                     <p>
                         Sign in to continue to your account.
                     </p>
-
                 </div>
 
-                {/* LOGIN FORM */}
                 <form onSubmit={handleSubmit}>
 
                     {/* EMAIL */}
                     <div className="form-group">
-
                         <label htmlFor="email">
                             Email Address
                         </label>
@@ -122,12 +114,10 @@ const Login = () => {
                             }
                             required
                         />
-
                     </div>
 
                     {/* PASSWORD */}
                     <div className="form-group">
-
                         <label htmlFor="password">
                             Password
                         </label>
@@ -142,7 +132,6 @@ const Login = () => {
                             }
                             required
                         />
-
                     </div>
 
                     {/* LOGIN OPTIONS */}
@@ -180,25 +169,22 @@ const Login = () => {
 
                     </div>
 
-                    {/* SIGN IN */}
+                    {/* SIGN IN BUTTON */}
                     <button
                         type="submit"
                         className="primary-button"
                         disabled={loading}
                     >
-                        {loading
-                            ? "Signing In..."
-                            : "Sign In"}
+                        {loading ? "Signing In..." : "Sign In"}
                     </button>
 
                 </form>
 
-                {/* DIVIDER */}
+                {/* SOCIAL LOGIN */}
                 <div className="divider">
                     <span>OR</span>
                 </div>
 
-                {/* SOCIAL LOGIN */}
                 <div className="social-login">
 
                     <button
@@ -229,7 +215,7 @@ const Login = () => {
 
                 </div>
 
-                {/* REGISTER */}
+                {/* REGISTER LINK */}
                 <p className="account-text">
                     Don't have an account?
                 </p>
@@ -243,11 +229,9 @@ const Login = () => {
 
                 {/* FOOTER */}
                 <div className="auth-footer">
-
                     <span>Terms</span>
                     <span>Privacy</span>
                     <span>Help</span>
-
                 </div>
 
             </div>

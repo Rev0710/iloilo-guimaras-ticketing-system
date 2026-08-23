@@ -1,23 +1,11 @@
-import {
-    Routes,
-    Route,
-} from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
-import LandingPage from "../pages/passenger/LandingPage";
+import LandingPage from "../pages/public/LandingPage";
 import Login from "../pages/passenger/Login";
 import Register from "../pages/passenger/Register";
-
-const Dashboard = () => {
-    return (
-        <div className="temporary-dashboard">
-            <h1>Passenger Dashboard</h1>
-
-            <p>
-                Dashboard will be developed next.
-            </p>
-        </div>
-    );
-};
+import Dashboard from "../pages/passenger/Dashboard";
+import BookTrip from "../pages/passenger/BookTrip";
+import Payment from "../pages/passenger/Payment";
 
 const AppRoutes = () => {
     return (
@@ -41,6 +29,16 @@ const AppRoutes = () => {
             <Route
                 path="/dashboard"
                 element={<Dashboard />}
+            />
+
+            <Route
+                path="/book-trip"
+                element={<BookTrip />}
+            />
+
+            <Route
+                path="/payment"
+                element={<Payment />}
             />
 
         </Routes>

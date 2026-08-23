@@ -579,3 +579,230 @@ button {
         min-height: 100vh;
     }
 }
+/* ============================= */
+/* PAYMENT PAGE */
+/* ============================= */
+
+.payment-page {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+    background: #f7f8fa;
+}
+
+.payment-container {
+    width: 100%;
+    max-width: 520px;
+    background: #ffffff;
+    padding: 35px;
+    border-radius: 24px;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
+}
+
+/* LOGO */
+
+.payment-logo {
+    text-align: center;
+    font-size: 32px;
+    font-weight: 800;
+    margin-bottom: 20px;
+}
+
+.logo-orange {
+    color: #f28c28;
+}
+
+.logo-green {
+    color: #2eaf5d;
+}
+
+/* HEADING */
+
+.payment-heading {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.payment-heading h1 {
+    margin: 0;
+    font-size: 28px;
+}
+
+.payment-heading p {
+    margin-top: 8px;
+    color: #777;
+}
+
+/* PAYMENT OPTIONS */
+
+.payment-methods {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.payment-option {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 16px;
+    border: 2px solid #e5e5e5;
+    border-radius: 14px;
+    background: #ffffff;
+    cursor: pointer;
+    text-align: left;
+    transition: 0.2s ease;
+}
+
+.payment-option:hover {
+    border-color: #f28c28;
+}
+
+.payment-option.selected {
+    border-color: #f28c28;
+    background: #fff8f1;
+}
+
+.payment-icon {
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 20px;
+}
+
+.gcash-icon {
+    background: #e8f4ff;
+    color: #1478d4;
+}
+
+.maya-icon {
+    background: #e9f9ed;
+    color: #19a44a;
+}
+
+.card-icon {
+    background: #f1f1f1;
+}
+
+.payment-option-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.payment-option-info strong {
+    font-size: 16px;
+}
+
+.payment-option-info span {
+    color: #777;
+    font-size: 13px;
+}
+
+.payment-radio {
+    font-size: 20px;
+}
+
+/* NOTICE */
+
+.payment-notice {
+    display: flex;
+    gap: 12px;
+    margin-top: 25px;
+    padding: 16px;
+    background: #f7f9fc;
+    border-radius: 14px;
+}
+
+.notice-icon {
+    font-size: 22px;
+}
+
+.payment-notice strong {
+    font-size: 14px;
+}
+
+.payment-notice p {
+    margin: 5px 0 0;
+    color: #666;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* SECURE MESSAGE */
+
+.secure-message {
+    text-align: center;
+    margin: 15px 0 25px;
+    font-size: 12px;
+    color: #777;
+}
+
+/* FARE */
+
+.fare-section {
+    margin-top: 10px;
+}
+
+.fare-section h2 {
+    font-size: 18px;
+    margin-bottom: 18px;
+}
+
+.fare-row,
+.fare-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.fare-row span {
+    color: #555;
+}
+
+.fare-divider {
+    border-top: 1px solid #ddd;
+    margin: 12px 0;
+}
+
+.fare-total {
+    font-size: 18px;
+}
+
+/* BOOK NOW */
+
+.book-now-button {
+    width: 100%;
+    margin-top: 25px;
+    padding: 15px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.book-now-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* BACK */
+
+.back-payment-button {
+    display: block;
+    margin: 18px auto 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: #666;
+}
