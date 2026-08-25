@@ -7,199 +7,497 @@ const LandingPage = () => {
     return (
         <>
             <style>{`
+
                 * {
                     box-sizing: border-box;
                 }
 
-                .landing-page {
-                    min-height: 100vh;
+                html,
+                body,
+                #root {
+                    margin: 0;
                     width: 100%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 30px;
-                    background: #f8f9fa;
+                    min-height: 100%;
+                }
+
+                body {
                     font-family: Arial, Helvetica, sans-serif;
                 }
 
-                .landing-container {
+
+
+                /* =========================================
+                   FULL LANDING PAGE
+                ========================================= */
+
+                .landing-page {
+                    position: relative;
                     width: 100%;
-                    max-width: 1000px;
-                    max-height: 1000px;
+                    min-height: 100vh;
+
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    overflow: hidden;
+
+                    background-image:
+                        linear-gradient(
+                            rgba(0, 0, 0, 0.30),
+                            rgba(0, 0, 0, 0.30)
+                        ),
+                        url("https://orbitshub.com/wp-content/uploads/2023/10/what-exactly-are-roro-ships-1024x576.jpg");
+
+                    background-size: cover;
+                    background-position: center;
+                    background-repeat: no-repeat;
+
+                    padding: 40px;
+                }
+
+
+
+                /* =========================================
+                   CENTER GLASS FRAME
+                ========================================= */
+
+                .landing-container {
+                    position: relative;
+                    z-index: 2;
+
+                    width: min(700px, 90vw);
+                    min-height: 430px;
+
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
+
                     text-align: center;
-                    padding: 60px 30px;
-                    background: white;
-                    border-radius: 20px;
-                    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
+
+                    padding: 50px 40px;
+
+                    background: rgba(255, 255, 255, 0.62);
+
+                    border: 1px solid rgba(255, 255, 255, 0.55);
+
+                    box-shadow:
+                        0 15px 45px rgba(0, 0, 0, 0.20);
+
+                    backdrop-filter: blur(3px);
+                    -webkit-backdrop-filter: blur(3px);
                 }
+
+
+
+                /* =========================================
+                   LOGO
+                ========================================= */
 
                 .landing-logo {
-                    margin-bottom: 30px;
-                    font-size: 42px;
-                    font-weight: 500;
-                    letter-spacing: -2px;
+                    width: 170px;
+                    height: 150px;
+
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    margin-bottom: -20px;
                 }
 
-                .logo-orange {
-                    color: #f28c28;
+                .landing-logo img {
+                    width: 170px;
+                    height: 150px;
+
+                    object-fit: contain;
+
+                    display: block;
                 }
 
-                .logo-green {
-                    color: #2e8b57;
-                }
+
+
+                /* =========================================
+                   CONTENT
+                ========================================= */
 
                 .landing-content {
                     width: 100%;
-                    max-width: 500px;
+
                     display: flex;
                     flex-direction: column;
                     align-items: center;
+
+                    text-align: center;
                 }
+
+
+
+                .welcome-text {
+                    margin: 0;
+
+                    color: #111;
+
+                    font-size: 22px;
+                    font-weight: 400;
+
+                    line-height: 1.2;
+                }
+
+
 
                 .landing-content h1 {
-                    margin: 0;
-                    font-size: clamp(42px, 7vw, 76px);
-                    line-height: 1.1;
-                    font-weight: 800;
-                    color: #222;
+                    margin: 3px 0 0;
+
+                    color: #111;
+
+                    font-size: clamp(42px, 6vw, 68px);
+
+                    font-weight: 400;
+
+                    line-height: 1.05;
+
+                    letter-spacing: -2px;
                 }
 
-                .landing-content h2 {
-                    margin: 18px 0 0;
-                    font-size: clamp(22px, 3vw, 34px);
-                    line-height: 1.3;
-                    font-weight: 600;
-                    color: #2e8b57;
-                }
+
 
                 .landing-content p {
-                    max-width: 600px;
-                    margin: 25px auto 35px;
-                    font-size: 18px;
-                    line-height: 1.7;
-                    color: #666;
+                    margin: 10px 0 20px;
+
+                    color: #222;
+
+                    font-size: 16px;
+                    font-weight: 400;
+
+                    line-height: 1.4;
                 }
 
-                .landing-content .primary-button {
+
+
+                /* =========================================
+                   LOGIN BUTTONS
+                ========================================= */
+
+                .login-buttons {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    gap: 15px;
+
+                    width: 100%;
+
+                    margin-top: 5px;
+                }
+
+
+                .primary-button {
+                    width: 180px;
+                    height: 44px;
+
                     border: none;
-                    padding: 15px 40px;
-                    border-radius: 10px;
-                    background: #f28c28;
+                    border-radius: 5px;
+
+                    background: #ff7417;
+
                     color: white;
-                    font-size: 17px;
-                    font-weight: 700;
+
+                    font-size: 14px;
+                    font-weight: 600;
+
                     cursor: pointer;
-                    transition: 0.2s ease;
+
+                    transition:
+                        transform 0.2s ease,
+                        background 0.2s ease,
+                        box-shadow 0.2s ease;
                 }
 
-                .landing-content .primary-button:hover {
+
+                .primary-button:hover {
+                    background: #f5660b;
+
                     transform: translateY(-2px);
-                    opacity: 0.9;
+
+                    box-shadow:
+                        0 6px 15px rgba(255, 116, 23, 0.30);
                 }
 
-                .landing-content .primary-button:active {
+
+                .primary-button:active {
                     transform: translateY(0);
                 }
 
-                /* TABLET */
-                @media (max-width: 768px) {
-                    .landing-page {
-                        padding: 20px;
-                    }
 
-                    .landing-container {
-                        min-height: 600px;
-                        padding: 45px 25px;
-                        border-radius: 20px;
-                    }
 
-                    .landing-logo img {
-    width: 80px;
-    height: auto;
-    display: block;
-    object-fit: contain;
-}
+                /* =========================================
+                   ADMIN BUTTON
+                ========================================= */
 
-                    .landing-content p {
-                        font-size: 10px;
-                    }
+                .admin-button {
+                    width: 180px;
+                    height: 44px;
+
+                    border: none;
+                    border-radius: 5px;
+
+                    background: #333333;
+
+                    color: white;
+
+                    font-size: 14px;
+                    font-weight: 600;
+
+                    cursor: pointer;
+
+                    transition:
+                        transform 0.2s ease,
+                        background 0.2s ease,
+                        box-shadow 0.2s ease;
                 }
 
-                /* MOBILE */
-                @media (max-width: 480px) {
+
+                .admin-button:hover {
+                    background: #222222;
+
+                    transform: translateY(-2px);
+
+                    box-shadow:
+                        0 6px 15px rgba(0, 0, 0, 0.25);
+                }
+
+
+                .admin-button:active {
+                    transform: translateY(0);
+                }
+
+
+
+                /* =========================================
+                   TABLET
+                ========================================= */
+
+                @media (max-width: 768px) {
+
                     .landing-page {
-                        padding: 15px;
+                        padding: 25px;
                     }
 
                     .landing-container {
-                        min-height: 580px;
-                        padding: 40px 20px;
+                        width: 90vw;
+                        min-height: 400px;
+
+                        padding: 40px 30px;
                     }
 
                     .landing-logo {
-                        font-size: 36px;
-                        margin-bottom: 30px;
+                        width: 145px;
+                        height: 125px;
+
+                        margin-bottom: -15px;
+                    }
+
+                    .landing-logo img {
+                        width: 145px;
+                        height: 125px;
+                    }
+
+                    .welcome-text {
+                        font-size: 19px;
                     }
 
                     .landing-content h1 {
-                        font-size: 42px;
-                    }
-
-                    .landing-content h2 {
-                        font-size: 21px;
+                        font-size: clamp(38px, 8vw, 55px);
                     }
 
                     .landing-content p {
-                        font-size: 15px;
-                        line-height: 1.6;
-                        margin-top: 20px;
+                        font-size: 14px;
+                        margin-top: 8px;
+                        margin-bottom: 18px;
                     }
 
-                    .landing-content .primary-button {
-                        width: 100%;
-                        max-width: 280px;
+                    .login-buttons {
+                        gap: 12px;
+                    }
+
+                    .primary-button,
+                    .admin-button {
+                        width: 170px;
+                        height: 42px;
                     }
                 }
+
+
+
+                /* =========================================
+                   MOBILE
+                ========================================= */
+
+                @media (max-width: 480px) {
+
+                    .landing-page {
+                        padding: 18px;
+                    }
+
+                    .landing-container {
+                        width: 100%;
+                        min-height: 390px;
+
+                        padding: 35px 20px;
+                    }
+
+                    .landing-logo {
+                        width: 125px;
+                        height: 110px;
+
+                        margin-bottom: -10px;
+                    }
+
+                    .landing-logo img {
+                        width: 125px;
+                        height: 110px;
+                    }
+
+                    .welcome-text {
+                        font-size: 17px;
+                    }
+
+                    .landing-content h1 {
+                        font-size: 39px;
+
+                        letter-spacing: -1.5px;
+                    }
+
+                    .landing-content p {
+                        font-size: 13px;
+
+                        margin-top: 8px;
+                        margin-bottom: 18px;
+                    }
+
+                    .login-buttons {
+                        flex-direction: column;
+
+                        gap: 10px;
+
+                        width: 100%;
+                    }
+
+                    .primary-button,
+                    .admin-button {
+                        width: 155px;
+                        height: 40px;
+
+                        font-size: 13px;
+                    }
+                }
+
+
+
+                /* =========================================
+                   VERY SMALL PHONES
+                ========================================= */
+
+                @media (max-width: 400px) {
+
+                    .landing-page {
+                        padding: 12px;
+                    }
+
+                    .landing-container {
+                        min-height: 360px;
+
+                        padding: 28px 15px;
+                    }
+
+                    .landing-logo {
+                        width: 110px;
+                        height: 95px;
+                    }
+
+                    .landing-logo img {
+                        width: 110px;
+                        height: 95px;
+                    }
+
+                    .welcome-text {
+                        font-size: 15px;
+                    }
+
+                    .landing-content h1 {
+                        font-size: 34px;
+                    }
+
+                    .landing-content p {
+                        font-size: 12px;
+                    }
+
+                    .primary-button,
+                    .admin-button {
+                        width: 145px;
+                        height: 38px;
+                    }
+                }
+
             `}</style>
+
+
 
             <main className="landing-page">
 
                 <div className="landing-container">
 
+                    {/* LOGO */}
                     <div className="landing-logo">
-    <img
-        src="https://scontent.fcgy2-2.fna.fbcdn.net/v/t1.15752-9/775468126_1793367781697550_3767041847597317415_n.png?stp=dst-png&cstp=mx532x469&ctp=s532x469&_nc_cat=103&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeEKTnmoEB20Fs5gE6WYWTxBd_QaoqEL1HV39BqioQvUdc9ZjhsVKyPy19OQYcSyO20Y_14PqMHIf2M01vrRKE4U&_nc_ohc=fK0ygs4SALUQ7kNvwEhUgQl&_nc_oc=Adr97yUKqKQuY-Rb-Lpj__Sjoqm7YY75sVczdULR8n8AbUyhy3oVy9DJ-YO_YUPfnTE&_nc_zt=23&_nc_ht=scontent.fcgy2-2.fna&_nc_ss=7a2a8&oh=03_Q7cD6AFmBhmkMTNembwVy95XQOYfaHONnpCT7udBE1IJnmNvHg&oe=6AB20956"
-        alt="Go"
-    />
-</div>
 
+                        <img
+                            src="https://scontent.fcgy2-2.fna.fbcdn.net/v/t1.15752-9/775468126_1793367781697550_3767041847597317415_n.png?stp=dst-png&cstp=mx532x469&ctp=s532x469&_nc_cat=103&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeEKTnmoEB20Fs5gE6WYWTxBd_QaoqEL1HV39BqioQvUdc9ZjhsVKyPy19OQYcSyO20Y_14PqMHIf2M01vrRKE4U&_nc_ohc=fK0ygs4SALUQ7kNvwEhUgQl&_nc_oc=Adr97yUKqKQuY-Rb-Lpj__Sjoqm7YY75sVczdULR8n8AbUyhy3oVy9DJ-YO_YUPfnTE&_nc_zt=23&_nc_ht=scontent.fcgy2-2.fna&_nc_ss=7a2a8&oh=03_Q7cD6AFmBhmkMTNembwVy95XQOYfaHONnpCT7udBE1IJnmNvHg&oe=6AB20956"
+                            alt="GuimarasGo Logo"
+                        />
+
+                    </div>
+
+
+
+                    {/* CONTENT */}
                     <div className="landing-content">
+
+                        <div className="welcome-text">
+                            Welcome to
+                        </div>
 
                         <h1>
                             GuimarasGo
                         </h1>
 
-                        <h2>
-                            Your Gateway to Island Adventures
-                        </h2>
-
                         <p>
-                            Book your ferry trip easily and
-                            enjoy a convenient journey to
-                            Guimaras.
+                            Travel Smarter Across Guimaras.
                         </p>
 
-                        <button
-                            type="button"
-                            className="primary-button"
-                            onClick={() => navigate("/login")}
-                        >
-                            Get Started
-                        </button>
+
+                        {/* LOGIN BUTTONS */}
+                        <div className="login-buttons">
+
+                            {/* STUDENT LOGIN */}
+                            <button
+                                type="button"
+                                className="primary-button"
+                                onClick={() => navigate("/Login")}
+                            >
+                                Log In as Tourist
+                            </button>
+
+
+                            {/* ADMIN LOGIN */}
+                            <button
+                                type="button"
+                                className="admin-button"
+                                onClick={() => navigate("/admin-login")}
+                            >
+                                Log In as Admin
+                            </button>
+
+                        </div>
 
                     </div>
 
