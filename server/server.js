@@ -1,18 +1,20 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
-const connectDB = require("./config/database");
+const path = require("path");
 
-// Load environment variables
+const connectDB =
+    require("./config/database");
+
 dotenv.config();
 
 const app = express();
+
 
 // ===============================
 // MIDDLEWARE
 // ===============================
 
-// Allow requests from your React/Vite frontend
 app.use(
     cors({
         origin: [
@@ -25,39 +27,90 @@ app.use(
 
 app.use(express.json());
 
+
 // ===============================
-// MONGODB CONNECTION
+// UPLOADS
+// ===============================
+
+app.use(
+    "/uploads",
+    express.static(
+        path.join(__dirname, "uploads")
+    )
+);
+
+
+// ===============================
+// MONGODB
 // ===============================
 
 connectDB();
 
+
 // ===============================
-// TEST ROUTE
+// TEST
 // ===============================
 
 app.get("/", (req, res) => {
+
     res.json({
-        message: "Iloilo-Guimaras Ferry Ticketing API is running!",
-        database: "MongoDB"
+        message:
+            "Iloilo-Guimaras Ferry Ticketing API is running!",
+
+        database:
+            "MongoDB"
     });
+
 });
 
+
 // ===============================
-// AUTH ROUTES
+// AUTH
 // ===============================
 
-const authRoutes = require("./routes/authRoutes");
+const authRoutes =
+    require("./routes/authRoutes");
 
-app.use("/api/auth", authRoutes);
+app.use(
+    "/api/auth",
+    authRoutes
+);
+
+
+// ===============================
+// ADMIN
+// ===============================
+
+const adminRoutes =
+    require("./routes/adminRoutes");
+
+app.use(
+    "/api/admin",
+    adminRoutes
+);
+
+const paymentRoutes =
+    require("./routes/paymentRoutes");
+
+app.use(
+    "/api/payment",
+    paymentRoutes
+);
 
 // ===============================
 // SERVER
 // ===============================
 
-const PORT = process.env.PORT || 5000;
+const PORT =
+    process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-    console.log(
-        `Server running on http://localhost:${PORT}`
-    );
-});
+app.listen(
+    PORT,
+    () => {
+
+        console.log(
+            `Server running on http://localhost:${PORT}`
+        );
+
+    }
+);

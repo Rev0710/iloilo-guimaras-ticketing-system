@@ -1,0 +1,381 @@
+const express = require("express");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+
+const Admin = require("../models/Admin");
+const adminAuth = require("../middleware/adminAuth");
+
+const router = express.Router();
+
+
+// =========================================================
+// ADMIN REGISTRATION
+// =========================================================
+
+router.post("/register", async (req, res) => {
+
+    try {
+
+        const {
+            fullName,
+            email,
+            password,
+            confirmPassword,
+            registrationCode
+        } = req.body;
+
+
+        // =====================================================
+        // REQUIRED FIELDS
+        // =====================================================
+
+        if (
+            !fullName ||
+            !email ||
+            !password ||
+            !confirmPassword ||
+            !registrationCode
+        ) {
+
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Please complete all required fields."
+            });
+        }
+
+
+        // =====================================================
+        // CHECK PASSWORD
+        // =====================================================
+
+        if (password !== confirmPassword) {
+
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Passwords do not match."
+            });
+        }
+
+
+        // =====================================================
+        // PASSWORD LENGTH
+        // =====================================================
+
+        if (password.length < 6) {
+
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Password must be at least 6 characters."
+            });
+        }
+
+
+        // =====================================================
+        // ADMIN REGISTRATION CODE
+        // =====================================================
+
+        if (
+            registrationCode !==
+            process.env.ADMIN_REGISTRATION_CODE
+        ) {
+
+            return res.status(403).json({
+                success: false,
+                message:
+                    "Invalid admin registration code."
+            });
+        }
+
+
+        // =====================================================
+        // CHECK EXISTING ADMIN
+        // =====================================================
+
+        const normalizedEmail =
+            email.trim().toLowerCase();
+
+        const existingAdmin =
+            await Admin.findOne({
+                email: normalizedEmail
+            });
+
+        if (existingAdmin) {
+
+            return res.status(409).json({
+                success: false,
+                message:
+                    "An administrator with this email already exists."
+            });
+        }
+
+
+        // =====================================================
+        // HASH PASSWORD
+        // =====================================================
+
+        const hashedPassword =
+            await bcrypt.hash(password, 12);
+
+
+        // =====================================================
+        // CREATE ADMIN
+        // =====================================================
+
+        const admin =
+            await Admin.create({
+
+                fullName:
+                    fullName.trim(),
+
+                email:
+                    normalizedEmail,
+
+                password:
+                    hashedPassword,
+
+                role:
+                    "ADMIN"
+            });
+
+
+        // =====================================================
+        // RESPONSE
+        // =====================================================
+
+        return res.status(201).json({
+
+            success: true,
+
+            message:
+                "Administrator account created successfully.",
+
+            admin: {
+
+                id:
+                    admin._id,
+
+                fullName:
+                    admin.fullName,
+
+                email:
+                    admin.email,
+
+                role:
+                    admin.role
+            }
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Admin registration error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message:
+                "Unable to create administrator account."
+        });
+    }
+});
+
+
+// =========================================================
+// ADMIN LOGIN
+// =========================================================
+
+router.post("/login", async (req, res) => {
+
+    try {
+
+        const {
+            email,
+            password
+        } = req.body;
+
+
+        if (!email || !password) {
+
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Email and password are required."
+            });
+        }
+
+
+        const normalizedEmail =
+            email.trim().toLowerCase();
+
+
+        // =====================================================
+        // FIND ADMIN
+        // =====================================================
+
+        const admin =
+            await Admin.findOne({
+                email: normalizedEmail
+            }).select("+password");
+
+
+        if (!admin) {
+
+            return res.status(401).json({
+                success: false,
+                message:
+                    "Invalid administrator email or password."
+            });
+        }
+
+
+        // =====================================================
+        // CHECK PASSWORD
+        // =====================================================
+
+        const passwordMatch =
+            await bcrypt.compare(
+                password,
+                admin.password
+            );
+
+
+        if (!passwordMatch) {
+
+            return res.status(401).json({
+                success: false,
+                message:
+                    "Invalid administrator email or password."
+            });
+        }
+
+
+        // =====================================================
+        // CREATE JWT
+        // =====================================================
+
+        const token =
+            jwt.sign(
+                {
+                    id:
+                        admin._id.toString(),
+
+                    email:
+                        admin.email,
+
+                    fullName:
+                        admin.fullName,
+
+                    role:
+                        "ADMIN"
+                },
+
+                process.env.JWT_SECRET,
+
+                {
+                    expiresIn:
+                        "8h"
+                }
+            );
+
+
+        // =====================================================
+        // RESPONSE
+        // =====================================================
+
+        return res.status(200).json({
+
+            success: true,
+
+            message:
+                "Administrator login successful.",
+
+            token,
+
+            admin: {
+
+                id:
+                    admin._id,
+
+                fullName:
+                    admin.fullName,
+
+                email:
+                    admin.email,
+
+                role:
+                    admin.role
+            }
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Admin login error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message:
+                "Unable to login administrator."
+        });
+    }
+});
+
+
+// =========================================================
+// PROTECTED ADMIN PROFILE
+// =========================================================
+
+router.get(
+    "/me",
+    adminAuth,
+    async (req, res) => {
+
+        try {
+
+            const admin =
+                await Admin.findById(
+                    req.admin.id
+                ).select("-password");
+
+
+            if (!admin) {
+
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Administrator account not found."
+                });
+            }
+
+
+            return res.status(200).json({
+
+                success: true,
+
+                admin
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Admin profile error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    "Unable to retrieve administrator."
+            });
+        }
+    }
+);
+
+
+module.exports = router;
