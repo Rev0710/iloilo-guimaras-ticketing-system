@@ -7,7 +7,7 @@ import Register from "../pages/passenger/Register";
 import Dashboard from "../pages/passenger/Dashboard";
 import BookTrip from "../pages/passenger/BookTrip";
 import Payment from "../pages/passenger/Payment";
-import GCashPayment from "../pages/passenger/GCashPayment";
+import GCashPayment from "../pages/passenger/MayaPayment";
 import Confirmation from "../pages/passenger/confirmation";
 
 const AppRoutes = () => {

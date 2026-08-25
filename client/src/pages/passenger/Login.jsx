@@ -11,15 +11,35 @@ const Login = () => {
     const [rememberMe, setRememberMe] = useState(false);
     const [loading, setLoading] = useState(false);
 
+    // Popup state
+    const [popup, setPopup] = useState({
+        show: false,
+        type: "",
+        title: "",
+        message: "",
+        redirecting: false,
+    });
+
     // Your logo URL
     const logoUrl =
         "https://scontent.fcgy2-2.fna.fbcdn.net/v/t1.15752-9/775468126_1793367781697550_3767041847597317415_n.png?stp=dst-png&cstp=mx532x469&ctp=s532x469&_nc_cat=103&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeEKTnmoEB20Fs5gE6WYWTxBd_QaoqEL1HV39BqioQvUdc9ZjhsVKyPy19OQYcSyO20Y_14PqMHIf2M01vrRKE4U&_nc_ohc=5YAYdBsPCPsQ7kNvwFjUQYD&_nc_oc=AdopjluXYgdM2PJ8fX0nZpqhgigmZIdAXn-EqtGpshgBSbu7e-3fcxU80OS6Uw2EUG4&_nc_zt=23&_nc_ht=scontent.fcgy2-2.fna&_nc_ss=7b2a8&oh=03_Q7cD6AFe_qZAOzICc2LJwC4u6B7mGN18VWGAWNhvIK8bMYGWLg&oe=6AB47416";
+
+    // =========================================================
+    // LOGIN
+    // =========================================================
 
     const handleSubmit = async (event) => {
         event.preventDefault();
 
         if (!email || !password) {
-            alert("Please enter your email and password.");
+            setPopup({
+                show: true,
+                type: "error",
+                title: "Incomplete Information",
+                message: "Please enter your email and password.",
+                redirecting: false,
+            });
+
             return;
         }
 
@@ -30,9 +50,11 @@ const Login = () => {
                 "http://localhost:5000/api/auth/login",
                 {
                     method: "POST",
+
                     headers: {
                         "Content-Type": "application/json",
                     },
+
                     body: JSON.stringify({
                         email,
                         password,
@@ -42,46 +64,108 @@ const Login = () => {
 
             const data = await response.json();
 
+            // =====================================================
+            // LOGIN ERROR
+            // =====================================================
+
             if (!response.ok) {
-                alert(data.message || "Login failed.");
+                setPopup({
+                    show: true,
+                    type: "error",
+                    title: "Login Failed",
+                    message:
+                        data.message ||
+                        "Invalid email or password.",
+                    redirecting: false,
+                });
+
                 return;
             }
 
-            // Save JWT token
+            // =====================================================
+            // SAVE JWT TOKEN
+            // =====================================================
+
             if (rememberMe) {
-                localStorage.setItem("token", data.token);
+                localStorage.setItem(
+                    "token",
+                    data.token
+                );
+
                 localStorage.setItem(
                     "user",
                     JSON.stringify(data.user)
                 );
             } else {
-                sessionStorage.setItem("token", data.token);
+                sessionStorage.setItem(
+                    "token",
+                    data.token
+                );
+
                 sessionStorage.setItem(
                     "user",
                     JSON.stringify(data.user)
                 );
             }
 
-            alert("Login successful!");
+            // =====================================================
+            // SUCCESS POPUP
+            // =====================================================
 
-            navigate("/dashboard");
+            setPopup({
+                show: true,
+                type: "success",
+                title: "Login Successful",
+                message:
+                    "You have successfully signed in.",
+                redirecting: true,
+            });
+
+            // =====================================================
+            // REDIRECT AFTER 2 SECONDS
+            // =====================================================
+
+            setTimeout(() => {
+                navigate("/dashboard");
+            }, 2000);
+
         } catch (error) {
             console.error("Login Error:", error);
 
-            alert(
-                "Unable to connect to the server. Please make sure the backend is running."
-            );
+            setPopup({
+                show: true,
+                type: "error",
+                title: "Connection Error",
+                message:
+                    "Unable to connect to the server. Please make sure the backend is running.",
+                redirecting: false,
+            });
         } finally {
             setLoading(false);
         }
     };
 
+    // =========================================================
+    // CLOSE ERROR POPUP
+    // =========================================================
+
+    const closePopup = () => {
+        setPopup({
+            show: false,
+            type: "",
+            title: "",
+            message: "",
+            redirecting: false,
+        });
+    };
+
     return (
         <>
             <style>{`
-                /* =========================================
+
+                /* =====================================================
                    RESET
-                ========================================= */
+                ===================================================== */
 
                 * {
                     box-sizing: border-box;
@@ -112,9 +196,9 @@ const Login = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    PAGE
-                ========================================= */
+                ===================================================== */
 
                 .auth-page {
                     width: 100%;
@@ -131,9 +215,9 @@ const Login = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    MAIN CONTAINER
-                ========================================= */
+                ===================================================== */
 
                 .auth-container {
                     position: relative;
@@ -155,9 +239,9 @@ const Login = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    BACK BUTTON
-                ========================================= */
+                ===================================================== */
 
                 .back-button {
                     position: absolute;
@@ -195,91 +279,88 @@ const Login = () => {
                 }
 
 
-               /* =========================================
-   LOGO HEADER
-========================================= */
+                /* =====================================================
+                   LOGO HEADER
+                ===================================================== */
 
-.auth-logo {
-    width: calc(100% - 1px);
+                .auth-logo {
+                    width: calc(100% - 1px);
 
-    height: 68px;
+                    height: 68px;
 
-    margin: 50px auto 0;
+                    margin: 50px auto 0;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
 
-    background: linear-gradient(
-        90deg,
-        #fff7f2 0%,
-        #fff2eb 50%,
-        #fff7f2 100%
-    );
+                    background: linear-gradient(
+                        90deg,
+                        #fff7f2 0%,
+                        #fff2eb 50%,
+                        #fff7f2 100%
+                    );
 
-    border: 1px solid #f3ddd2;
+                    border: 1px solid #f3ddd2;
 
-    border-radius: 3px;
+                    border-radius: 3px;
 
-    position: relative;
+                    position: relative;
 
-    overflow: hidden;
-}
+                    overflow: hidden;
+                }
 
-/* subtle decorative line */
-.auth-logo::after {
-    content: "";
+                .auth-logo::after {
+                    content: "";
 
-    position: absolute;
+                    position: absolute;
 
-    bottom: 0;
-    left: 8%;
+                    bottom: 0;
+                    left: 8%;
 
-    width: 84%;
-    height: 2px;
+                    width: 84%;
+                    height: 2px;
 
-    background: linear-gradient(
-        90deg,
-        transparent,
-        #ff7818,
-        transparent
-    );
+                    background: linear-gradient(
+                        90deg,
+                        transparent,
+                        #ff7818,
+                        transparent
+                    );
 
-    opacity: 0.35;
-}
-
-
-/* =========================================
-   LOGO IMAGE
-========================================= */
-
-.logo-image {
-    display: block;
-
-    width: 52px;
-    height: 52px;
-
-    object-fit: contain;
-
-    object-position: center;
-
-    position: relative;
-
-    z-index: 2;
-
-    transition:
-        transform 0.25s ease,
-        filter 0.25s ease;
-}
-
-.auth-logo:hover .logo-image {
-    transform: scale(1.05);
-}
+                    opacity: 0.35;
+                }
 
 
-                /* =========================================
+                /* =====================================================
+                   LOGO
+                ===================================================== */
+
+                .logo-image {
+                    display: block;
+
+                    width: 52px;
+                    height: 52px;
+
+                    object-fit: contain;
+
+                    position: relative;
+
+                    z-index: 2;
+
+                    transition:
+                        transform 0.25s ease,
+                        filter 0.25s ease;
+                }
+
+                .auth-logo:hover .logo-image {
+                    transform: scale(1.05);
+                }
+
+
+                /* =====================================================
                    CONTENT
-                ========================================= */
+                ===================================================== */
 
                 .auth-content {
                     width: 100%;
@@ -295,9 +376,9 @@ const Login = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    HEADING
-                ========================================= */
+                ===================================================== */
 
                 .auth-heading {
                     width: 100%;
@@ -329,9 +410,9 @@ const Login = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    LOGIN FORM
-                ========================================= */
+                ===================================================== */
 
                 .login-form {
                     width: 100%;
@@ -347,9 +428,9 @@ const Login = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    FORM GROUP
-                ========================================= */
+                ===================================================== */
 
                 .form-group {
                     width: 100%;
@@ -399,14 +480,14 @@ const Login = () => {
                     border-color: #ff7818;
 
                     box-shadow:
-                        0 0 0 2px
-                        rgba(255, 120, 24, 0.1);
+                        0 0 0 3px
+                        rgba(255, 120, 24, 0.10);
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    LOGIN OPTIONS
-                ========================================= */
+                ===================================================== */
 
                 .login-options {
                     width: 100%;
@@ -466,19 +547,24 @@ const Login = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    SIGN IN BUTTON
-                ========================================= */
+                ===================================================== */
 
                 .primary-button {
                     width: 100%;
-                    height: 40px;
+                    height: 43px;
 
                     border: none;
 
-                    border-radius: 4px;
+                    border-radius: 6px;
 
-                    background: #ff7818;
+                    background:
+                        linear-gradient(
+                            135deg,
+                            #ff7818,
+                            #ff6410
+                        );
 
                     color: #ffffff;
 
@@ -487,29 +573,53 @@ const Login = () => {
 
                     cursor: pointer;
 
+                    box-shadow:
+                        0 5px 12px
+                        rgba(255, 120, 24, 0.18);
+
                     transition:
-                        background 0.2s ease,
-                        transform 0.15s ease;
+                        transform 0.2s ease,
+                        box-shadow 0.2s ease,
+                        background 0.2s ease;
                 }
 
                 .primary-button:hover {
-                    background: #f46e0c;
+                    background:
+                        linear-gradient(
+                            135deg,
+                            #ff841f,
+                            #f45e09
+                        );
+
+                    transform: translateY(-1px);
+
+                    box-shadow:
+                        0 7px 16px
+                        rgba(255, 120, 24, 0.25);
                 }
 
                 .primary-button:active {
-                    transform: scale(0.99);
+                    transform: translateY(0);
+
+                    box-shadow:
+                        0 3px 8px
+                        rgba(255, 120, 24, 0.18);
                 }
 
                 .primary-button:disabled {
                     opacity: 0.65;
 
                     cursor: not-allowed;
+
+                    transform: none;
+
+                    box-shadow: none;
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    DIVIDER
-                ========================================= */
+                ===================================================== */
 
                 .divider {
                     width: 100%;
@@ -545,238 +655,461 @@ const Login = () => {
                 }
 
 
-                /* =========================================
-   SOCIAL LOGIN
-========================================= */
+                /* =====================================================
+                   SOCIAL LOGIN
+                ===================================================== */
 
-.social-login {
-    width: 100%;
-    max-width: 370px;
+                .social-login {
+                    width: 100%;
+                    max-width: 370px;
 
-    display: flex;
+                    display: flex;
 
-    gap: 12px;
-}
+                    gap: 12px;
+                }
 
 
-/* =========================================
-   SOCIAL BUTTON
-========================================= */
+                /* =====================================================
+                   SOCIAL BUTTON
+                ===================================================== */
 
-.social-button {
-    flex: 1;
+                .social-button {
+                    flex: 1;
 
-    height: 42px;
+                    height: 43px;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
 
-    gap: 9px;
+                    gap: 9px;
 
-    border: 1px solid #d9d9d9;
+                    border: 1px solid #d9d9d9;
 
-    border-radius: 6px;
+                    border-radius: 6px;
 
-    background: #ffffff;
+                    background: #ffffff;
 
-    color: #333333;
+                    color: #333333;
 
-    font-size: 11px;
+                    font-size: 10px;
 
-    font-weight: 500;
+                    font-weight: 500;
 
-    cursor: pointer;
+                    cursor: pointer;
 
-    position: relative;
+                    transition:
+                        background 0.2s ease,
+                        border-color 0.2s ease,
+                        box-shadow 0.2s ease,
+                        transform 0.15s ease;
+                }
 
-    transition:
-        background 0.2s ease,
-        border-color 0.2s ease,
-        box-shadow 0.2s ease,
-        transform 0.15s ease;
-}
+                .social-button:hover {
+                    background: #fffaf7;
 
+                    border-color: #ff7818;
 
-/* icon */
-.social-button strong {
-    width: 20px;
-    height: 20px;
+                    box-shadow:
+                        0 5px 12px
+                        rgba(0, 0, 0, 0.07);
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+                    transform: translateY(-1px);
+                }
 
-    font-size: 14px;
+                .social-button:active {
+                    transform: translateY(0);
+                }
 
-    font-weight: 700;
-}
+                .social-icon {
+                    width: 18px;
+                    height: 18px;
 
+                    flex-shrink: 0;
+                }
 
-/* Google */
-.google-button strong {
-    color: #4285f4;
+                .google-button:hover {
+                    border-color: #4285f4;
+                    background: #f8fbff;
+                }
 
-    font-family: Arial, sans-serif;
-}
+                .apple-button:hover {
+                    border-color: #111111;
+                    background: #f8f8f8;
+                }
 
 
-/* Apple */
-.apple-button strong {
-    color: #111111;
+                /* =====================================================
+                   REGISTER
+                ===================================================== */
 
-    font-size: 13px;
-}
+                .account-section {
+                    width: 100%;
+                    max-width: 370px;
 
+                    margin-top: 26px;
 
-/* Hover */
-.social-button:hover {
-    background: #fafafa;
+                    padding-top: 20px;
 
-    border-color: #ff7818;
+                    border-top: 1px solid #eeeeee;
 
-    box-shadow:
-        0 3px 10px
-        rgba(0, 0, 0, 0.06);
+                    text-align: center;
+                }
 
-    transform: translateY(-1px);
-}
+                .account-text {
+                    margin: 0 0 9px;
 
+                    font-size: 10px;
 
-/* Click */
-.social-button:active {
-    transform: translateY(0);
-}
+                    color: #777777;
+                }
 
-/* =========================================
-   REGISTER SECTION
-========================================= */
+                .auth-link {
+                    display: inline-flex;
 
-.account-section {
-    width: 100%;
-    max-width: 370px;
+                    align-items: center;
+                    justify-content: center;
 
-    margin-top: 26px;
+                    min-width: 150px;
 
-    padding-top: 20px;
+                    height: 34px;
 
-    border-top: 1px solid #eeeeee;
+                    padding: 0 18px;
 
-    text-align: center;
-}
+                    border: 1px solid #ff7818;
 
-.account-text {
-    margin: 0 0 9px;
+                    border-radius: 5px;
 
-    font-size: 10px;
+                    background: #ffffff;
 
-    color: #777777;
-}
+                    color: #ff7818;
 
-.auth-link {
-    display: inline-flex;
+                    font-size: 10px;
 
-    align-items: center;
-    justify-content: center;
+                    font-weight: 600;
 
-    min-width: 150px;
+                    text-decoration: none;
 
-    height: 34px;
+                    transition:
+                        background 0.2s ease,
+                        color 0.2s ease,
+                        box-shadow 0.2s ease,
+                        transform 0.15s ease;
+                }
 
-    padding: 0 18px;
+                .auth-link:hover {
+                    background: #ff7818;
 
-    border: 1px solid #ff7818;
+                    color: #ffffff;
 
-    border-radius: 5px;
+                    box-shadow:
+                        0 4px 10px
+                        rgba(255, 120, 24, 0.18);
 
-    background: #ffffff;
+                    transform: translateY(-1px);
+                }
 
-    color: #ff7818;
 
-    font-size: 10px;
+                /* =====================================================
+                   FOOTER
+                ===================================================== */
 
-    font-weight: 600;
+                .auth-footer {
+                    width: 100%;
+                    max-width: 370px;
 
-    text-decoration: none;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
 
-    transition:
-        background 0.2s ease,
-        color 0.2s ease,
-        box-shadow 0.2s ease,
-        transform 0.15s ease;
-}
+                    flex-wrap: wrap;
 
-.auth-link:hover {
-    background: #ff7818;
+                    gap: 26px;
 
-    color: #ffffff;
+                    margin-top: 28px;
 
-    box-shadow:
-        0 4px 10px
-        rgba(255, 120, 24, 0.18);
+                    padding-top: 16px;
 
-    transform: translateY(-1px);
-}
+                    border-top: 1px solid #eeeeee;
 
-.auth-link:active {
-    transform: translateY(0);
-}
+                    font-size: 9px;
 
+                    color: #999999;
+                }
 
-                /* =========================================
-   FOOTER
-========================================= */
+                .auth-footer span {
+                    cursor: pointer;
 
-.auth-footer {
-    width: 100%;
-    max-width: 370px;
+                    transition:
+                        color 0.2s ease;
+                }
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+                .auth-footer span:hover {
+                    color: #ff7818;
+                }
 
-    flex-wrap: wrap;
 
-    gap: 26px;
+                /* =====================================================
+                   POPUP OVERLAY
+                ===================================================== */
 
-    margin-top: 28px;
+                .popup-overlay {
+                    position: fixed;
 
-    padding-top: 16px;
+                    inset: 0;
 
-    border-top: 1px solid #eeeeee;
+                    z-index: 9999;
 
-    font-size: 9px;
+                    display: flex;
 
-    color: #999999;
-}
+                    align-items: center;
+                    justify-content: center;
 
-.auth-footer span {
-    cursor: pointer;
+                    padding: 20px;
 
-    transition:
-        color 0.2s ease;
-}
+                    background:
+                        rgba(0, 0, 0, 0.38);
 
-.auth-footer span:hover {
-    color: #ff7818;
-}
+                    backdrop-filter: blur(4px);
 
+                    animation:
+                        popupFadeIn
+                        0.2s ease;
+                }
 
-                /* =========================================
-                   LARGE DESKTOP
-                ========================================= */
 
-                @media (min-width: 1200px) {
+                /* =====================================================
+                   POPUP
+                ===================================================== */
 
-                    .auth-container {
-                        max-width: 1100px;
+                .popup-modal {
+                    width: 100%;
+                    max-width: 360px;
+
+                    padding: 30px 26px 26px;
+
+                    background: #ffffff;
+
+                    border: 1px solid #eeeeee;
+
+                    border-radius: 12px;
+
+                    text-align: center;
+
+                    box-shadow:
+                        0 20px 50px
+                        rgba(0, 0, 0, 0.16);
+
+                    animation:
+                        popupScale
+                        0.25s ease;
+                }
+
+
+                /* =====================================================
+                   SUCCESS / ERROR ICON
+                ===================================================== */
+
+                .popup-icon {
+                    width: 58px;
+                    height: 58px;
+
+                    margin: 0 auto 15px;
+
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    border-radius: 50%;
+
+                    font-size: 26px;
+
+                    font-weight: 700;
+                }
+
+                .popup-icon.success {
+                    background: #fff3eb;
+
+                    border: 2px solid #ff7818;
+
+                    color: #ff7818;
+                }
+
+                .popup-icon.error {
+                    background: #fff1f1;
+
+                    border: 2px solid #e54848;
+
+                    color: #e54848;
+                }
+
+
+                /* =====================================================
+                   POPUP TEXT
+                ===================================================== */
+
+                .popup-modal h2 {
+                    margin: 0;
+
+                    font-size: 19px;
+
+                    font-weight: 600;
+
+                    color: #111111;
+                }
+
+                .popup-modal p {
+                    margin:
+                        8px
+                        0
+                        0;
+
+                    font-size: 11px;
+
+                    line-height: 1.5;
+
+                    color: #777777;
+                }
+
+
+                /* =====================================================
+                   LOADING
+                ===================================================== */
+
+                .loading-text {
+                    margin-top: 16px;
+
+                    font-size: 11px;
+
+                    color: #999999;
+                }
+
+                .loading-dots {
+                    display: inline-flex;
+
+                    margin-left: 3px;
+
+                    gap: 3px;
+                }
+
+                .loading-dot {
+                    width: 4px;
+                    height: 4px;
+
+                    border-radius: 50%;
+
+                    background: #ff7818;
+
+                    animation:
+                        dotBounce
+                        0.8s infinite ease-in-out;
+                }
+
+                .loading-dot:nth-child(1) {
+                    animation-delay: 0s;
+                }
+
+                .loading-dot:nth-child(2) {
+                    animation-delay: 0.15s;
+                }
+
+                .loading-dot:nth-child(3) {
+                    animation-delay: 0.3s;
+                }
+
+
+                /* =====================================================
+                   CLOSE BUTTON
+                ===================================================== */
+
+                .popup-close {
+                    width: 100%;
+
+                    height: 40px;
+
+                    margin-top: 20px;
+
+                    border: none;
+
+                    border-radius: 6px;
+
+                    background: #ff7818;
+
+                    color: #ffffff;
+
+                    font-size: 11px;
+
+                    font-weight: 600;
+
+                    cursor: pointer;
+
+                    transition:
+                        background 0.2s ease,
+                        transform 0.15s ease;
+                }
+
+                .popup-close:hover {
+                    background: #f46e0c;
+
+                    transform: translateY(-1px);
+                }
+
+                .popup-close:active {
+                    transform: translateY(0);
+                }
+
+
+                /* =====================================================
+                   ANIMATIONS
+                ===================================================== */
+
+                @keyframes popupFadeIn {
+                    from {
+                        opacity: 0;
+                    }
+
+                    to {
+                        opacity: 1;
+                    }
+                }
+
+                @keyframes popupScale {
+                    from {
+                        opacity: 0;
+
+                        transform:
+                            scale(0.94)
+                            translateY(8px);
+                    }
+
+                    to {
+                        opacity: 1;
+
+                        transform:
+                            scale(1)
+                            translateY(0);
+                    }
+                }
+
+                @keyframes dotBounce {
+
+                    0%,
+                    60%,
+                    100% {
+                        transform: translateY(0);
+                        opacity: 0.45;
+                    }
+
+                    30% {
+                        transform: translateY(-5px);
+                        opacity: 1;
                     }
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    TABLET
-                ========================================= */
+                ===================================================== */
 
                 @media (max-width: 768px) {
 
@@ -785,21 +1118,24 @@ const Login = () => {
                     }
 
                     .auth-container {
-                        min-height: calc(100vh - 30px);
-                        min-height: calc(100dvh - 30px);
+                        min-height:
+                            calc(100vh - 30px);
+
+                        min-height:
+                            calc(100dvh - 30px);
 
                         border-radius: 5px;
                     }
 
                     .auth-logo {
-                        width: calc(100% - 40px);
-                        
+                        width:
+                            calc(100% - 40px);
+
                         margin-top: 50px;
                     }
 
                     .auth-content {
                         padding-top: 30px;
-                        
                     }
 
                     .auth-heading h1 {
@@ -808,9 +1144,9 @@ const Login = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    MOBILE
-                ========================================= */
+                ===================================================== */
 
                 @media (max-width: 480px) {
 
@@ -845,16 +1181,17 @@ const Login = () => {
                     }
 
                     .auth-logo {
-                        width: calc(100% - 30px);
+                        width:
+                            calc(100% - 30px);
 
-                        height: 52px;
+                        height: 60px;
 
                         margin-top: 48px;
                     }
 
                     .logo-image {
-                        width: 43px;
-                        height: 43px;
+                        width: 47px;
+                        height: 47px;
                     }
 
                     .auth-content {
@@ -872,22 +1209,10 @@ const Login = () => {
                         font-size: 24px;
                     }
 
-                    .auth-heading p {
-                        font-size: 11px;
-                    }
-
                     .login-form {
                         max-width: 100%;
 
                         padding: 20px;
-                    }
-
-                    .form-group {
-                        margin-bottom: 16px;
-                    }
-
-                    .form-group label {
-                        font-size: 11px;
                     }
 
                     .form-group input {
@@ -896,15 +1221,8 @@ const Login = () => {
                         font-size: 12px;
                     }
 
-                    .remember-option,
-                    .forgot-password {
-                        font-size: 10px;
-                    }
-
                     .primary-button {
-                        height: 42px;
-
-                        font-size: 12px;
+                        height: 43px;
                     }
 
                     .divider {
@@ -918,76 +1236,28 @@ const Login = () => {
                     }
 
                     .social-button {
-                        height: 40px;
+                        height: 42px;
 
                         font-size: 10px;
                     }
 
-                    .account-text,
-                    .auth-link {
-                        font-size: 10px;
+                    .account-section {
+                        margin-top: 24px;
+
+                        padding-top: 18px;
                     }
 
                     .auth-footer {
                         gap: 18px;
 
-                        margin-top: 28px;
-
-                        font-size: 9px;
+                        margin-top: 25px;
                     }
                 }
-                    @media (max-width: 480px) {
-
-    .auth-logo {
-        width: calc(100% - 30px);
-
-        height: 60px;
-
-        margin-top: 48px;
-
-        border-radius: 3px;
-    }
-
-    .logo-image {
-        width: 47px;
-        height: 47px;
-    }
-
-    .social-login {
-        gap: 8px;
-    }
-
-    .social-button {
-        height: 42px;
-
-        font-size: 10px;
-    }
-
-    .account-section {
-        margin-top: 24px;
-
-        padding-top: 18px;
-    }
-
-    .auth-link {
-        min-width: 145px;
-
-        height: 35px;
-
-        font-size: 10px;
-    }
-
-    .auth-footer {
-        gap: 18px;
-
-        margin-top: 25px;
-    }
-}
 
 
-                /* =========================================
+                /* =====================================================
                    VERY SMALL PHONES
-                ========================================= */
+                ===================================================== */
 
                 @media (max-width: 360px) {
 
@@ -1017,49 +1287,101 @@ const Login = () => {
                         display: none;
                     }
 
-                    .social-button strong {
-                        font-size: 15px;
-                    }
-
                     .auth-footer {
                         gap: 13px;
 
                         font-size: 8px;
                     }
+
+                    .auth-link {
+                        width: 100%;
+                        max-width: 170px;
+                    }
                 }
-                    @media (max-width: 360px) {
 
-    .auth-logo {
-        width: calc(100% - 24px);
-
-        height: 56px;
-    }
-
-    .logo-image {
-        width: 44px;
-        height: 44px;
-    }
-
-    .social-button {
-        height: 40px;
-    }
-
-    .auth-link {
-        width: 100%;
-        max-width: 170px;
-    }
-
-    .auth-footer {
-        gap: 13px;
-    }
-}
             `}</style>
+
+
+            {/* =====================================================
+                POPUP
+            ===================================================== */}
+
+            {popup.show && (
+                <div className="popup-overlay">
+
+                    <div className="popup-modal">
+
+                        <div
+                            className={`popup-icon ${
+                                popup.type
+                            }`}
+                        >
+                            {popup.type === "success"
+                                ? "✓"
+                                : "!"}
+                        </div>
+
+
+                        <h2>
+                            {popup.title}
+                        </h2>
+
+
+                        <p>
+                            {popup.message}
+                        </p>
+
+
+                        {/* SUCCESS LOADING */}
+
+                        {popup.redirecting && (
+                            <div className="loading-text">
+
+                                Loading
+
+                                <span className="loading-dots">
+
+                                    <span className="loading-dot"></span>
+
+                                    <span className="loading-dot"></span>
+
+                                    <span className="loading-dot"></span>
+
+                                </span>
+
+                            </div>
+                        )}
+
+
+                        {/* ERROR CLOSE BUTTON */}
+
+                        {!popup.redirecting && (
+                            <button
+                                type="button"
+                                className="popup-close"
+                                onClick={closePopup}
+                            >
+                                Okay
+                            </button>
+                        )}
+
+                    </div>
+
+                </div>
+            )}
+
+
+            {/* =====================================================
+                LOGIN PAGE
+            ===================================================== */}
 
             <main className="auth-page">
 
                 <div className="auth-container">
 
+
                     {/* BACK BUTTON */}
+
                     <button
                         type="button"
                         className="back-button"
@@ -1070,20 +1392,26 @@ const Login = () => {
                     </button>
 
 
-                    {/* LOGO HEADER */}
+                    {/* LOGO */}
+
                     <div className="auth-logo">
+
                         <img
                             src={logoUrl}
                             alt="GuimarasGo Logo"
                             className="logo-image"
                         />
+
                     </div>
 
 
                     {/* CONTENT */}
+
                     <div className="auth-content">
 
+
                         {/* HEADING */}
+
                         <div className="auth-heading">
 
                             <h1>
@@ -1098,12 +1426,15 @@ const Login = () => {
 
 
                         {/* LOGIN FORM */}
+
                         <form
                             className="login-form"
                             onSubmit={handleSubmit}
                         >
 
+
                             {/* EMAIL */}
+
                             <div className="form-group">
 
                                 <label htmlFor="email">
@@ -1116,7 +1447,9 @@ const Login = () => {
                                     placeholder="you@example.com"
                                     value={email}
                                     onChange={(event) =>
-                                        setEmail(event.target.value)
+                                        setEmail(
+                                            event.target.value
+                                        )
                                     }
                                     autoComplete="email"
                                     required
@@ -1126,6 +1459,7 @@ const Login = () => {
 
 
                             {/* PASSWORD */}
+
                             <div className="form-group">
 
                                 <label htmlFor="password">
@@ -1138,7 +1472,9 @@ const Login = () => {
                                     placeholder="••••••••"
                                     value={password}
                                     onChange={(event) =>
-                                        setPassword(event.target.value)
+                                        setPassword(
+                                            event.target.value
+                                        )
                                     }
                                     autoComplete="current-password"
                                     required
@@ -1147,7 +1483,8 @@ const Login = () => {
                             </div>
 
 
-                            {/* LOGIN OPTIONS */}
+                            {/* OPTIONS */}
+
                             <div className="login-options">
 
                                 <label className="remember-option">
@@ -1173,9 +1510,14 @@ const Login = () => {
                                     type="button"
                                     className="forgot-password"
                                     onClick={() =>
-                                        alert(
-                                            "Forgot password functionality will be added later."
-                                        )
+                                        setPopup({
+                                            show: true,
+                                            type: "error",
+                                            title: "Coming Soon",
+                                            message:
+                                                "Forgot password functionality will be added later.",
+                                            redirecting: false,
+                                        })
                                     }
                                 >
                                     Forgot password?
@@ -1185,6 +1527,7 @@ const Login = () => {
 
 
                             {/* SIGN IN */}
+
                             <button
                                 type="submit"
                                 className="primary-button"
@@ -1199,6 +1542,7 @@ const Login = () => {
 
 
                         {/* DIVIDER */}
+
                         <div className="divider">
 
                             <span>
@@ -1208,42 +1552,71 @@ const Login = () => {
                         </div>
 
 
+                        {/* SOCIAL LOGIN */}
+
                         <div className="social-login">
 
-    {/* GOOGLE */}
-    <button
-        type="button"
-        className="social-button google-button"
-        onClick={() =>
-            alert("Google login will be added later.")
-        }
-    >
-        <FcGoogle className="social-icon google-icon" />
 
-        <span>
-            Continue with Google
-        </span>
-    </button>
+                            {/* GOOGLE */}
+
+                            <button
+                                type="button"
+                                className="social-button google-button"
+                                onClick={() =>
+                                    setPopup({
+                                        show: true,
+                                        type: "error",
+                                        title: "Coming Soon",
+                                        message:
+                                            "Google login functionality will be added later.",
+                                        redirecting: false,
+                                    })
+                                }
+                            >
+
+                                <FcGoogle
+                                    className="social-icon"
+                                />
+
+                                <span>
+                                    Continue with Google
+                                </span>
+
+                            </button>
 
 
-    {/* APPLE */}
-    <button
-        type="button"
-        className="social-button apple-button"
-        onClick={() =>
-            alert("Apple login will be added later.")
-        }
-    >
-        <FaApple className="social-icon apple-icon" />
+                            {/* APPLE */}
 
-        <span>
-            Continue with Apple
-        </span>
-    </button>
+                            <button
+                                type="button"
+                                className="social-button apple-button"
+                                onClick={() =>
+                                    setPopup({
+                                        show: true,
+                                        type: "error",
+                                        title: "Coming Soon",
+                                        message:
+                                            "Apple login functionality will be added later.",
+                                        redirecting: false,
+                                    })
+                                }
+                            >
 
-</div>
+                                <FaApple
+                                    className="social-icon"
+                                />
+
+                                <span>
+                                    Continue with Apple
+                                </span>
+
+                            </button>
+
+                        </div>
+
 
                         {/* REGISTER */}
+
                         <div className="account-section">
 
                             <p className="account-text">
@@ -1261,6 +1634,7 @@ const Login = () => {
 
 
                         {/* FOOTER */}
+
                         <div className="auth-footer">
 
                             <span>

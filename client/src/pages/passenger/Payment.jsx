@@ -1,44 +1,38 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
+/* =========================================================
+   LOGO
+   ========================================================= */
+
 const LOGO_URL =
     "https://scontent.fcgy2-2.fna.fbcdn.net/v/t1.15752-9/775468126_1793367781697550_3767041847597317415_n.png?stp=dst-png&cstp=mx532x469&ctp=s532x469&_nc_cat=103&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeEKTnmoEB20Fs5gE6WYWTxBd_QaoqEL1HV39BqioQvUdc9ZjhsVKyPy19OQYcSyO20Y_14PqMHIf2M01vrRKE4U&_nc_ohc=fK0ygs4SALUQ7kNvwEhUgQl&_nc_oc=Adr97yUKqKQuY-Rb-Lpj__Sjoqm7YY75sVczdULR8n8AbUyhy3oVy9DJ-YO_YUPfnTE&_nc_zt=23&_nc_ht=scontent.fcgy2-2.fna&_nc_ss=7a2a8&oh=03_Q7cD6AFmBhmkMTNembwVy95XQOYfaHONnpCT7udBE1IJnmNvHg&oe=6AB20956";
+
 
 const Payment = () => {
 
     const navigate = useNavigate();
     const location = useLocation();
 
-    /*
-     * =========================================================
-     * GET TRIP DETAILS
-     * =========================================================
-     *
-     * First get the trip from navigation state.
-     *
-     * If navigation state is unavailable, recover the
-     * information from sessionStorage.
-     */
+    /* =========================================================
+       GET TRIP DETAILS
+       ========================================================= */
 
-    const savedTrip =
-        sessionStorage.getItem("tripDetails");
+    const savedTrip = sessionStorage.getItem("tripDetails");
 
-    let storedTrip = {};
+    let storedTrip = null;
 
     try {
-
         storedTrip = savedTrip
             ? JSON.parse(savedTrip)
-            : {};
-
+            : null;
     } catch (error) {
-
         console.error(
             "Unable to recover saved trip:",
             error
         );
 
-        storedTrip = {};
+        storedTrip = null;
     }
 
     const trip =
@@ -47,22 +41,15 @@ const Payment = () => {
         null;
 
 
-    /*
-     * =========================================================
-     * NORMALIZE TRIP INFORMATION
-     * =========================================================
-     *
-     * This makes sure all passenger and vehicle information
-     * stays together throughout the payment process.
-     */
+    /* =========================================================
+       NORMALIZE TRIP INFORMATION
+       ========================================================= */
 
     const normalizedTrip = trip
         ? {
             ...trip,
 
-            /*
-             * PASSENGER INFORMATION
-             */
+            /* Passenger information */
             passengerName:
                 trip.passengerName ||
                 trip.fullName ||
@@ -79,9 +66,7 @@ const Payment = () => {
                 trip.gender ||
                 "",
 
-            /*
-             * PASSENGER COUNT
-             */
+            /* Passenger count */
             passengers:
                 Number(
                     trip.passengers ||
@@ -89,12 +74,7 @@ const Payment = () => {
                     1
                 ),
 
-            /*
-             * PLATE NUMBER
-             *
-             * Check several possible property names so
-             * older booking data will still work.
-             */
+            /* Plate number */
             plateNumber:
                 trip.plateNumber ||
                 trip.plate_number ||
@@ -106,9 +86,7 @@ const Payment = () => {
                 trip.motorcycle?.plateNumber ||
                 "",
 
-            /*
-             * VEHICLE TYPE
-             */
+            /* Vehicle */
             vehicleType:
                 trip.vehicleType ||
                 trip.vehicle ||
@@ -118,28 +96,24 @@ const Payment = () => {
         : null;
 
 
-    /*
-     * =========================================================
-     * PAYMENT METHOD
-     * =========================================================
-     */
+    /* =========================================================
+       PAYMENT METHOD
+       ========================================================= */
 
     const [paymentMethod, setPaymentMethod] =
-        useState("gcash");
+        useState("maya");
 
 
-    /*
-     * =========================================================
-     * IF TRIP INFORMATION IS MISSING
-     * =========================================================
-     */
+    /* =========================================================
+       IF TRIP INFORMATION IS MISSING
+       ========================================================= */
 
     if (!normalizedTrip) {
 
         return (
             <main className="payment-page">
 
-                <div className="payment-container">
+                <div className="payment-container missing-trip">
 
                     <h2>
                         No trip details found.
@@ -168,8 +142,13 @@ const Payment = () => {
                         box-sizing: border-box;
                     }
 
+                    body {
+                        margin: 0;
+                    }
+
                     .payment-page {
                         min-height: 100vh;
+                        min-height: 100dvh;
                         background: #f7f8fa;
                         font-family:
                             Arial,
@@ -182,13 +161,25 @@ const Payment = () => {
                         width: 100%;
                         max-width: 650px;
                         margin: 0 auto;
-                        padding: 40px 30px;
                         background: #ffffff;
                         border-radius: 24px;
                         box-shadow:
                             0 10px 35px
                             rgba(0, 0, 0, 0.08);
+                    }
+
+                    .missing-trip {
+                        padding: 40px 30px;
                         text-align: center;
+                    }
+
+                    .missing-trip h2 {
+                        margin: 0 0 10px;
+                        color: #111111;
+                    }
+
+                    .missing-trip p {
+                        color: #777777;
                     }
 
                     .back-trip-button {
@@ -211,11 +202,9 @@ const Payment = () => {
     }
 
 
-    /*
-     * =========================================================
-     * PASSENGERS
-     * =========================================================
-     */
+    /* =========================================================
+       PASSENGERS
+       ========================================================= */
 
     const passengers =
         Number(
@@ -223,11 +212,9 @@ const Payment = () => {
         );
 
 
-    /*
-     * =========================================================
-     * FARES
-     * =========================================================
-     */
+    /* =========================================================
+       FARES
+       ========================================================= */
 
     const passengerRate = 40;
 
@@ -236,21 +223,17 @@ const Payment = () => {
     const ppaFee = 65;
 
 
-    /*
-     * =========================================================
-     * PASSENGER FARE
-     * =========================================================
-     */
+    /* =========================================================
+       PASSENGER FARE
+       ========================================================= */
 
     const passengerFare =
         passengers * passengerRate;
 
 
-    /*
-     * =========================================================
-     * TOTAL FARE
-     * =========================================================
-     */
+    /* =========================================================
+       TOTAL FARE
+       ========================================================= */
 
     const totalFare =
         passengerFare +
@@ -258,11 +241,9 @@ const Payment = () => {
         ppaFee;
 
 
-    /*
-     * =========================================================
-     * FORMAT DATE
-     * =========================================================
-     */
+    /* =========================================================
+       FORMAT DATE
+       ========================================================= */
 
     const formattedDate =
         normalizedTrip.date
@@ -276,27 +257,22 @@ const Payment = () => {
                     day: "numeric",
                 }
             )
-            : "";
+            : "N/A";
 
 
-    /*
-     * =========================================================
-     * FORMAT TIME
-     * =========================================================
-     */
+    /* =========================================================
+       FORMAT TIME
+       ========================================================= */
 
     const formatTime = (time) => {
 
         if (!time) {
-            return "";
+            return "N/A";
         }
 
         const timeString =
-            String(time);
+            String(time).trim();
 
-        /*
-         * Already formatted.
-         */
         if (
             timeString
                 .toUpperCase()
@@ -337,11 +313,9 @@ const Payment = () => {
     };
 
 
-    /*
-     * =========================================================
-     * GENERATE BOOKING REFERENCE
-     * =========================================================
-     */
+    /* =========================================================
+       GENERATE BOOKING REFERENCE
+       ========================================================= */
 
     const generateBookingReference = () => {
 
@@ -355,27 +329,9 @@ const Payment = () => {
     };
 
 
-    /*
-     * =========================================================
-     * CREATE A UNIQUE TRIP KEY
-     * =========================================================
-     *
-     * IMPORTANT:
-     *
-     * The previous version always reused:
-     *
-     * sessionStorage.getItem("bookingReference")
-     *
-     * Therefore every new booking could receive the same
-     * booking reference.
-     *
-     * This key allows us to determine whether this is:
-     *
-     * 1. The SAME booking being continued
-     * OR
-     *
-     * 2. A NEW booking.
-     */
+    /* =========================================================
+       CREATE UNIQUE TRIP KEY
+       ========================================================= */
 
     const tripKey = JSON.stringify({
 
@@ -414,16 +370,9 @@ const Payment = () => {
     });
 
 
-    /*
-     * =========================================================
-     * RECOVER BOOKING REFERENCE
-     * =========================================================
-     *
-     * If the saved booking belongs to this exact trip,
-     * keep its reference.
-     *
-     * If the trip is different, generate a NEW reference.
-     */
+    /* =========================================================
+       RECOVER BOOKING REFERENCE
+       ========================================================= */
 
     const savedBookingReference =
         sessionStorage.getItem(
@@ -443,11 +392,9 @@ const Payment = () => {
             : generateBookingReference();
 
 
-    /*
-     * =========================================================
-     * SAVE BOOKING REFERENCE
-     * =========================================================
-     */
+    /* =========================================================
+       SAVE BOOKING REFERENCE
+       ========================================================= */
 
     sessionStorage.setItem(
         "bookingReference",
@@ -460,13 +407,9 @@ const Payment = () => {
     );
 
 
-    /*
-     * =========================================================
-     * BACK TO TRIP DETAILS
-     * =========================================================
-     *
-     * Preserve EVERYTHING entered by the passenger.
-     */
+    /* =========================================================
+       BACK TO TRIP DETAILS
+       ========================================================= */
 
     const handleBackToTripDetails = () => {
 
@@ -481,23 +424,20 @@ const Payment = () => {
         );
 
         navigate("/book-trip", {
-
             state: {
                 trip: normalizedTrip,
             },
-
         });
     };
 
 
-    /*
-     * =========================================================
-     * BOOK NOW
-     * =========================================================
-     */
+    /* =========================================================
+       BOOK NOW
+       ========================================================= */
 
     const handleBookNow = () => {
 
+        /* Make sure payment method is selected */
         if (!paymentMethod) {
 
             alert(
@@ -508,25 +448,26 @@ const Payment = () => {
         }
 
 
-        /*
-         * Currently only GCash is enabled.
-         */
+        /* =====================================================
+           CURRENT DEMO PAYMENT
+           ===================================================== */
 
-        if (paymentMethod !== "gcash") {
+        if (paymentMethod !== "maya") {
 
             alert(
-                "For the current student demo, please select GCash."
+                `${paymentMethod === "gcash"
+                    ? "GCash"
+                    : "Debit/Credit Card"
+                } payment is not yet available in the current demo. Please select Maya.`
             );
 
             return;
         }
 
 
-        /*
-         * =====================================================
-         * MAKE SURE PLATE NUMBER EXISTS
-         * =====================================================
-         */
+        /* =====================================================
+           CHECK PLATE NUMBER
+           ===================================================== */
 
         if (
             !normalizedTrip.plateNumber ||
@@ -543,30 +484,25 @@ const Payment = () => {
         }
 
 
-        /*
-         * =====================================================
-         * FINAL TRIP DATA
-         * =====================================================
-         *
-         * This object contains EVERYTHING entered on
-         * Book Trip.
-         */
+        /* =====================================================
+           FINAL TRIP DATA
+           ===================================================== */
 
         const finalTrip = {
 
             ...normalizedTrip,
 
             origin:
-                normalizedTrip.origin,
+                normalizedTrip.origin || "",
 
             destination:
-                normalizedTrip.destination,
+                normalizedTrip.destination || "",
 
             date:
-                normalizedTrip.date,
+                normalizedTrip.date || "",
 
             time:
-                normalizedTrip.time,
+                normalizedTrip.time || "",
 
             passengerName:
                 String(
@@ -574,10 +510,10 @@ const Payment = () => {
                 ).trim(),
 
             passengerAge:
-                normalizedTrip.passengerAge,
+                normalizedTrip.passengerAge || "",
 
             passengerGender:
-                normalizedTrip.passengerGender,
+                normalizedTrip.passengerGender || "",
 
             passengers:
                 Number(
@@ -600,17 +536,23 @@ const Payment = () => {
         };
 
 
-        /*
-         * =====================================================
-         * SAVE COMPLETE TRIP
-         * =====================================================
-         */
+        /* =====================================================
+           IMPORTANT:
+           EXACT PAYMENT AMOUNT
+           ===================================================== */
+
+        const paymentAmount =
+            Number(totalFare.toFixed(2));
+
+
+        /* =====================================================
+           SAVE COMPLETE TRIP
+           ===================================================== */
 
         sessionStorage.setItem(
             "tripDetails",
             JSON.stringify(finalTrip)
         );
-
 
         sessionStorage.setItem(
             "pendingTrip",
@@ -618,27 +560,30 @@ const Payment = () => {
         );
 
 
-        /*
-         * =====================================================
-         * PAYMENT DETAILS
-         * =====================================================
-         *
-         * The complete trip is included here.
-         *
-         * This is important because the next page can
-         * recover passengerName, passengerAge,
-         * passengerGender and plateNumber.
-         */
+        /* =====================================================
+           PAYMENT DETAILS
+
+           This is the important part for Maya.
+
+           Example:
+           totalFare = 255
+
+           amount = 255
+           amountFormatted = "₱255.00"
+           ===================================================== */
 
         const paymentDetails = {
 
             bookingReference,
 
             paymentMethod:
-                "gcash",
+                paymentMethod,
 
             amount:
-                totalFare,
+                paymentAmount,
+
+            amountFormatted:
+                `₱${paymentAmount.toFixed(2)}`,
 
             currency:
                 "PHP",
@@ -651,20 +596,19 @@ const Payment = () => {
         };
 
 
+        /* =====================================================
+           SAVE PAYMENT DETAILS
+           ===================================================== */
+
         sessionStorage.setItem(
             "paymentDetails",
             JSON.stringify(paymentDetails)
         );
 
 
-        /*
-         * =====================================================
-         * BACKUP LATEST BOOKING
-         * =====================================================
-         *
-         * Keep the complete information available even
-         * before the GCash page finishes the demo payment.
-         */
+        /* =====================================================
+           BACKUP LATEST BOOKING
+           ===================================================== */
 
         const pendingBooking = {
 
@@ -678,10 +622,17 @@ const Payment = () => {
 
             ppaFee,
 
-            totalFare,
+            totalFare:
+                paymentAmount,
+
+            paymentAmount:
+                paymentAmount,
+
+            paymentAmountFormatted:
+                `₱${paymentAmount.toFixed(2)}`,
 
             paymentMethod:
-                "gcash",
+                paymentMethod,
 
             paymentStatus:
                 "PENDING",
@@ -694,16 +645,36 @@ const Payment = () => {
         );
 
 
-        /*
-         * =====================================================
-         * GO TO GCASH PAYMENT
-         * =====================================================
-         */
+        /* =====================================================
+           SAVE MAYA PAYMENT AMOUNT SEPARATELY
+
+           This makes it very easy for maya-payment.jsx
+           to recover the exact amount.
+           ===================================================== */
+
+        sessionStorage.setItem(
+            "mayaPaymentAmount",
+            String(paymentAmount)
+        );
+
+
+        sessionStorage.setItem(
+            "mayaPaymentBookingReference",
+            bookingReference
+        );
+
+
+        /* =====================================================
+           GO TO MAYA PAYMENT
+
+           The amount is sent directly through React Router.
+           ===================================================== */
 
         navigate(
-            "/gcash-payment",
+            "/maya-payment",
             {
                 state: {
+
                     booking:
                         pendingBooking,
 
@@ -712,17 +683,25 @@ const Payment = () => {
 
                     payment:
                         paymentDetails,
+
+                    /* IMPORTANT */
+                    amount:
+                        paymentAmount,
+
+                    amountFormatted:
+                        `₱${paymentAmount.toFixed(2)}`,
+
+                    bookingReference:
+                        bookingReference,
                 },
             }
         );
     };
 
 
-    /*
-     * =========================================================
-     * DISPLAY VALUES
-     * =========================================================
-     */
+    /* =========================================================
+       DISPLAY VALUES
+       ========================================================= */
 
     const displayPassengerName =
         normalizedTrip.passengerName ||
@@ -750,17 +729,16 @@ const Payment = () => {
         "Motorcycle";
 
 
-    /*
-     * =========================================================
-     * PAGE
-     * =========================================================
-     */
+    /* =========================================================
+       PAGE
+       ========================================================= */
 
     return (
 
         <main className="payment-page">
 
             <div className="payment-container">
+
 
                 {/* =================================================
                     LOGO
@@ -787,8 +765,7 @@ const Payment = () => {
                     </h1>
 
                     <p>
-                        Choose your preferred payment
-                        method
+                        Choose your preferred payment method
                     </p>
 
                 </div>
@@ -800,50 +777,10 @@ const Payment = () => {
 
                 <div className="payment-methods">
 
-                    {/* GCASH */}
 
-                    <button
-                        type="button"
-                        className={`payment-option ${
-                            paymentMethod === "gcash"
-                                ? "selected"
-                                : ""
-                        }`}
-                        onClick={() =>
-                            setPaymentMethod(
-                                "gcash"
-                            )
-                        }
-                    >
-
-                        <div className="payment-icon gcash-icon">
-                            G
-                        </div>
-
-                        <div className="payment-info">
-
-                            <strong>
-                                GCash
-                            </strong>
-
-                            <span>
-                                E-wallet payment
-                            </span>
-
-                        </div>
-
-                        {paymentMethod === "gcash" && (
-
-                            <div className="selected-dot">
-                                ●
-                            </div>
-
-                        )}
-
-                    </button>
-
-
-                    {/* MAYA */}
+                    {/* =================================================
+                        MAYA
+                    ================================================= */}
 
                     <button
                         type="button"
@@ -853,9 +790,7 @@ const Payment = () => {
                                 : ""
                         }`}
                         onClick={() =>
-                            setPaymentMethod(
-                                "maya"
-                            )
+                            setPaymentMethod("maya")
                         }
                     >
 
@@ -886,7 +821,52 @@ const Payment = () => {
                     </button>
 
 
-                    {/* CARD */}
+                    {/* =================================================
+                        GCASH
+                    ================================================= */}
+
+                    <button
+                        type="button"
+                        className={`payment-option ${
+                            paymentMethod === "gcash"
+                                ? "selected"
+                                : ""
+                        }`}
+                        onClick={() =>
+                            setPaymentMethod("gcash")
+                        }
+                    >
+
+                        <div className="payment-icon gcash-icon">
+                            G
+                        </div>
+
+                        <div className="payment-info">
+
+                            <strong>
+                                GCash
+                            </strong>
+
+                            <span>
+                                E-wallet payment
+                            </span>
+
+                        </div>
+
+                        {paymentMethod === "gcash" && (
+
+                            <div className="selected-dot">
+                                ●
+                            </div>
+
+                        )}
+
+                    </button>
+
+
+                    {/* =================================================
+                        CARD
+                    ================================================= */}
 
                     <button
                         type="button"
@@ -894,12 +874,14 @@ const Payment = () => {
                             paymentMethod === "card"
                                 ? "selected"
                                 : ""
-                        }`}
-                        onClick={() =>
-                            setPaymentMethod(
-                                "card"
-                            )
-                        }
+                        } disabled-option`}
+                        onClick={() => {
+
+                            alert(
+                                "Card payment is not yet available in the current student demo."
+                            );
+
+                        }}
                     >
 
                         <div className="payment-icon card-icon">
@@ -918,13 +900,9 @@ const Payment = () => {
 
                         </div>
 
-                        {paymentMethod === "card" && (
-
-                            <div className="selected-dot">
-                                ●
-                            </div>
-
-                        )}
+                        <span className="coming-soon">
+                            Soon
+                        </span>
 
                     </button>
 
@@ -949,16 +927,11 @@ const Payment = () => {
 
                         <p>
 
-                            {paymentMethod === "gcash"
-
-                                ? "You will continue to the GCash testing payment."
-
-                                : paymentMethod === "maya"
-
-                                ? "Maya payment will be available in a future integration."
-
+                            {paymentMethod === "maya"
+                                ? "You will continue to the Maya testing payment page."
+                                : paymentMethod === "gcash"
+                                ? "GCash payment will be available in a future integration."
                                 : "Card payment will be available in a future integration."
-
                             }
 
                         </p>
@@ -997,9 +970,11 @@ const Payment = () => {
 
                         <strong>
 
-                            {normalizedTrip.origin}
+                            {normalizedTrip.origin || "N/A"}
+
                             {" → "}
-                            {normalizedTrip.destination}
+
+                            {normalizedTrip.destination || "N/A"}
 
                         </strong>
 
@@ -1163,8 +1138,7 @@ const Payment = () => {
                         </span>
 
                         <span>
-                            ₱
-                            {passengerFare.toFixed(2)}
+                            ₱{passengerFare.toFixed(2)}
                         </span>
 
                     </div>
@@ -1177,8 +1151,7 @@ const Payment = () => {
                         </span>
 
                         <span>
-                            ₱
-                            {motorcycleFare.toFixed(2)}
+                            ₱{motorcycleFare.toFixed(2)}
                         </span>
 
                     </div>
@@ -1191,8 +1164,7 @@ const Payment = () => {
                         </span>
 
                         <span>
-                            ₱
-                            {ppaFee.toFixed(2)}
+                            ₱{ppaFee.toFixed(2)}
                         </span>
 
                     </div>
@@ -1208,8 +1180,7 @@ const Payment = () => {
                         </strong>
 
                         <strong>
-                            ₱
-                            {totalFare.toFixed(2)}
+                            ₱{totalFare.toFixed(2)}
                         </strong>
 
                     </div>
@@ -1257,48 +1228,31 @@ const Payment = () => {
                     box-sizing: border-box;
                 }
 
+                body {
+                    margin: 0;
+                }
 
                 .payment-page {
                     min-height: 100vh;
                     min-height: 100dvh;
-
                     background: #f7f8fa;
-
                     font-family:
                         Arial,
                         Helvetica,
                         sans-serif;
-
-                    padding:
-                        30px 20px;
+                    padding: 30px 20px;
                 }
-
 
                 .payment-container {
                     width: 100%;
-
                     max-width: 650px;
-
                     margin: 0 auto;
-
-                    padding:
-                        30px 0 35px;
-
-                    background:
-                        #ffffff;
-
-                    border-radius:
-                        24px;
-
+                    padding: 30px 0 35px;
+                    background: #ffffff;
+                    border-radius: 24px;
                     box-shadow:
                         0 10px 35px
-                        rgba(
-                            0,
-                            0,
-                            0,
-                            0.08
-                        );
-
+                        rgba(0, 0, 0, 0.08);
                     overflow: hidden;
                 }
 
@@ -1309,33 +1263,17 @@ const Payment = () => {
 
                 .payment-logo {
                     display: flex;
-
-                    justify-content:
-                        center;
-
-                    align-items:
-                        center;
-
-                    margin-bottom:
-                        20px;
+                    justify-content: center;
+                    align-items: center;
+                    margin-bottom: 20px;
                 }
 
-
                 .payment-logo img {
-                    width:
-                        110px;
-
-                    height:
-                        auto;
-
-                    max-height:
-                        90px;
-
-                    object-fit:
-                        contain;
-
-                    display:
-                        block;
+                    width: 110px;
+                    height: auto;
+                    max-height: 90px;
+                    object-fit: contain;
+                    display: block;
                 }
 
 
@@ -1344,41 +1282,22 @@ const Payment = () => {
                 ================================================= */
 
                 .payment-heading {
-                    text-align:
-                        center;
-
-                    padding:
-                        0 30px;
-
-                    margin-bottom:
-                        28px;
+                    text-align: center;
+                    padding: 0 30px;
+                    margin-bottom: 28px;
                 }
-
 
                 .payment-heading h1 {
-                    margin:
-                        0;
-
-                    color:
-                        #111111;
-
-                    font-size:
-                        28px;
-
-                    font-weight:
-                        800;
+                    margin: 0;
+                    color: #111111;
+                    font-size: 28px;
+                    font-weight: 800;
                 }
 
-
                 .payment-heading p {
-                    margin-top:
-                        10px;
-
-                    color:
-                        #777777;
-
-                    font-size:
-                        15px;
+                    margin: 10px 0 0;
+                    color: #777777;
+                    font-size: 15px;
                 }
 
 
@@ -1387,167 +1306,130 @@ const Payment = () => {
                 ================================================= */
 
                 .payment-methods {
-                    padding:
-                        0 34px;
+                    padding: 0 34px;
                 }
-
 
                 .payment-option {
-                    width:
-                        100%;
+                    width: 100%;
+                    min-height: 74px;
+                    margin-bottom: 12px;
+                    padding: 12px 16px;
 
-                    min-height:
-                        74px;
+                    display: flex;
+                    align-items: center;
 
-                    margin-bottom:
-                        12px;
+                    text-align: left;
 
-                    padding:
-                        12px 16px;
+                    border: 1px solid #dddddd;
+                    border-radius: 14px;
 
-                    display:
-                        flex;
+                    background: #ffffff;
 
-                    align-items:
-                        center;
+                    cursor: pointer;
 
-                    text-align:
-                        left;
-
-                    border:
-                        1px solid #dddddd;
-
-                    border-radius:
-                        14px;
-
-                    background:
-                        #ffffff;
-
-                    cursor:
-                        pointer;
-
-                    transition:
-                        0.2s ease;
+                    transition: 0.2s ease;
                 }
-
 
                 .payment-option:hover {
-                    border-color:
-                        #f28c28;
+                    border-color: #f28c28;
+                    transform: translateY(-1px);
                 }
-
 
                 .payment-option.selected {
-                    border-color:
-                        #f28c28;
-
-                    background:
-                        #fffaf5;
+                    border-color: #f28c28;
+                    background: #fffaf5;
                 }
 
+                .payment-option.disabled-option {
+                    cursor: not-allowed;
+                    opacity: 0.7;
+                }
+
+                .payment-option.disabled-option:hover {
+                    border-color: #dddddd;
+                    transform: none;
+                }
+
+
+                /* =================================================
+                   PAYMENT ICON
+                ================================================= */
 
                 .payment-icon {
-                    width:
-                        42px;
+                    width: 42px;
+                    height: 42px;
+                    margin-right: 14px;
 
-                    height:
-                        42px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
 
-                    margin-right:
-                        14px;
+                    border-radius: 9px;
 
-                    display:
-                        flex;
+                    font-size: 20px;
+                    font-weight: 800;
 
-                    align-items:
-                        center;
-
-                    justify-content:
-                        center;
-
-                    border-radius:
-                        9px;
-
-                    font-size:
-                        20px;
-
-                    font-weight:
-                        800;
-
-                    flex-shrink:
-                        0;
+                    flex-shrink: 0;
                 }
 
 
-                .gcash-icon {
-                    background:
-                        #e9f4ff;
-
-                    color:
-                        #087ee8;
-                }
-
+                /* MAYA */
 
                 .maya-icon {
-                    background:
-                        #eaf8ef;
-
-                    color:
-                        #16a34a;
+                    background: #eaf8ef;
+                    color: #16a34a;
                 }
 
+
+                /* GCASH */
+
+                .gcash-icon {
+                    background: #eaf3ff;
+                    color: #087ee8;
+                }
+
+
+                /* CARD */
 
                 .card-icon {
-                    background:
-                        #f0f0f0;
-
-                    color:
-                        #2185c5;
-
-                    font-size:
-                        18px;
+                    background: #f0f0f0;
+                    color: #2185c5;
+                    font-size: 18px;
                 }
 
+
+                /* =================================================
+                   PAYMENT INFORMATION
+                ================================================= */
 
                 .payment-info {
-                    flex:
-                        1;
+                    flex: 1;
 
-                    display:
-                        flex;
+                    display: flex;
+                    flex-direction: column;
 
-                    flex-direction:
-                        column;
-
-                    gap:
-                        4px;
+                    gap: 4px;
                 }
-
 
                 .payment-info strong {
-                    color:
-                        #111111;
-
-                    font-size:
-                        15px;
+                    color: #111111;
+                    font-size: 15px;
                 }
-
 
                 .payment-info span {
-                    color:
-                        #777777;
-
-                    font-size:
-                        12px;
+                    color: #777777;
+                    font-size: 12px;
                 }
 
-
                 .selected-dot {
-                    color:
-                        #000000;
+                    color: #000000;
+                    font-size: 14px;
+                }
 
-                    font-size:
-                        14px;
+                .coming-soon {
+                    color: #999999;
+                    font-size: 11px;
+                    font-weight: 600;
                 }
 
 
@@ -1556,77 +1438,41 @@ const Payment = () => {
                 ================================================= */
 
                 .secure-payment {
-                    margin:
-                        22px 34px 0;
+                    margin: 22px 34px 0;
+                    padding: 18px;
 
-                    padding:
-                        18px;
+                    display: flex;
+                    align-items: flex-start;
 
-                    display:
-                        flex;
+                    gap: 14px;
 
-                    align-items:
-                        flex-start;
-
-                    gap:
-                        14px;
-
-                    background:
-                        #f5f7fa;
-
-                    border-radius:
-                        14px;
+                    background: #f5f7fa;
+                    border-radius: 14px;
                 }
-
 
                 .secure-icon {
-                    font-size:
-                        18px;
+                    font-size: 18px;
                 }
-
 
                 .secure-payment strong {
-                    display:
-                        block;
-
-                    color:
-                        #111111;
-
-                    font-size:
-                        14px;
-
-                    margin-bottom:
-                        6px;
+                    display: block;
+                    color: #111111;
+                    font-size: 14px;
+                    margin-bottom: 6px;
                 }
-
 
                 .secure-payment p {
-                    margin:
-                        0;
-
-                    color:
-                        #666666;
-
-                    font-size:
-                        12px;
-
-                    line-height:
-                        1.5;
+                    margin: 0;
+                    color: #666666;
+                    font-size: 12px;
+                    line-height: 1.5;
                 }
 
-
                 .secure-text {
-                    margin:
-                        18px 34px 0;
-
-                    text-align:
-                        center;
-
-                    color:
-                        #777777;
-
-                    font-size:
-                        11px;
+                    margin: 18px 34px 0;
+                    text-align: center;
+                    color: #777777;
+                    font-size: 11px;
                 }
 
 
@@ -1635,86 +1481,49 @@ const Payment = () => {
                 ================================================= */
 
                 .trip-summary {
-                    margin:
-                        28px 34px 0;
+                    margin: 28px 34px 0;
+                    padding: 20px;
 
-                    padding:
-                        20px;
+                    border: 1px solid #eeeeee;
+                    border-radius: 14px;
 
-                    border:
-                        1px solid #eeeeee;
-
-                    border-radius:
-                        14px;
-
-                    background:
-                        #ffffff;
+                    background: #ffffff;
                 }
-
 
                 .trip-summary h2 {
-                    margin:
-                        0 0 18px;
-
-                    color:
-                        #111111;
-
-                    font-size:
-                        18px;
+                    margin: 0 0 18px;
+                    color: #111111;
+                    font-size: 18px;
                 }
 
-
                 .trip-row {
-                    display:
-                        flex;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
 
-                    justify-content:
-                        space-between;
+                    gap: 15px;
 
-                    align-items:
-                        center;
-
-                    gap:
-                        15px;
-
-                    padding:
-                        10px 0;
+                    padding: 10px 0;
 
                     border-bottom:
                         1px solid #f0f0f0;
                 }
 
-
                 .trip-row:last-child {
-                    border-bottom:
-                        none;
+                    border-bottom: none;
                 }
-
 
                 .trip-row span {
-                    color:
-                        #777777;
-
-                    font-size:
-                        13px;
+                    color: #777777;
+                    font-size: 13px;
                 }
 
-
                 .trip-row strong {
-                    color:
-                        #222222;
-
-                    font-size:
-                        13px;
-
-                    text-align:
-                        right;
-
-                    max-width:
-                        60%;
-
-                    overflow-wrap:
-                        anywhere;
+                    color: #222222;
+                    font-size: 13px;
+                    text-align: right;
+                    max-width: 60%;
+                    overflow-wrap: anywhere;
                 }
 
 
@@ -1723,89 +1532,53 @@ const Payment = () => {
                 ================================================= */
 
                 .fare-section {
-                    margin:
-                        24px 34px 0;
+                    margin: 24px 34px 0;
+                    padding: 20px;
 
-                    padding:
-                        20px;
+                    border: 1px solid #eeeeee;
+                    border-radius: 14px;
 
-                    border:
-                        1px solid #eeeeee;
-
-                    border-radius:
-                        14px;
-
-                    background:
-                        #ffffff;
+                    background: #ffffff;
                 }
-
 
                 .fare-section h2 {
-                    margin:
-                        0 0 16px;
-
-                    color:
-                        #111111;
-
-                    font-size:
-                        18px;
+                    margin: 0 0 16px;
+                    color: #111111;
+                    font-size: 18px;
                 }
-
 
                 .fare-row {
-                    display:
-                        flex;
+                    display: flex;
+                    justify-content: space-between;
 
-                    justify-content:
-                        space-between;
+                    padding: 9px 0;
 
-                    padding:
-                        9px 0;
-
-                    color:
-                        #555555;
-
-                    font-size:
-                        14px;
+                    color: #555555;
+                    font-size: 14px;
                 }
-
 
                 .fare-row span:last-child {
-                    color:
-                        #333333;
+                    color: #333333;
+                    font-weight: 600;
                 }
-
 
                 .fare-divider {
-                    width:
-                        100%;
+                    width: 100%;
+                    height: 1px;
 
-                    height:
-                        1px;
+                    margin: 10px 0;
 
-                    margin:
-                        10px 0;
-
-                    background:
-                        #dddddd;
+                    background: #dddddd;
                 }
 
-
                 .fare-total {
-                    display:
-                        flex;
+                    display: flex;
+                    justify-content: space-between;
 
-                    justify-content:
-                        space-between;
+                    padding-top: 8px;
 
-                    padding-top:
-                        8px;
-
-                    color:
-                        #111111;
-
-                    font-size:
-                        16px;
+                    color: #111111;
+                    font-size: 16px;
                 }
 
 
@@ -1814,47 +1587,28 @@ const Payment = () => {
                 ================================================= */
 
                 .book-now-button {
-                    width:
-                        calc(100% - 68px);
+                    width: calc(100% - 68px);
+                    height: 54px;
 
-                    height:
-                        54px;
+                    margin: 26px 34px 0;
 
-                    margin:
-                        26px 34px 0;
+                    border: none;
+                    border-radius: 10px;
 
-                    border:
-                        none;
+                    background: #333333;
+                    color: #ffffff;
 
-                    border-radius:
-                        10px;
+                    font-size: 16px;
+                    font-weight: 700;
 
-                    background:
-                        #333333;
+                    cursor: pointer;
 
-                    color:
-                        #ffffff;
-
-                    font-size:
-                        16px;
-
-                    font-weight:
-                        700;
-
-                    cursor:
-                        pointer;
-
-                    transition:
-                        0.2s ease;
+                    transition: 0.2s ease;
                 }
 
-
                 .book-now-button:hover {
-                    background:
-                        #222222;
-
-                    transform:
-                        translateY(-1px);
+                    background: #222222;
+                    transform: translateY(-1px);
                 }
 
 
@@ -1863,35 +1617,24 @@ const Payment = () => {
                 ================================================= */
 
                 .back-trip-button {
-                    display:
-                        block;
+                    display: block;
 
-                    margin:
-                        18px auto 0;
+                    margin: 18px auto 0;
 
-                    padding:
-                        5px 10px;
+                    padding: 5px 10px;
 
-                    border:
-                        none;
+                    border: none;
+                    background: transparent;
 
-                    background:
-                        transparent;
+                    color: #777777;
 
-                    color:
-                        #777777;
+                    font-size: 13px;
 
-                    font-size:
-                        13px;
-
-                    cursor:
-                        pointer;
+                    cursor: pointer;
                 }
 
-
                 .back-trip-button:hover {
-                    color:
-                        #f28c28;
+                    color: #f28c28;
                 }
 
 
@@ -1902,89 +1645,58 @@ const Payment = () => {
                 @media (max-width: 600px) {
 
                     .payment-page {
-                        padding:
-                            15px;
+                        padding: 15px;
                     }
-
 
                     .payment-container {
-                        border-radius:
-                            18px;
-
-                        padding-bottom:
-                            30px;
+                        border-radius: 18px;
+                        padding-bottom: 30px;
                     }
-
 
                     .payment-methods {
-                        padding:
-                            0 20px;
+                        padding: 0 20px;
                     }
-
 
                     .secure-payment {
-                        margin-left:
-                            20px;
-
-                        margin-right:
-                            20px;
+                        margin-left: 20px;
+                        margin-right: 20px;
                     }
-
 
                     .secure-text {
-                        margin-left:
-                            20px;
-
-                        margin-right:
-                            20px;
+                        margin-left: 20px;
+                        margin-right: 20px;
                     }
-
 
                     .trip-summary {
-                        margin-left:
-                            20px;
-
-                        margin-right:
-                            20px;
+                        margin-left: 20px;
+                        margin-right: 20px;
                     }
-
 
                     .fare-section {
-                        margin-left:
-                            20px;
-
-                        margin-right:
-                            20px;
+                        margin-left: 20px;
+                        margin-right: 20px;
                     }
-
 
                     .book-now-button {
-                        width:
-                            calc(100% - 40px);
-
-                        margin-left:
-                            20px;
-
-                        margin-right:
-                            20px;
+                        width: calc(100% - 40px);
+                        margin-left: 20px;
+                        margin-right: 20px;
                     }
 
+                    .payment-heading {
+                        padding: 0 20px;
+                    }
 
                     .payment-heading h1 {
-                        font-size:
-                            25px;
+                        font-size: 25px;
                     }
-
 
                     .trip-row {
-                        align-items:
-                            flex-start;
+                        align-items: flex-start;
                     }
 
-
                     .trip-row strong {
-                        max-width:
-                            55%;
+                        max-width: 55%;
                     }
 
                 }
@@ -1994,5 +1706,6 @@ const Payment = () => {
         </main>
     );
 };
+
 
 export default Payment;
