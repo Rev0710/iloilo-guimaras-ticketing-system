@@ -1794,7 +1794,7 @@ const BookTrip = () => {
                             type="button"
                             className="back-button"
                             onClick={() =>
-                                navigate("/dashboard")
+                                navigate("/trips")
                             }
                             aria-label="Back to dashboard"
                         >

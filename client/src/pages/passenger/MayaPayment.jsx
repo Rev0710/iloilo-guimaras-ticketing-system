@@ -983,23 +983,21 @@ const MayaPayment = () => {
 
                 <div className="payment-notice">
 
-                    <strong>
-                        IMPORTANT
-                    </strong>
+    <strong>
+        IMPORTANT
+    </strong>
 
-                    <p>
-                        Scan the QR code below using
-                        Maya or another supported
-                        QRPh payment app.
-                    </p>
+    <p>
+        • Scan the QR code below using Maya or
+        another supported QRPh payment app.
+    </p>
 
-                    <p>
-                        After successfully paying,
-                        save a screenshot of your
-                        Maya payment receipt.
-                    </p>
+    <p>
+        • After successfully paying, save a
+        screenshot of your Maya payment receipt.
+    </p>
 
-                </div>
+</div>
 
                 {/* MAYA QR */}
 
@@ -1550,50 +1548,27 @@ const MayaPayment = () => {
                 ================================================= */
 
                 .payment-notice {
+    display: block;
+    padding: 16px 20px;
+    border: 1px solid #d8c4ff;
+    border-radius: 12px;
+    background: #f8f3ff;
+}
 
-                    padding:
-                        16px;
+.payment-notice strong {
+    display: block;
+    margin-bottom: 12px;
+    color: #7040e8;
+    font-size: 14px;
+    font-weight: 700;
+}
 
-                    margin-bottom:
-                        20px;
-
-                    border-radius:
-                        12px;
-
-                    background:
-                        #f5f0ff;
-
-                    border:
-                        1px solid
-                        #ddd0ff;
-
-                    text-align:
-                        center;
-                }
-
-                .payment-notice strong {
-
-                    color:
-                        #7046d8;
-
-                    font-size:
-                        13px;
-                }
-
-                .payment-notice p {
-
-                    margin:
-                        6px 0 0;
-
-                    color:
-                        #666666;
-
-                    font-size:
-                        12px;
-
-                    line-height:
-                        1.5;
-                }
+.payment-notice p {
+    margin: 8px 0;
+    color: #333;
+    font-size: 14px;
+    line-height: 1.6;
+}
 
                 /* =================================================
                    QR SECTION

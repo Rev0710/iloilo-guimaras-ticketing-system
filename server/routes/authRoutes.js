@@ -2,15 +2,66 @@ const express = require("express");
 
 const {
     register,
-    login
+    login,
+    getMe,
+    updateProfile,
+    changePassword
 } = require("../controllers/authController");
+
+const protect = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-// POST /api/auth/register
-router.post("/register", register);
 
-// POST /api/auth/login
-router.post("/login", login);
+// =========================================================
+// REGISTER
+// =========================================================
+
+router.post(
+    "/register",
+    register
+);
+
+
+// =========================================================
+// LOGIN
+// =========================================================
+
+router.post(
+    "/login",
+    login
+);
+
+
+// =========================================================
+// CURRENT USER
+// =========================================================
+
+router.get(
+    "/me",
+    getMe
+);
+
+
+// =========================================================
+// UPDATE PROFILE
+// =========================================================
+
+router.put(
+    "/profile",
+    protect,
+    updateProfile
+);
+
+
+// =========================================================
+// CHANGE PASSWORD
+// =========================================================
+
+router.put(
+    "/password",
+    protect,
+    changePassword
+);
 
 module.exports = router;

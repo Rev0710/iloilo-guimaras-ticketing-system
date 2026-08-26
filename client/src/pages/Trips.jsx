@@ -93,12 +93,15 @@ const Trips = () => {
                             #fff8f2 100%
                         );
 
-                    padding: 40px 30px 60px;
+                    padding:
+                        30px
+                        30px
+                        60px;
                 }
 
                 .trips-container {
                     width: 100%;
-                    max-width: 1100px;
+                    max-width: 1250px;
 
                     margin: 0 auto;
                 }
@@ -110,25 +113,28 @@ const Trips = () => {
                 .trips-header {
                     display: flex;
                     align-items: center;
+
                     gap: 16px;
 
-                    margin-bottom: 35px;
+                    margin-bottom: 32px;
                 }
 
                 .trips-back-button {
-                    width: 44px;
-                    height: 44px;
+                    width: 46px;
+                    height: 46px;
 
                     display: flex;
                     align-items: center;
                     justify-content: center;
 
                     border: 1px solid #e8e8e8;
-                    border-radius: 12px;
+
+                    border-radius: 13px;
 
                     background: #ffffff;
 
                     color: #333;
+
                     font-size: 20px;
 
                     cursor: pointer;
@@ -138,15 +144,20 @@ const Trips = () => {
 
                 .trips-back-button:hover {
                     border-color: #ff7818;
+
                     color: #ff7818;
+
                     background: #fff7f1;
-                    transform: translateX(-2px);
+
+                    transform:
+                        translateX(-2px);
                 }
 
                 .trips-heading h1 {
                     margin: 0;
 
-                    font-size: 28px;
+                    font-size: 30px;
+
                     font-weight: 700;
 
                     color: #171717;
@@ -156,31 +167,51 @@ const Trips = () => {
                     margin: 5px 0 0;
 
                     font-size: 12px;
+
                     font-weight: 400;
 
                     color: #858585;
                 }
 
                 /* =================================================
-                   AVAILABLE TRIPS
+                   AVAILABLE TRIPS TITLE
                 ================================================= */
 
                 .trips-section-title {
-                    margin: 0 0 16px;
+                    margin:
+                        0
+                        0
+                        16px;
 
-                    font-size: 15px;
+                    font-size: 16px;
+
                     font-weight: 600;
 
                     color: #242424;
                 }
 
+                /* =================================================
+                   TRIPS LIST
+                ================================================= */
+
                 .trips-list {
+                    width: 100%;
+
                     display: grid;
 
                     grid-template-columns:
-                        repeat(2, minmax(0, 1fr));
+                        repeat(
+                            2,
+                            minmax(0, 1fr)
+                        );
 
-                    gap: 18px;
+                    gap: 22px;
+
+                    /*
+                       Makes the two selection cards
+                       occupy much more of the available
+                       horizontal space.
+                    */
                 }
 
                 /* =================================================
@@ -190,13 +221,21 @@ const Trips = () => {
                 .trip-card {
                     position: relative;
 
-                    padding: 22px;
+                    min-height: 300px;
+
+                    display: flex;
+
+                    flex-direction: column;
+
+                    padding: 28px;
 
                     background: #ffffff;
 
-                    border: 1px solid #e6e6e6;
+                    border:
+                        1px solid
+                        #e6e6e6;
 
-                    border-radius: 16px;
+                    border-radius: 18px;
 
                     cursor: pointer;
 
@@ -207,13 +246,20 @@ const Trips = () => {
                 }
 
                 .trip-card:hover {
-                    transform: translateY(-3px);
+                    transform:
+                        translateY(-3px);
 
-                    border-color: #ffb887;
+                    border-color:
+                        #ffb887;
 
                     box-shadow:
-                        0 12px 30px
-                        rgba(255, 120, 24, 0.10);
+                        0 15px 35px
+                        rgba(
+                            255,
+                            120,
+                            24,
+                            0.10
+                        );
                 }
 
                 /* =================================================
@@ -225,13 +271,16 @@ const Trips = () => {
 
                     align-items: flex-start;
 
-                    justify-content: space-between;
+                    justify-content:
+                        space-between;
 
                     gap: 20px;
 
-                    padding-bottom: 18px;
+                    padding-bottom: 22px;
 
-                    border-bottom: 1px solid #eeeeee;
+                    border-bottom:
+                        1px solid
+                        #eeeeee;
                 }
 
                 .vessel-info {
@@ -239,37 +288,46 @@ const Trips = () => {
 
                     align-items: center;
 
-                    gap: 13px;
+                    gap: 15px;
                 }
 
                 .vessel-icon {
-                    width: 48px;
-                    height: 48px;
+                    width: 58px;
+                    height: 58px;
 
                     display: flex;
+
                     align-items: center;
+
                     justify-content: center;
 
-                    border-radius: 13px;
+                    flex-shrink: 0;
 
-                    background: #fff1e7;
+                    border-radius: 15px;
 
-                    font-size: 23px;
+                    background:
+                        #fff1e7;
+
+                    font-size: 28px;
                 }
 
                 .vessel-name {
                     margin: 0;
 
-                    font-size: 16px;
+                    font-size: 18px;
+
                     font-weight: 600;
 
                     color: #191919;
                 }
 
                 .vessel-route {
-                    margin: 4px 0 0;
+                    margin:
+                        5px
+                        0
+                        0;
 
-                    font-size: 10px;
+                    font-size: 11px;
 
                     color: #999999;
                 }
@@ -280,16 +338,19 @@ const Trips = () => {
 
                 .departure-time {
                     padding:
-                        9px
-                        13px;
+                        11px
+                        16px;
 
-                    border-radius: 9px;
+                    border-radius: 10px;
 
-                    background: #fff4ec;
+                    background:
+                        #fff4ec;
 
-                    color: #ff7818;
+                    color:
+                        #ff7818;
 
-                    font-size: 13px;
+                    font-size: 14px;
+
                     font-weight: 700;
 
                     white-space: nowrap;
@@ -306,9 +367,11 @@ const Trips = () => {
                         1fr
                         1fr;
 
-                    gap: 15px;
+                    gap: 25px;
 
-                    padding-top: 18px;
+                    padding:
+                        25px
+                        0;
                 }
 
                 .capacity-item {
@@ -316,30 +379,42 @@ const Trips = () => {
 
                     align-items: center;
 
-                    gap: 10px;
+                    gap: 13px;
+
+                    padding:
+                        10px
+                        5px;
                 }
 
                 .capacity-icon {
-                    width: 36px;
-                    height: 36px;
+                    width: 45px;
+                    height: 45px;
 
                     display: flex;
+
                     align-items: center;
+
                     justify-content: center;
 
-                    border-radius: 10px;
+                    flex-shrink: 0;
 
-                    background: #f7f7f7;
+                    border-radius: 12px;
 
-                    font-size: 17px;
+                    background:
+                        #f7f7f7;
+
+                    font-size: 20px;
                 }
 
                 .capacity-label {
                     display: block;
 
-                    font-size: 10px;
+                    font-size: 11px;
 
-                    color: #999999;
+                    color:
+                        #999999;
+
+                    margin-bottom: 3px;
                 }
 
                 .capacity-value {
@@ -347,10 +422,12 @@ const Trips = () => {
 
                     margin-top: 2px;
 
-                    font-size: 12px;
+                    font-size: 14px;
+
                     font-weight: 600;
 
-                    color: #333333;
+                    color:
+                        #333333;
                 }
 
                 /* =================================================
@@ -360,36 +437,52 @@ const Trips = () => {
                 .select-trip-button {
                     width: 100%;
 
-                    height: 42px;
+                    height: 50px;
 
-                    margin-top: 20px;
+                    margin-top: auto;
 
                     border: none;
 
-                    border-radius: 9px;
+                    border-radius: 10px;
 
-                    background: #ff7818;
+                    background:
+                        #ff7818;
 
-                    color: #ffffff;
+                    color:
+                        #ffffff;
 
-                    font-size: 11px;
+                    font-size: 12px;
+
                     font-weight: 600;
 
                     cursor: pointer;
 
                     transition:
                         background 0.2s ease,
-                        transform 0.15s ease;
+                        transform 0.15s ease,
+                        box-shadow 0.2s ease;
                 }
 
                 .select-trip-button:hover {
-                    background: #ed690d;
+                    background:
+                        #ed690d;
 
-                    transform: translateY(-1px);
+                    transform:
+                        translateY(-1px);
+
+                    box-shadow:
+                        0 8px 18px
+                        rgba(
+                            255,
+                            120,
+                            24,
+                            0.20
+                        );
                 }
 
                 .select-trip-button:active {
-                    transform: translateY(0);
+                    transform:
+                        translateY(0);
                 }
 
                 /* =================================================
@@ -399,15 +492,21 @@ const Trips = () => {
                 .trips-info {
                     margin-top: 22px;
 
-                    padding: 14px 16px;
+                    padding:
+                        15px
+                        17px;
 
-                    border: 1px solid #ffe0cc;
+                    border:
+                        1px solid
+                        #ffe0cc;
 
                     border-radius: 11px;
 
-                    background: #fff9f5;
+                    background:
+                        #fff9f5;
 
-                    color: #777777;
+                    color:
+                        #777777;
 
                     font-size: 10px;
 
@@ -415,7 +514,50 @@ const Trips = () => {
                 }
 
                 .trips-info strong {
-                    color: #ff7818;
+                    color:
+                        #ff7818;
+                }
+
+                /* =================================================
+                   LARGE SCREEN
+                ================================================= */
+
+                @media (min-width: 1200px) {
+
+                    .trips-page {
+                        padding:
+                            35px
+                            40px
+                            70px;
+                    }
+
+                    .trip-card {
+                        min-height: 330px;
+
+                        padding: 32px;
+                    }
+
+                    .vessel-name {
+                        font-size: 19px;
+                    }
+
+                    .departure-time {
+                        font-size: 15px;
+
+                        padding:
+                            12px
+                            18px;
+                    }
+
+                    .capacity-value {
+                        font-size: 15px;
+                    }
+
+                    .select-trip-button {
+                        height: 52px;
+
+                        font-size: 13px;
+                    }
                 }
 
                 /* =================================================
@@ -432,7 +574,14 @@ const Trips = () => {
                     }
 
                     .trips-list {
-                        grid-template-columns: 1fr;
+                        grid-template-columns:
+                            1fr;
+
+                        gap: 18px;
+                    }
+
+                    .trip-card {
+                        min-height: 290px;
                     }
 
                 }
@@ -451,7 +600,8 @@ const Trips = () => {
                     }
 
                     .trips-header {
-                        margin-bottom: 25px;
+                        margin-bottom:
+                            25px;
                     }
 
                     .trips-back-button {
@@ -468,7 +618,9 @@ const Trips = () => {
                     }
 
                     .trip-card {
-                        padding: 17px;
+                        min-height: 270px;
+
+                        padding: 20px;
                     }
 
                     .trip-card-header {
@@ -476,16 +628,23 @@ const Trips = () => {
                     }
 
                     .vessel-icon {
-                        width: 42px;
-                        height: 42px;
+                        width: 45px;
+                        height: 45px;
+
+                        font-size: 22px;
                     }
 
                     .vessel-name {
                         font-size: 14px;
                     }
 
+                    .vessel-route {
+                        font-size: 9px;
+                    }
+
                     .departure-time {
                         font-size: 11px;
+
                         padding:
                             8px
                             10px;
@@ -493,6 +652,65 @@ const Trips = () => {
 
                     .trip-capacity {
                         gap: 10px;
+
+                        padding:
+                            20px
+                            0;
+                    }
+
+                    .capacity-icon {
+                        width: 38px;
+                        height: 38px;
+
+                        font-size: 17px;
+                    }
+
+                    .capacity-label {
+                        font-size: 9px;
+                    }
+
+                    .capacity-value {
+                        font-size: 11px;
+                    }
+
+                    .select-trip-button {
+                        height: 45px;
+
+                        font-size: 11px;
+                    }
+
+                }
+
+                /* =================================================
+                   VERY SMALL MOBILE
+                ================================================= */
+
+                @media (max-width: 360px) {
+
+                    .trip-card {
+                        padding: 17px;
+                    }
+
+                    .trip-card-header {
+                        align-items:
+                            flex-start;
+                    }
+
+                    .vessel-name {
+                        font-size: 13px;
+                    }
+
+                    .departure-time {
+                        font-size: 10px;
+
+                        padding:
+                            7px
+                            8px;
+                    }
+
+                    .trip-capacity {
+                        grid-template-columns:
+                            1fr;
                     }
 
                 }
@@ -503,7 +721,9 @@ const Trips = () => {
 
                 <div className="trips-container">
 
-                    {/* HEADER */}
+                    {/* =================================================
+                        HEADER
+                    ================================================= */}
 
                     <header className="trips-header">
 
@@ -534,14 +754,18 @@ const Trips = () => {
                     </header>
 
 
-                    {/* TITLE */}
+                    {/* =================================================
+                        TITLE
+                    ================================================= */}
 
                     <h2 className="trips-section-title">
                         Available Ferries
                     </h2>
 
 
-                    {/* TRIPS */}
+                    {/* =================================================
+                        TRIPS
+                    ================================================= */}
 
                     <div className="trips-list">
 
@@ -554,6 +778,8 @@ const Trips = () => {
                                     selectTrip(trip)
                                 }
                             >
+
+                                {/* CARD HEADER */}
 
                                 <div className="trip-card-header">
 
@@ -583,6 +809,8 @@ const Trips = () => {
 
                                 </div>
 
+
+                                {/* CAPACITY */}
 
                                 <div className="trip-capacity">
 
@@ -632,11 +860,14 @@ const Trips = () => {
                                 </div>
 
 
+                                {/* SELECT */}
+
                                 <button
                                     type="button"
                                     className="select-trip-button"
                                     onClick={(event) => {
                                         event.stopPropagation();
+
                                         selectTrip(trip);
                                     }}
                                 >
@@ -650,12 +881,21 @@ const Trips = () => {
                     </div>
 
 
+                    {/* =================================================
+                        INFORMATION
+                    ================================================= */}
+
                     <div className="trips-info">
-                        <strong>Note:</strong>{" "}
+
+                        <strong>
+                            Note:
+                        </strong>{" "}
+
                         Select your preferred vessel first.
                         The selected vessel and departure time
                         will automatically be carried into your
                         booking and receipt.
+
                     </div>
 
                 </div>

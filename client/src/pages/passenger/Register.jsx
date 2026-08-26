@@ -6,6 +6,10 @@ import { FaApple } from "react-icons/fa";
 const Register = () => {
     const navigate = useNavigate();
 
+    // =========================================================
+    // FORM DATA
+    // =========================================================
+
     const [formData, setFormData] = useState({
         fullName: "",
         email: "",
@@ -16,6 +20,21 @@ const Register = () => {
     });
 
     const [loading, setLoading] = useState(false);
+
+    // =========================================================
+    // POPUP STATE
+    // =========================================================
+
+    const [popup, setPopup] = useState({
+        show: false,
+        type: "",
+        title: "",
+        message: "",
+    });
+
+    // =========================================================
+    // HANDLE INPUT
+    // =========================================================
 
     const handleChange = (event) => {
         const {
@@ -34,40 +53,94 @@ const Register = () => {
         }));
     };
 
+    // =========================================================
+    // SHOW POPUP
+    // =========================================================
+
+    const showPopup = (
+        type,
+        title,
+        message
+    ) => {
+        setPopup({
+            show: true,
+            type,
+            title,
+            message,
+        });
+    };
+
+    // =========================================================
+    // CLOSE POPUP
+    // =========================================================
+
+    const closePopup = () => {
+        setPopup({
+            show: false,
+            type: "",
+            title: "",
+            message: "",
+        });
+    };
+
+    // =========================================================
+    // HANDLE REGISTRATION
+    // =========================================================
+
     const handleSubmit = async (event) => {
         event.preventDefault();
 
-        // Check password confirmation
+        // =====================================================
+        // PASSWORD VALIDATION
+        // =====================================================
+
         if (
             formData.password !==
             formData.confirmPassword
         ) {
-            alert("Passwords do not match.");
+            showPopup(
+                "error",
+                "Passwords Don't Match",
+                "Your passwords do not match. Please check your password and try again."
+            );
+
             return;
         }
 
-        // Check terms
+        // =====================================================
+        // TERMS VALIDATION
+        // =====================================================
+
         if (!formData.agreeTerms) {
-            alert(
-                "Please agree to the Terms of Service and Privacy Policy."
+            showPopup(
+                "warning",
+                "Terms Required",
+                "Please agree to the Terms of Service and Privacy Policy before creating your account."
             );
+
             return;
         }
+
+        // =====================================================
+        // START LOADING
+        // =====================================================
 
         try {
             setLoading(true);
 
             /*
              * BACKEND CONNECTION
-             * Keep this endpoint connected to your server.
+             * Same endpoint and same data.
              */
+
             const response = await fetch(
                 "http://localhost:5000/api/auth/register",
                 {
                     method: "POST",
 
                     headers: {
-                        "Content-Type": "application/json",
+                        "Content-Type":
+                            "application/json",
                     },
 
                     body: JSON.stringify({
@@ -86,22 +159,28 @@ const Register = () => {
                 }
             );
 
-            const data = await response.json();
+            const data =
+                await response.json();
+
+            // =================================================
+            // BACKEND ERROR
+            // =================================================
 
             if (!response.ok) {
-                alert(
+                showPopup(
+                    "error",
+                    "Registration Failed",
                     data.message ||
-                    "Registration failed."
+                        "We were unable to create your account. Please check your information and try again."
                 );
 
                 return;
             }
 
-            alert(
-                "Account created successfully! You can now sign in."
-            );
+            // =================================================
+            // SUCCESS
+            // =================================================
 
-            // Clear form
             setFormData({
                 fullName: "",
                 email: "",
@@ -111,8 +190,19 @@ const Register = () => {
                 agreeTerms: false,
             });
 
-            // Navigate to Login
-            navigate("/login");
+            showPopup(
+                "success",
+                "Account Created!",
+                "Your GuimarasGo account has been created successfully. Redirecting you to the login page..."
+            );
+
+            // =================================================
+            // GO TO LOGIN AFTER SUCCESS MESSAGE
+            // =================================================
+
+            setTimeout(() => {
+                navigate("/login");
+            }, 1800);
 
         } catch (error) {
             console.error(
@@ -120,8 +210,10 @@ const Register = () => {
                 error
             );
 
-            alert(
-                "Unable to connect to the server. Please make sure the backend is running."
+            showPopup(
+                "error",
+                "Connection Error",
+                "Unable to connect to the server. Please make sure the backend is running and try again."
             );
 
         } finally {
@@ -129,13 +221,17 @@ const Register = () => {
         }
     };
 
+    // =========================================================
+    // PAGE
+    // =========================================================
+
     return (
         <>
             <style>{`
 
-                /* =========================================
+                /* =====================================================
                    RESET
-                ========================================= */
+                ===================================================== */
 
                 * {
                     box-sizing: border-box;
@@ -162,9 +258,9 @@ const Register = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    PAGE
-                ========================================= */
+                ===================================================== */
 
                 .register-page {
                     width: 100%;
@@ -189,9 +285,9 @@ const Register = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    MAIN CONTAINER
-                ========================================= */
+                ===================================================== */
 
                 .register-container {
                     position: relative;
@@ -202,7 +298,8 @@ const Register = () => {
 
                     background: #ffffff;
 
-                    border: 1px solid #dedede;
+                    border:
+                        1px solid #dedede;
 
                     border-radius: 10px;
 
@@ -220,9 +317,9 @@ const Register = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    BACK BUTTON
-                ========================================= */
+                ===================================================== */
 
                 .register-back-button {
                     position: absolute;
@@ -233,7 +330,8 @@ const Register = () => {
                     width: 38px;
                     height: 38px;
 
-                    border: 1px solid #e4e4e4;
+                    border:
+                        1px solid #e4e4e4;
 
                     border-radius: 50%;
 
@@ -259,16 +357,17 @@ const Register = () => {
                 .register-back-button:hover {
                     color: #ff7818;
 
-                    border-color: #ff7818;
+                    border-color:
+                        #ff7818;
 
                     transform:
                         translateX(-2px);
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    LOGO HEADER
-                ========================================= */
+                ===================================================== */
 
                 .register-logo-header {
                     width:
@@ -300,9 +399,9 @@ const Register = () => {
                 }
 
 
-                /* =========================================
-                   LOGO IMAGE
-                ========================================= */
+                /* =====================================================
+                   LOGO
+                ===================================================== */
 
                 .register-logo-image {
                     width: 58px;
@@ -315,9 +414,9 @@ const Register = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    CONTENT
-                ========================================= */
+                ===================================================== */
 
                 .register-content {
                     width: 100%;
@@ -335,9 +434,9 @@ const Register = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    HEADING
-                ========================================= */
+                ===================================================== */
 
                 .register-heading {
                     width: 100%;
@@ -373,9 +472,9 @@ const Register = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    FORM
-                ========================================= */
+                ===================================================== */
 
                 .register-form {
                     width: 100%;
@@ -397,9 +496,9 @@ const Register = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    FORM GROUP
-                ========================================= */
+                ===================================================== */
 
                 .register-form-group {
                     width: 100%;
@@ -464,9 +563,9 @@ const Register = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    TERMS
-                ========================================= */
+                ===================================================== */
 
                 .register-terms {
                     width: 100%;
@@ -518,9 +617,9 @@ const Register = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    CREATE ACCOUNT BUTTON
-                ========================================= */
+                ===================================================== */
 
                 .register-primary-button {
                     width: 100%;
@@ -588,9 +687,9 @@ const Register = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    DIVIDER
-                ========================================= */
+                ===================================================== */
 
                 .register-divider {
                     width: 100%;
@@ -628,9 +727,9 @@ const Register = () => {
                 }
 
 
-                /* =========================================
-                   SOCIAL LOGIN
-                ========================================= */
+                /* =====================================================
+                   SOCIAL REGISTRATION
+                ===================================================== */
 
                 .register-social-login {
                     width: 100%;
@@ -708,9 +807,9 @@ const Register = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    LOGIN SECTION
-                ========================================= */
+                ===================================================== */
 
                 .register-login-section {
                     text-align: center;
@@ -719,7 +818,8 @@ const Register = () => {
                 }
 
                 .register-login-text {
-                    margin: 0 0 7px;
+                    margin:
+                        0 0 7px;
 
                     font-size: 11px;
 
@@ -742,9 +842,9 @@ const Register = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    FOOTER
-                ========================================= */
+                ===================================================== */
 
                 .register-footer {
                     display: flex;
@@ -775,9 +875,378 @@ const Register = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
+                   LOADING OVERLAY
+                ===================================================== */
+
+                .register-loading-overlay {
+                    position: fixed;
+
+                    inset: 0;
+
+                    z-index: 9999;
+
+                    display: flex;
+
+                    align-items: center;
+
+                    justify-content: center;
+
+                    background:
+                        rgba(
+                            17,
+                            17,
+                            17,
+                            0.45
+                        );
+
+                    backdrop-filter:
+                        blur(5px);
+
+                    -webkit-backdrop-filter:
+                        blur(5px);
+                }
+
+                .register-loading-card {
+                    width: min(
+                        350px,
+                        calc(100% - 40px)
+                    );
+
+                    padding:
+                        32px 25px;
+
+                    background:
+                        #ffffff;
+
+                    border-radius:
+                        18px;
+
+                    text-align:
+                        center;
+
+                    box-shadow:
+                        0 20px 60px
+                        rgba(
+                            0,
+                            0,
+                            0,
+                            0.20
+                        );
+
+                    animation:
+                        popupIn
+                        0.25s ease;
+                }
+
+                .loading-spinner {
+                    width: 48px;
+
+                    height: 48px;
+
+                    margin:
+                        0 auto 18px;
+
+                    border:
+                        4px solid
+                        #ffe0c8;
+
+                    border-top-color:
+                        #ff7818;
+
+                    border-radius:
+                        50%;
+
+                    animation:
+                        spin
+                        0.8s linear infinite;
+                }
+
+                .register-loading-card h2 {
+                    margin:
+                        0 0 7px;
+
+                    color: #111;
+
+                    font-size: 18px;
+                }
+
+                .register-loading-card p {
+                    margin: 0;
+
+                    color: #777;
+
+                    font-size: 12px;
+
+                    line-height: 1.5;
+                }
+
+
+                /* =====================================================
+                   POPUP OVERLAY
+                ===================================================== */
+
+                .register-popup-overlay {
+                    position: fixed;
+
+                    inset: 0;
+
+                    z-index: 10000;
+
+                    display: flex;
+
+                    align-items: center;
+
+                    justify-content: center;
+
+                    padding: 20px;
+
+                    background:
+                        rgba(
+                            17,
+                            17,
+                            17,
+                            0.45
+                        );
+
+                    backdrop-filter:
+                        blur(5px);
+
+                    -webkit-backdrop-filter:
+                        blur(5px);
+
+                    animation:
+                        fadeIn
+                        0.2s ease;
+                }
+
+
+                /* =====================================================
+                   POPUP CARD
+                ===================================================== */
+
+                .register-popup {
+                    width: min(
+                        390px,
+                        100%
+                    );
+
+                    padding:
+                        32px 28px 26px;
+
+                    background:
+                        #ffffff;
+
+                    border-radius:
+                        20px;
+
+                    text-align:
+                        center;
+
+                    box-shadow:
+                        0 20px 65px
+                        rgba(
+                            0,
+                            0,
+                            0,
+                            0.22
+                        );
+
+                    animation:
+                        popupIn
+                        0.25s ease;
+                }
+
+
+                /* =====================================================
+                   POPUP ICON
+                ===================================================== */
+
+                .popup-icon {
+                    width: 64px;
+
+                    height: 64px;
+
+                    margin:
+                        0 auto 17px;
+
+                    display: flex;
+
+                    align-items: center;
+
+                    justify-content: center;
+
+                    border-radius:
+                        50%;
+
+                    font-size: 28px;
+
+                    font-weight: 700;
+                }
+
+                .popup-icon.success {
+                    background:
+                        #e9f9ef;
+
+                    color:
+                        #20a35a;
+                }
+
+                .popup-icon.error {
+                    background:
+                        #fff0f0;
+
+                    color:
+                        #e04444;
+                }
+
+                .popup-icon.warning {
+                    background:
+                        #fff6e8;
+
+                    color:
+                        #ed921e;
+                }
+
+
+                /* =====================================================
+                   POPUP TEXT
+                ===================================================== */
+
+                .register-popup h2 {
+                    margin:
+                        0 0 9px;
+
+                    color:
+                        #111;
+
+                    font-size:
+                        21px;
+
+                    font-weight:
+                        700;
+                }
+
+                .register-popup p {
+                    margin:
+                        0;
+
+                    color:
+                        #777;
+
+                    font-size:
+                        12px;
+
+                    line-height:
+                        1.6;
+                }
+
+
+                /* =====================================================
+                   POPUP BUTTON
+                ===================================================== */
+
+                .popup-button {
+                    width:
+                        100%;
+
+                    height:
+                        43px;
+
+                    margin-top:
+                        23px;
+
+                    border:
+                        none;
+
+                    border-radius:
+                        8px;
+
+                    background:
+                        #ff7818;
+
+                    color:
+                        #ffffff;
+
+                    font-size:
+                        12px;
+
+                    font-weight:
+                        600;
+
+                    cursor:
+                        pointer;
+
+                    transition:
+                        0.2s ease;
+                }
+
+                .popup-button:hover {
+                    background:
+                        #f46e0c;
+
+                    transform:
+                        translateY(-1px);
+
+                    box-shadow:
+                        0 6px 16px
+                        rgba(
+                            255,
+                            120,
+                            24,
+                            0.20
+                        );
+                }
+
+
+                /* =====================================================
+                   ANIMATIONS
+                ===================================================== */
+
+                @keyframes spin {
+                    from {
+                        transform:
+                            rotate(0deg);
+                    }
+
+                    to {
+                        transform:
+                            rotate(360deg);
+                    }
+                }
+
+                @keyframes fadeIn {
+                    from {
+                        opacity: 0;
+                    }
+
+                    to {
+                        opacity: 1;
+                    }
+                }
+
+                @keyframes popupIn {
+                    from {
+                        opacity: 0;
+
+                        transform:
+                            translateY(12px)
+                            scale(0.96);
+                    }
+
+                    to {
+                        opacity: 1;
+
+                        transform:
+                            translateY(0)
+                            scale(1);
+                    }
+                }
+
+
+                /* =====================================================
                    TABLET
-                ========================================= */
+                ===================================================== */
 
                 @media (max-width: 768px) {
 
@@ -814,9 +1283,9 @@ const Register = () => {
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    MOBILE
-                ========================================= */
+                ===================================================== */
 
                 @media (max-width: 480px) {
 
@@ -935,17 +1404,39 @@ const Register = () => {
 
                         margin-top: 25px;
                     }
+
+                    .register-popup {
+                        padding:
+                            28px 22px 23px;
+                    }
+
+                    .popup-icon {
+                        width: 58px;
+
+                        height: 58px;
+
+                        font-size: 25px;
+                    }
+
+                    .register-popup h2 {
+                        font-size: 19px;
+                    }
+
+                    .register-popup p {
+                        font-size: 11px;
+                    }
                 }
 
 
-                /* =========================================
+                /* =====================================================
                    VERY SMALL PHONES
-                ========================================= */
+                ===================================================== */
 
                 @media (max-width: 360px) {
 
                     .register-content {
                         padding-left: 12px;
+
                         padding-right: 12px;
                     }
 
@@ -963,23 +1454,33 @@ const Register = () => {
             `}</style>
 
 
+            {/* =====================================================
+               MAIN PAGE
+            ===================================================== */}
+
             <main className="register-page">
 
                 <div className="register-container">
 
-                    {/* BACK BUTTON */}
+                    {/* =================================================
+                       BACK BUTTON
+                    ================================================= */}
 
                     <button
                         type="button"
                         className="register-back-button"
-                        onClick={() => navigate("/Login")}
+                        onClick={() =>
+                            navigate("/Login")
+                        }
                         aria-label="Go back"
                     >
                         ←
                     </button>
 
 
-                    {/* LOGO */}
+                    {/* =================================================
+                       LOGO
+                    ================================================= */}
 
                     <div className="register-logo-header">
 
@@ -992,7 +1493,9 @@ const Register = () => {
                     </div>
 
 
-                    {/* CONTENT */}
+                    {/* =================================================
+                       CONTENT
+                    ================================================= */}
 
                     <div className="register-content">
 
@@ -1012,7 +1515,9 @@ const Register = () => {
                         </div>
 
 
-                        {/* REGISTRATION FORM */}
+                        {/* =================================================
+                           REGISTRATION FORM
+                        ================================================= */}
 
                         <form
                             className="register-form"
@@ -1032,8 +1537,12 @@ const Register = () => {
                                     name="fullName"
                                     type="text"
                                     placeholder="Enter your full name"
-                                    value={formData.fullName}
-                                    onChange={handleChange}
+                                    value={
+                                        formData.fullName
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     autoComplete="name"
                                     required
                                 />
@@ -1054,8 +1563,12 @@ const Register = () => {
                                     name="email"
                                     type="email"
                                     placeholder="you@example.com"
-                                    value={formData.email}
-                                    onChange={handleChange}
+                                    value={
+                                        formData.email
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     autoComplete="email"
                                     required
                                 />
@@ -1076,8 +1589,12 @@ const Register = () => {
                                     name="phoneNumber"
                                     type="tel"
                                     placeholder="09XXXXXXXXX"
-                                    value={formData.phoneNumber}
-                                    onChange={handleChange}
+                                    value={
+                                        formData.phoneNumber
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     autoComplete="tel"
                                     required
                                 />
@@ -1098,8 +1615,12 @@ const Register = () => {
                                     name="password"
                                     type="password"
                                     placeholder="Create a password"
-                                    value={formData.password}
-                                    onChange={handleChange}
+                                    value={
+                                        formData.password
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     autoComplete="new-password"
                                     minLength={6}
                                     required
@@ -1124,7 +1645,9 @@ const Register = () => {
                                     value={
                                         formData.confirmPassword
                                     }
-                                    onChange={handleChange}
+                                    onChange={
+                                        handleChange
+                                    }
                                     autoComplete="new-password"
                                     minLength={6}
                                     required
@@ -1143,28 +1666,39 @@ const Register = () => {
                                     checked={
                                         formData.agreeTerms
                                     }
-                                    onChange={handleChange}
+                                    onChange={
+                                        handleChange
+                                    }
                                 />
 
                                 <span>
+
                                     I agree to the{" "}
+
                                     <a
                                         href="#terms"
-                                        onClick={(event) =>
+                                        onClick={(
+                                            event
+                                        ) =>
                                             event.stopPropagation()
                                         }
                                     >
                                         Terms of Service
-                                    </a>{" "}
-                                    and{" "}
+                                    </a>
+
+                                    {" "}and{" "}
+
                                     <a
                                         href="#privacy"
-                                        onClick={(event) =>
+                                        onClick={(
+                                            event
+                                        ) =>
                                             event.stopPropagation()
                                         }
                                     >
                                         Privacy Policy
                                     </a>.
+
                                 </span>
 
                             </label>
@@ -1185,7 +1719,9 @@ const Register = () => {
                         </form>
 
 
-                        {/* DIVIDER */}
+                        {/* =================================================
+                           DIVIDER
+                        ================================================= */}
 
                         <div className="register-divider">
 
@@ -1196,7 +1732,9 @@ const Register = () => {
                         </div>
 
 
-                        {/* SOCIAL REGISTRATION */}
+                        {/* =================================================
+                           SOCIAL REGISTRATION
+                        ================================================= */}
 
                         <div className="register-social-login">
 
@@ -1204,11 +1742,14 @@ const Register = () => {
                                 type="button"
                                 className="register-social-button"
                                 onClick={() =>
-                                    alert(
+                                    showPopup(
+                                        "warning",
+                                        "Coming Soon",
                                         "Google registration will be added later."
                                     )
                                 }
                             >
+
                                 <FcGoogle
                                     className="register-social-icon"
                                 />
@@ -1224,11 +1765,14 @@ const Register = () => {
                                 type="button"
                                 className="register-social-button"
                                 onClick={() =>
-                                    alert(
+                                    showPopup(
+                                        "warning",
+                                        "Coming Soon",
                                         "Apple registration will be added later."
                                     )
                                 }
                             >
+
                                 <FaApple
                                     className="register-social-icon register-apple-icon"
                                 />
@@ -1242,7 +1786,9 @@ const Register = () => {
                         </div>
 
 
-                        {/* LOGIN */}
+                        {/* =================================================
+                           LOGIN
+                        ================================================= */}
 
                         <div className="register-login-section">
 
@@ -1260,7 +1806,9 @@ const Register = () => {
                         </div>
 
 
-                        {/* FOOTER */}
+                        {/* =================================================
+                           FOOTER
+                        ================================================= */}
 
                         <div className="register-footer">
 
@@ -1283,6 +1831,122 @@ const Register = () => {
                 </div>
 
             </main>
+
+
+            {/* =========================================================
+               LOADING POPUP
+            ========================================================= */}
+
+            {loading && (
+
+                <div className="register-loading-overlay">
+
+                    <div className="register-loading-card">
+
+                        <div className="loading-spinner" />
+
+                        <h2>
+                            Creating your account...
+                        </h2>
+
+                        <p>
+                            Please wait while we securely
+                            create your GuimarasGo account.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            )}
+
+
+            {/* =========================================================
+               RESULT POPUP
+            ========================================================= */}
+
+            {popup.show && (
+
+                <div
+                    className="register-popup-overlay"
+                    onClick={() => {
+                        if (
+                            popup.type !==
+                            "success"
+                        ) {
+                            closePopup();
+                        }
+                    }}
+                >
+
+                    <div
+                        className="register-popup"
+                        onClick={(event) =>
+                            event.stopPropagation()
+                        }
+                    >
+
+                        {/* ICON */}
+
+                        <div
+                            className={`popup-icon ${popup.type}`}
+                        >
+
+                            {popup.type ===
+                                "success" && (
+                                <span>✓</span>
+                            )}
+
+                            {popup.type ===
+                                "error" && (
+                                <span>!</span>
+                            )}
+
+                            {popup.type ===
+                                "warning" && (
+                                <span>!</span>
+                            )}
+
+                        </div>
+
+
+                        {/* TITLE */}
+
+                        <h2>
+                            {popup.title}
+                        </h2>
+
+
+                        {/* MESSAGE */}
+
+                        <p>
+                            {popup.message}
+                        </p>
+
+
+                        {/* BUTTON */}
+
+                        {popup.type !==
+                            "success" && (
+
+                            <button
+                                type="button"
+                                className="popup-button"
+                                onClick={
+                                    closePopup
+                                }
+                            >
+                                Okay
+                            </button>
+
+                        )}
+
+                    </div>
+
+                </div>
+
+            )}
+
         </>
     );
 };

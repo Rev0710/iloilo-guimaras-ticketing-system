@@ -7,10 +7,22 @@ import {
     useNavigate
 } from "react-router-dom";
 
+import {
+    FaHome,
+    FaSearch,
+    FaTicketAlt,
+    FaUser
+} from "react-icons/fa";
+
 
 const Dashboard = () => {
 
     const navigate = useNavigate();
+
+
+    // =========================================================
+    // STATES
+    // =========================================================
 
     const [
         recentBookings,
@@ -254,9 +266,14 @@ const Dashboard = () => {
             // =================================================
 
             const recent =
-                [...allBookings]
+                [
+                    ...allBookings
+                ]
                     .reverse()
-                    .slice(0, 3);
+                    .slice(
+                        0,
+                        3
+                    );
 
 
             setRecentBookings(
@@ -264,7 +281,10 @@ const Dashboard = () => {
             );
 
 
-            // Keep compatibility
+            // =================================================
+            // KEEP COMPATIBILITY
+            // =================================================
+
             sessionStorage.setItem(
                 "recentBookings",
                 JSON.stringify(
@@ -291,21 +311,14 @@ const Dashboard = () => {
     // NAVIGATION
     // =========================================================
 
-    // IMPORTANT:
-    // Book a Trip now goes to /trips.
-    // The user selects the available ferry there.
-    // Then /trips will send them to /book-trip.
-
     const goToBooking = () => {
 
-        navigate("/trips");
+        navigate(
+            "/trips"
+        );
 
     };
 
-
-    // =========================================================
-    // VIEW BOOKING
-    // =========================================================
 
     const viewBooking = (
         booking
@@ -324,10 +337,6 @@ const Dashboard = () => {
 
     };
 
-
-    // =========================================================
-    // VIEW ALL BOOKINGS
-    // =========================================================
 
     const viewAllBookings = () => {
 
@@ -401,12 +410,15 @@ const Dashboard = () => {
                 #root {
                     margin: 0;
                     padding: 0;
+
                     width: 100%;
+
                     min-height: 100%;
                 }
 
 
                 body {
+
                     font-family:
                         Inter,
                         -apple-system,
@@ -416,17 +428,17 @@ const Dashboard = () => {
                         Helvetica,
                         sans-serif;
 
-                    background:
-                        #f7f8fa;
+                    background: #f7f8fa;
 
-                    color:
-                        #222;
+                    color: #222;
+
                 }
 
 
                 button {
-                    font-family:
-                        inherit;
+
+                    font-family: inherit;
+
                 }
 
 
@@ -435,42 +447,29 @@ const Dashboard = () => {
                 ================================================= */
 
                 .dashboard-page {
+    background:
+        linear-gradient(
+            180deg,
+            #fffdf9 0%,
+            #fff7ef 35%,
+            #fffaf7 100%
+        );
 
-                    min-height:
-                        100vh;
-
-                    min-height:
-                        100dvh;
-
-                    background:
-                        linear-gradient(
-                            180deg,
-                            #fffaf7 0%,
-                            #fff7f0 35%,
-                            #f7f8fa 100%
-                        );
-
-                    padding-bottom:
-                        100px;
-                }
+    padding-bottom: 105px;
+}
 
 
                 .dashboard-container {
 
-                    width:
-                        100%;
+                    width: 100%;
 
-                    max-width:
-                        1200px;
+                    max-width: 1200px;
 
-                    min-height:
-                        100vh;
+                    min-height: 100vh;
 
-                    margin:
-                        0 auto;
+                    margin: 0 auto;
 
-                    background:
-                        #ffffff;
+                    background: #ffffff;
 
                     box-shadow:
                         0 0 40px
@@ -480,6 +479,7 @@ const Dashboard = () => {
                             0,
                             0.04
                         );
+
                 }
 
 
@@ -489,26 +489,21 @@ const Dashboard = () => {
 
                 .dashboard-header {
 
-                    position:
-                        sticky;
+                    position: sticky;
 
-                    top:
-                        0;
+                    top: 0;
 
-                    z-index:
-                        50;
+                    z-index: 50;
 
-                    height:
-                        78px;
+                    height: 78px;
 
                     padding:
-                        0 34px;
+                        0
+                        34px;
 
-                    display:
-                        flex;
+                    display: flex;
 
-                    align-items:
-                        center;
+                    align-items: center;
 
                     justify-content:
                         space-between;
@@ -522,67 +517,71 @@ const Dashboard = () => {
                         );
 
                     border-bottom:
-                        1px solid #eeeeee;
+                        1px solid
+                        #eeeeee;
 
                     backdrop-filter:
                         blur(10px);
+
                 }
 
 
                 .dashboard-logo {
 
-                    display:
-                        flex;
+                    display: flex;
 
-                    align-items:
-                        center;
+                    align-items: center;
 
-                    height:
-                        100%;
+                    height: 100%;
+
                 }
 
 
                 .dashboard-logo img {
 
-                    width:
-                        112px;
+                    width: 112px;
 
-                    height:
-                        58px;
+                    height: auto;
 
-                    object-fit:
-                        contain;
+                    object-fit: contain;
 
-                    display:
-                        block;
                 }
 
 
                 .menu-button {
 
-                    width:
-                        42px;
+                    width: 42px;
 
-                    height:
-                        42px;
+                    height: 42px;
+
+                    display: flex;
+
+                    align-items: center;
+
+                    justify-content: center;
 
                     border:
-                        1px solid #eeeeee;
+                        1px solid
+                        #eeeeee;
 
                     border-radius:
-                        10px;
+                        12px;
 
                     background:
                         #ffffff;
 
+                    color:
+                        #555555;
+
                     font-size:
-                        21px;
+                        20px;
 
                     cursor:
                         pointer;
 
                     transition:
                         0.2s ease;
+
                 }
 
 
@@ -591,19 +590,27 @@ const Dashboard = () => {
                     background:
                         #fff3eb;
 
-                    border-color:
-                        #ffd5bd;
-
                     color:
                         #ff7818;
+
+                    border-color:
+                        #ffd3bb;
+
                 }
 
 
                 /* =================================================
                    WELCOME SECTION
+                   ONLY THE BACKGROUND WAS UPDATED
                 ================================================= */
 
                 .welcome-section {
+
+                    position:
+                        relative;
+
+                    overflow:
+                        hidden;
 
                     margin:
                         25px
@@ -611,11 +618,11 @@ const Dashboard = () => {
                         30px;
 
                     min-height:
-                        285px;
+                        290px;
 
                     padding:
-                        50px
-                        35px;
+                        55px
+                        45px;
 
                     display:
                         flex;
@@ -629,123 +636,121 @@ const Dashboard = () => {
                     justify-content:
                         center;
 
+                    border:
+                        1px solid
+                        #ffd8c2;
+
                     border-radius:
                         22px;
 
-                    background:
+
+                    /* =========================================
+                       YOUR DASHBOARD BACKGROUND URL
+                    ========================================= */
+
+                    background-image:
+
                         linear-gradient(
-                            135deg,
-                            #fff4e9,
-                            #fffaf7
+                            rgba(
+                                255,
+                                248,
+                                241,
+                                0.72
+                            ),
+                            rgba(
+                                255,
+                                248,
+                                241,
+                                0.72
+                            )
+                        ),
+
+                        url(
+                            "https://orbitshub.com/wp-content/uploads/2023/10/what-exactly-are-roro-ships-1024x576.jpg"
                         );
 
-                    border:
-                        1px solid #ffe1cd;
 
-                    overflow:
-                        hidden;
+                    background-size:
+                        cover;
 
-                    position:
-                        relative;
-                }
+                    background-position:
+                        center center;
+
+                    background-repeat:
+                        no-repeat;
 
 
-                .welcome-section::after {
-
-                    content:
-                        "";
-
-                    position:
-                        absolute;
-
-                    width:
-                        260px;
-
-                    height:
-                        260px;
-
-                    right:
-                        -80px;
-
-                    bottom:
-                        -100px;
-
-                    border-radius:
-                        50%;
-
-                    background:
+                    box-shadow:
+                        0
+                        10px
+                        35px
                         rgba(
-                            255,
-                            145,
-                            65,
-                            0.12
+                            0,
+                            0,
+                            0,
+                            0.06
                         );
+
                 }
 
 
                 .welcome-section h1 {
 
-                    margin:
-                        0 0 8px;
-
-                    color:
-                        #222;
-
-                    font-size:
-                        clamp(
-                            32px,
-                            4vw,
-                            45px
-                        );
-
-                    font-weight:
-                        800;
-
                     position:
                         relative;
 
                     z-index:
                         2;
+
+                    margin:
+                        0
+                        0
+                        8px;
+
+                    color:
+                        #111111;
+
+                    font-size:
+                        42px;
+
+                    font-weight:
+                        800;
+
+                    line-height:
+                        1.1;
+
                 }
 
 
                 .welcome-section p {
 
+                    position:
+                        relative;
+
+                    z-index:
+                        2;
+
                     margin:
-                        0 0 25px;
+                        0
+                        0
+                        25px;
 
                     color:
-                        #777;
+                        #666666;
 
                     font-size:
-                        clamp(
-                            14px,
-                            2vw,
-                            17px
-                        );
+                        16px;
 
-                    line-height:
-                        1.5;
+                }
+
+
+                .book-button {
 
                     position:
                         relative;
 
                     z-index:
                         2;
-                }
-
-
-                /* =================================================
-                   BOOK BUTTON
-                ================================================= */
-
-                .book-button {
-
-                    min-width:
-                        190px;
-
-                    padding:
-                        14px 28px;
 
                     border:
                         none;
@@ -753,18 +758,18 @@ const Dashboard = () => {
                     border-radius:
                         10px;
 
+                    padding:
+                        14px
+                        28px;
+
                     background:
-                        linear-gradient(
-                            135deg,
-                            #ff7818,
-                            #ff951f
-                        );
+                        #ff7818;
 
                     color:
                         #ffffff;
 
                     font-size:
-                        15px;
+                        14px;
 
                     font-weight:
                         700;
@@ -775,56 +780,28 @@ const Dashboard = () => {
                     box-shadow:
                         0
                         8px
-                        20px
+                        18px
                         rgba(
                             255,
                             120,
                             24,
-                            0.28
+                            0.22
                         );
 
                     transition:
-                        transform 0.2s ease,
-                        box-shadow 0.2s ease,
-                        background 0.2s ease;
+                        0.2s ease;
 
-                    position:
-                        relative;
-
-                    z-index:
-                        2;
                 }
 
 
                 .book-button:hover {
 
-                    transform:
-                        translateY(-3px);
-
                     background:
-                        linear-gradient(
-                            135deg,
-                            #f06c0c,
-                            #ff8a24
-                        );
-
-                    box-shadow:
-                        0
-                        12px
-                        26px
-                        rgba(
-                            255,
-                            120,
-                            24,
-                            0.36
-                        );
-                }
-
-
-                .book-button:active {
+                        #e9680c;
 
                     transform:
-                        translateY(0);
+                        translateY(-2px);
+
                 }
 
 
@@ -840,29 +817,27 @@ const Dashboard = () => {
                     grid-template-columns:
                         repeat(
                             2,
-                            minmax(
-                                0,
-                                1fr
-                            )
+                            1fr
                         );
 
                     gap:
-                        20px;
+                        18px;
 
                     padding:
                         0
                         34px
-                        36px;
+                        30px;
+
                 }
 
 
                 .feature-card {
 
                     min-height:
-                        150px;
+                        125px;
 
                     padding:
-                        25px;
+                        22px;
 
                     display:
                         flex;
@@ -879,14 +854,15 @@ const Dashboard = () => {
                     text-align:
                         left;
 
+                    background:
+                        #ffffff;
+
                     border:
-                        1px solid #eeeeee;
+                        1px solid
+                        #e8e8e8;
 
                     border-radius:
                         18px;
-
-                    background:
-                        #ffffff;
 
                     cursor:
                         pointer;
@@ -899,106 +875,92 @@ const Dashboard = () => {
                             0,
                             0,
                             0,
-                            0.045
+                            0.035
                         );
 
                     transition:
                         0.2s ease;
+
                 }
 
 
                 .feature-card:hover {
 
-                    transform:
-                        translateY(-4px);
-
                     border-color:
-                        #f5d8c9;
+                        #ffd3b9;
+
+                    transform:
+                        translateY(-2px);
 
                     box-shadow:
                         0
-                        12px
-                        30px
+                        10px
+                        25px
                         rgba(
-                            0,
-                            0,
-                            0,
+                            255,
+                            120,
+                            24,
                             0.08
                         );
+
                 }
 
 
                 .feature-icon {
 
-                    width:
-                        48px;
-
-                    height:
-                        48px;
-
                     margin-bottom:
-                        15px;
+                        12px;
+
+                    font-size:
+                        21px;
+
+                }
+
+
+                .feature-card strong {
 
                     display:
-                        flex;
+                        block;
 
-                    align-items:
-                        center;
+                    margin-bottom:
+                        5px;
 
-                    justify-content:
-                        center;
-
-                    border-radius:
-                        14px;
-
-                    background:
-                        #fff3eb;
+                    color:
+                        #111111;
 
                     font-size:
-                        24px;
+                        15px;
+
                 }
 
 
-                .feature-title {
+                .feature-card > span:last-child {
 
                     color:
-                        #222;
+                        #999999;
 
                     font-size:
-                        18px;
+                        12px;
 
-                    font-weight:
-                        700;
-                }
-
-
-                .feature-description {
-
-                    margin-top:
-                        6px;
-
-                    color:
-                        #888;
-
-                    font-size:
-                        13px;
                 }
 
 
                 /* =================================================
-                   RECENT BOOKINGS
+                   SECTION HEADERS
                 ================================================= */
 
-                .recent-bookings {
+                .recent-bookings,
+                .popular-section {
 
                     padding:
                         0
-                        34px
-                        35px;
+                        34px;
+
                 }
 
 
-                .section-header {
+                .section-header,
+                .popular-header {
 
                     display:
                         flex;
@@ -1010,23 +972,26 @@ const Dashboard = () => {
                         space-between;
 
                     margin-bottom:
-                        18px;
+                        15px;
+
                 }
 
 
-                .section-header h2 {
+                .section-header h2,
+                .popular-header h2 {
 
                     margin:
                         0;
 
                     color:
-                        #222;
+                        #2c2926;
 
                     font-size:
                         22px;
 
                     font-weight:
-                        750;
+                        800;
+
                 }
 
 
@@ -1042,27 +1007,22 @@ const Dashboard = () => {
                         #ff7818;
 
                     font-size:
-                        13px;
+                        12px;
 
                     font-weight:
                         700;
 
                     cursor:
                         pointer;
+
                 }
 
 
-                .section-header button:hover {
+                /* =================================================
+                   RECENT BOOKING
+                ================================================= */
 
-                    color:
-                        #e9660b;
-
-                    text-decoration:
-                        underline;
-                }
-
-
-                .booking-list {
+                .recent-list {
 
                     display:
                         flex;
@@ -1071,34 +1031,73 @@ const Dashboard = () => {
                         column;
 
                     gap:
-                        15px;
+                        12px;
+
                 }
 
 
-                .recent-booking-card {
+                .recent-empty {
+
+                    min-height:
+                        125px;
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    justify-content:
+                        center;
+
+                    border:
+                        1px solid
+                        #eeeeee;
+
+                    border-radius:
+                        18px;
+
+                    color:
+                        #999999;
+
+                    font-size:
+                        13px;
+
+                    background:
+                        #ffffff;
+
+                }
+
+
+                .booking-card {
+
+                    padding:
+                        18px;
 
                     background:
                         #ffffff;
 
                     border:
-                        1px solid #e5e5e5;
+                        1px solid
+                        #e8e8e8;
 
                     border-radius:
-                        15px;
+                        16px;
 
-                    padding:
-                        18px;
+                    cursor:
+                        pointer;
 
-                    box-shadow:
-                        0
-                        5px
-                        18px
-                        rgba(
-                            0,
-                            0,
-                            0,
-                            0.04
-                        );
+                    transition:
+                        0.2s ease;
+
+                }
+
+
+                .booking-card:hover {
+
+                    border-color:
+                        #ffd3bb;
+
                 }
 
 
@@ -1107,27 +1106,72 @@ const Dashboard = () => {
                     display:
                         flex;
 
+                    align-items:
+                        center;
+
                     justify-content:
                         space-between;
 
                     gap:
-                        10px;
+                        12px;
 
-                    padding-bottom:
-                        14px;
-
-                    border-bottom:
-                        1px solid #eeeeee;
                 }
 
 
-                .booking-top strong {
+                .booking-route {
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    gap:
+                        10px;
+
+                }
+
+
+                .booking-icon {
+
+                    width:
+                        42px;
+
+                    height:
+                        42px;
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    justify-content:
+                        center;
+
+                    border-radius:
+                        12px;
+
+                    background:
+                        #fff1e7;
+
+                    font-size:
+                        20px;
+
+                }
+
+
+                .booking-route strong {
 
                     display:
                         block;
 
+                    color:
+                        #111111;
+
                     font-size:
-                        15px;
+                        14px;
+
                 }
 
 
@@ -1137,32 +1181,31 @@ const Dashboard = () => {
                         block;
 
                     margin-top:
-                        5px;
+                        3px;
 
                     color:
-                        #888888;
+                        #999999;
 
                     font-size:
-                        11px;
+                        10px;
+
                 }
 
 
-                .confirmed {
-
-                    height:
-                        fit-content;
-
-                    background:
-                        #e9f8ef;
-
-                    color:
-                        #168b45;
+                .booking-status {
 
                     padding:
-                        5px 9px;
+                        5px
+                        9px;
 
                     border-radius:
                         20px;
+
+                    background:
+                        #fff1e7;
+
+                    color:
+                        #ff7818;
 
                     font-size:
                         9px;
@@ -1170,8 +1213,6 @@ const Dashboard = () => {
                     font-weight:
                         700;
 
-                    white-space:
-                        nowrap;
                 }
 
 
@@ -1182,36 +1223,40 @@ const Dashboard = () => {
 
                     grid-template-columns:
                         repeat(
-                            3,
+                            4,
                             1fr
                         );
 
                     gap:
                         12px;
 
-                    padding:
-                        15px 0;
-                }
+                    margin-top:
+                        15px;
 
+                    padding-top:
+                        15px;
 
-                .booking-info small,
-                .booking-info strong {
+                    border-top:
+                        1px solid
+                        #eeeeee;
 
-                    display:
-                        block;
                 }
 
 
                 .booking-info small {
 
-                    color:
-                        #888888;
-
-                    font-size:
-                        10px;
+                    display:
+                        block;
 
                     margin-bottom:
                         4px;
+
+                    color:
+                        #999999;
+
+                    font-size:
+                        9px;
+
                 }
 
 
@@ -1221,191 +1266,11 @@ const Dashboard = () => {
                         #222222;
 
                     font-size:
-                        12px;
-                }
-
-
-                .booking-bottom {
-
-                    display:
-                        flex;
-
-                    justify-content:
-                        space-between;
-
-                    align-items:
-                        center;
-
-                    padding-top:
-                        13px;
-
-                    border-top:
-                        1px solid #eeeeee;
-                }
-
-
-                .booking-bottom strong {
-
-                    font-size:
-                        15px;
-                }
-
-
-                .view-booking-button {
-
-                    border:
-                        none;
-
-                    background:
-                        #ff7818;
-
-                    color:
-                        #ffffff;
-
-                    border-radius:
-                        8px;
-
-                    padding:
-                        9px 14px;
-
-                    font-size:
                         11px;
 
                     font-weight:
-                        600;
+                        500;
 
-                    cursor:
-                        pointer;
-
-                    transition:
-                        0.2s ease;
-                }
-
-
-                .view-booking-button:hover {
-
-                    background:
-                        #e9660b;
-                }
-
-
-                /* =================================================
-                   EMPTY BOOKINGS
-                ================================================= */
-
-                .no-bookings {
-
-                    min-height:
-                        220px;
-
-                    display:
-                        flex;
-
-                    flex-direction:
-                        column;
-
-                    align-items:
-                        center;
-
-                    justify-content:
-                        center;
-
-                    text-align:
-                        center;
-
-                    border:
-                        1px dashed #dddddd;
-
-                    border-radius:
-                        16px;
-
-                    background:
-                        #fcfcfc;
-
-                    padding:
-                        25px;
-                }
-
-
-                .empty-icon {
-
-                    width:
-                        58px;
-
-                    height:
-                        58px;
-
-                    display:
-                        flex;
-
-                    align-items:
-                        center;
-
-                    justify-content:
-                        center;
-
-                    margin-bottom:
-                        12px;
-
-                    border-radius:
-                        16px;
-
-                    background:
-                        #fff3eb;
-
-                    font-size:
-                        25px;
-                }
-
-
-                .no-bookings h3 {
-
-                    margin:
-                        0 0 6px;
-
-                    font-size:
-                        18px;
-                }
-
-
-                .no-bookings p {
-
-                    margin:
-                        0 0 18px;
-
-                    color:
-                        #999;
-
-                    font-size:
-                        12px;
-                }
-
-
-                .no-bookings button {
-
-                    border:
-                        none;
-
-                    background:
-                        #ff7818;
-
-                    color:
-                        white;
-
-                    padding:
-                        10px 18px;
-
-                    border-radius:
-                        8px;
-
-                    font-size:
-                        12px;
-
-                    font-weight:
-                        700;
-
-                    cursor:
-                        pointer;
                 }
 
 
@@ -1415,46 +1280,9 @@ const Dashboard = () => {
 
                 .popular-section {
 
-                    padding:
-                        0
-                        34px
-                        50px;
-                }
+                    margin-top:
+                        35px;
 
-
-                .popular-header {
-
-                    display:
-                        flex;
-
-                    align-items:
-                        center;
-
-                    justify-content:
-                        space-between;
-
-                    max-width:
-                        900px;
-
-                    margin:
-                        0 auto
-                        18px;
-                }
-
-
-                .popular-header h2 {
-
-                    margin:
-                        0;
-
-                    font-size:
-                        22px;
-
-                    color:
-                        #222222;
-
-                    font-weight:
-                        750;
                 }
 
 
@@ -1465,6 +1293,7 @@ const Dashboard = () => {
 
                     font-size:
                         12px;
+
                 }
 
 
@@ -1472,9 +1301,6 @@ const Dashboard = () => {
 
                     max-width:
                         900px;
-
-                    margin:
-                        0 auto;
 
                     display:
                         grid;
@@ -1489,7 +1315,8 @@ const Dashboard = () => {
                         );
 
                     gap:
-                        16px;
+                        30px;
+
                 }
 
 
@@ -1499,53 +1326,38 @@ const Dashboard = () => {
                         relative;
 
                     min-height:
-                        130px;
+                        145px;
 
                     padding:
                         20px;
 
+                    background:
+                        #ffffff;
+
                     border:
-                        1px solid #e8e8e8;
+                        1px solid
+                        #e8e8e8;
 
                     border-radius:
-                        16px;
-
-                    background:
-                        linear-gradient(
-                            135deg,
-                            #ffffff,
-                            #fffaf7
-                        );
-
-                    text-align:
-                        left;
+                        18px;
 
                     cursor:
                         pointer;
 
                     transition:
                         0.2s ease;
+
                 }
 
 
                 .popular-route:hover {
 
-                    transform:
-                        translateY(-3px);
-
                     border-color:
-                        #ffd4bb;
+                        #ffd3bb;
 
-                    box-shadow:
-                        0
-                        10px
-                        25px
-                        rgba(
-                            255,
-                            120,
-                            24,
-                            0.09
-                        );
+                    transform:
+                        translateY(-2px);
+
                 }
 
 
@@ -1567,29 +1379,31 @@ const Dashboard = () => {
                         center;
 
                     border-radius:
-                        12px;
+                        13px;
 
                     background:
-                        #fff0e5;
+                        #fff1e7;
 
                     font-size:
-                        22px;
+                        21px;
 
                     margin-bottom:
-                        12px;
+                        14px;
+
                 }
 
 
                 .route-name {
 
                     color:
-                        #222;
+                        #111111;
 
                     font-size:
                         15px;
 
                     font-weight:
                         700;
+
                 }
 
 
@@ -1599,10 +1413,11 @@ const Dashboard = () => {
                         6px;
 
                     color:
-                        #999;
+                        #999999;
 
                     font-size:
                         11px;
+
                 }
 
 
@@ -1621,32 +1436,248 @@ const Dashboard = () => {
                         #ff7818;
 
                     font-size:
-                        15px;
+                        14px;
 
                     font-weight:
                         800;
 
-                    text-align:
-                        right;
                 }
 
 
-                .route-fare small {
+               /* =================================================
+   FOOTER
+================================================= */
+
+.dashboard-footer {
+    width: 100%;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-top: 40px;
+
+    padding: 20px 35px;
+
+    border-top: 1px solid #e8e8e8;
+
+    background: #ffffff;
+
+    font-size: 11px;
+
+    color: #8a8a8a;
+}
+
+.dashboard-footer span:first-child {
+    font-weight: 600;
+
+    color: #777777;
+}
+
+.dashboard-footer span:last-child {
+    text-align: right;
+
+    color: #999999;
+}
+
+
+/* =================================================
+   FOOTER RESPONSIVE
+================================================= */
+
+@media (max-width: 600px) {
+
+    .dashboard-footer {
+
+        flex-direction: column;
+
+        justify-content: center;
+
+        gap: 6px;
+
+        padding:
+            18px
+            20px;
+
+        text-align: center;
+
+    }
+
+    .dashboard-footer span:last-child {
+
+        text-align: center;
+
+    }
+
+}
+
+
+                /* =================================================
+                   BOTTOM NAVIGATION
+                ================================================= */
+
+                .bottom-navigation {
+
+                    position:
+                        fixed;
+
+                    left:
+                        50%;
+
+                    bottom:
+                        12px;
+
+                    transform:
+                        translateX(-50%);
+
+                    z-index:
+                        100;
+
+                    width:
+                        min(
+                            850px,
+                            calc(
+                                100% - 30px
+                            )
+                        );
+
+                    height:
+                        76px;
 
                     display:
-                        block;
+                        grid;
 
-                    margin-top:
-                        2px;
+                    grid-template-columns:
+                        repeat(
+                            4,
+                            1fr
+                        );
+
+                    align-items:
+                        center;
+
+                    padding:
+                        5px;
+
+                    background:
+                        rgba(
+                            255,
+                            255,
+                            255,
+                            0.96
+                        );
+
+                    border:
+                        1px solid
+                        #eeeeee;
+
+                    border-radius:
+                        18px;
+
+                    box-shadow:
+                        0
+                        12px
+                        35px
+                        rgba(
+                            0,
+                            0,
+                            0,
+                            0.12
+                        );
+
+                    backdrop-filter:
+                        blur(12px);
+
+                }
+
+
+                .nav-item {
+
+                    height:
+                        66px;
+
+                    display:
+                        flex;
+
+                    flex-direction:
+                        column;
+
+                    align-items:
+                        center;
+
+                    justify-content:
+                        center;
+
+                    gap:
+                        5px;
+
+                    border:
+                        none;
+
+                    background:
+                        transparent;
 
                     color:
-                        #aaa;
+                        #aaaaaa;
+
+                    cursor:
+                        pointer;
+
+                    border-radius:
+                        14px;
+
+                    transition:
+                        0.2s ease;
+
+                }
+
+
+                .nav-item span {
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    justify-content:
+                        center;
 
                     font-size:
-                        8px;
+                        23px;
+
+                }
+
+
+                .nav-item small {
+
+                    font-size:
+                        11px;
 
                     font-weight:
-                        500;
+                        600;
+
+                }
+
+
+                .nav-item.active {
+
+                    color:
+                        #ff7818;
+
+                }
+
+
+                .nav-item:hover {
+
+                    color:
+                        #ff7818;
+
+                    background:
+                        #fff6f0;
+
                 }
 
 
@@ -1687,6 +1718,26 @@ const Dashboard = () => {
 
                     backdrop-filter:
                         blur(5px);
+
+                    animation:
+                        logoutFadeIn
+                        0.2s ease;
+
+                }
+
+
+                @keyframes logoutFadeIn {
+
+                    from {
+                        opacity:
+                            0;
+                    }
+
+                    to {
+                        opacity:
+                            1;
+                    }
+
                 }
 
 
@@ -1698,17 +1749,17 @@ const Dashboard = () => {
                     max-width:
                         390px;
 
-                    background:
-                        #ffffff;
-
-                    border-radius:
-                        20px;
-
                     padding:
                         28px;
 
                     text-align:
                         center;
+
+                    background:
+                        #ffffff;
+
+                    border-radius:
+                        20px;
 
                     box-shadow:
                         0
@@ -1720,6 +1771,7 @@ const Dashboard = () => {
                             0,
                             0.20
                         );
+
                 }
 
 
@@ -1732,7 +1784,9 @@ const Dashboard = () => {
                         60px;
 
                     margin:
-                        0 auto 16px;
+                        0
+                        auto
+                        16px;
 
                     display:
                         flex;
@@ -1754,32 +1808,39 @@ const Dashboard = () => {
 
                     font-size:
                         28px;
+
                 }
 
 
                 .logout-modal h2 {
 
                     margin:
-                        0 0 8px;
+                        0
+                        0
+                        8px;
 
                     font-size:
                         20px;
+
                 }
 
 
                 .logout-modal p {
 
                     margin:
-                        0 0 22px;
+                        0
+                        0
+                        22px;
 
                     color:
-                        #777;
+                        #777777;
 
                     font-size:
                         13px;
 
                     line-height:
                         1.5;
+
                 }
 
 
@@ -1789,10 +1850,12 @@ const Dashboard = () => {
                         grid;
 
                     grid-template-columns:
-                        1fr 1fr;
+                        1fr
+                        1fr;
 
                     gap:
                         10px;
+
                 }
 
 
@@ -1808,11 +1871,15 @@ const Dashboard = () => {
                     border-radius:
                         9px;
 
+                    font-size:
+                        12px;
+
                     font-weight:
                         700;
 
                     cursor:
                         pointer;
+
                 }
 
 
@@ -1822,7 +1889,16 @@ const Dashboard = () => {
                         #f1f1f1;
 
                     color:
-                        #555;
+                        #555555;
+
+                }
+
+
+                .logout-cancel-button:hover {
+
+                    background:
+                        #e6e6e6;
+
                 }
 
 
@@ -1833,6 +1909,15 @@ const Dashboard = () => {
 
                     color:
                         #ffffff;
+
+                }
+
+
+                .logout-confirm-button:hover {
+
+                    background:
+                        #c43f3b;
+
                 }
 
 
@@ -1840,19 +1925,34 @@ const Dashboard = () => {
                    TABLET
                 ================================================= */
 
-                @media (max-width: 900px) {
+                @media (
+                    max-width: 800px
+                ) {
 
                     .welcome-section {
 
-                        padding:
-                            40px 30px;
+                        margin:
+                            22px
+                            22px
+                            25px;
+
                     }
 
 
                     .quick-actions {
 
-                        gap:
-                            15px;
+                        grid-template-columns:
+                            repeat(
+                                2,
+                                1fr
+                            );
+
+                        padding-left:
+                            22px;
+
+                        padding-right:
+                            22px;
+
                     }
 
 
@@ -1864,32 +1964,7 @@ const Dashboard = () => {
 
                         padding-right:
                             22px;
-                    }
 
-
-                    .popular-routes {
-
-                        max-width:
-                            650px;
-
-                        grid-template-columns:
-                            repeat(
-                                2,
-                                minmax(
-                                    0,
-                                    1fr
-                                )
-                            );
-
-                        gap:
-                            16px;
-                    }
-
-
-                    .popular-route {
-
-                        min-height:
-                            130px;
                     }
 
                 }
@@ -1899,12 +1974,15 @@ const Dashboard = () => {
                    MOBILE
                 ================================================= */
 
-                @media (max-width: 600px) {
+                @media (
+                    max-width: 600px
+                ) {
 
                     .dashboard-page {
 
                         padding-bottom:
-                            80px;
+                            95px;
+
                     }
 
 
@@ -1914,7 +1992,9 @@ const Dashboard = () => {
                             64px;
 
                         padding:
-                            0 16px;
+                            0
+                            16px;
+
                     }
 
 
@@ -1925,6 +2005,7 @@ const Dashboard = () => {
 
                         height:
                             48px;
+
                     }
 
 
@@ -1935,11 +2016,12 @@ const Dashboard = () => {
 
                         height:
                             38px;
+
                     }
 
 
                     .welcome-section {
-                    
+
                         margin:
                             18px
                             16px
@@ -1955,15 +2037,18 @@ const Dashboard = () => {
 
                         border-radius:
                             18px;
-                            
+
+                        background-position:
+                            center center;
+
                     }
-                            
 
 
                     .welcome-section h1 {
 
                         font-size:
                             30px;
+
                     }
 
 
@@ -1971,6 +2056,7 @@ const Dashboard = () => {
 
                         font-size:
                             14px;
+
                     }
 
 
@@ -1981,6 +2067,7 @@ const Dashboard = () => {
 
                         max-width:
                             230px;
+
                     }
 
 
@@ -1993,6 +2080,7 @@ const Dashboard = () => {
                             0
                             16px
                             30px;
+
                     }
 
 
@@ -2000,6 +2088,7 @@ const Dashboard = () => {
 
                         min-height:
                             125px;
+
                     }
 
 
@@ -2011,6 +2100,7 @@ const Dashboard = () => {
 
                         padding-right:
                             16px;
+
                     }
 
 
@@ -2019,6 +2109,7 @@ const Dashboard = () => {
 
                         font-size:
                             19px;
+
                     }
 
 
@@ -2026,6 +2117,7 @@ const Dashboard = () => {
 
                         margin-bottom:
                             14px;
+
                     }
 
 
@@ -2033,6 +2125,7 @@ const Dashboard = () => {
 
                         font-size:
                             10px;
+
                     }
 
 
@@ -2046,6 +2139,7 @@ const Dashboard = () => {
 
                         gap:
                             13px;
+
                     }
 
 
@@ -2056,6 +2150,7 @@ const Dashboard = () => {
 
                         padding:
                             18px;
+
                     }
 
 
@@ -2063,6 +2158,7 @@ const Dashboard = () => {
 
                         font-size:
                             14px;
+
                     }
 
 
@@ -2070,6 +2166,7 @@ const Dashboard = () => {
 
                         font-size:
                             10px;
+
                     }
 
 
@@ -2080,6 +2177,7 @@ const Dashboard = () => {
 
                         right:
                             18px;
+
                     }
 
 
@@ -2090,6 +2188,93 @@ const Dashboard = () => {
                                 2,
                                 1fr
                             );
+
+                    }
+
+
+                    .bottom-navigation {
+
+                        bottom:
+                            10px;
+
+                        width:
+                            calc(
+                                100% - 20px
+                            );
+
+                        height:
+                            72px;
+
+                        padding:
+                            4px
+                            7px;
+
+                        border-radius:
+                            17px;
+
+                    }
+
+
+                    .nav-item {
+
+                        height:
+                            62px;
+
+                    }
+
+
+                    .nav-item span {
+
+                        font-size:
+                            23px;
+
+                    }
+
+
+                    .nav-item small {
+
+                        font-size:
+                            10px;
+
+                    }
+
+                }
+
+
+                /* =================================================
+                   VERY SMALL PHONES
+                ================================================= */
+
+                @media (
+                    max-width: 380px
+                ) {
+
+                    .bottom-navigation {
+
+                        width:
+                            calc(
+                                100% - 14px
+                            );
+
+                        bottom:
+                            7px;
+
+                    }
+
+
+                    .nav-item span {
+
+                        font-size:
+                            21px;
+
+                    }
+
+
+                    .nav-item small {
+
+                        font-size:
+                            9px;
+
                     }
 
                 }
@@ -2149,15 +2334,8 @@ const Dashboard = () => {
                         </h1>
 
                         <p>
-                            Travel smarter and
-                            explore Guimaras with ease.
+                            Your Gateway to Island Adventures
                         </p>
-
-
-                        {/* =================================================
-                           IMPORTANT:
-                           Book a Trip → /trips
-                        ================================================= */}
 
                         <button
                             type="button"
@@ -2180,49 +2358,11 @@ const Dashboard = () => {
                         className="quick-actions"
                     >
 
-
-                        {/* MY BOOKINGS */}
-
                         <button
                             type="button"
                             className="feature-card"
-                            onClick={() =>
-                                navigate(
-                                    "/bookings"
-                                )
-                            }
-                        >
-
-                            <span
-                                className="feature-icon"
-                            >
-                                🎫
-                            </span>
-
-                            <span
-                                className="feature-title"
-                            >
-                                My Bookings
-                            </span>
-
-                            <span
-                                className="feature-description"
-                            >
-                                View your reservations
-                            </span>
-
-                        </button>
-
-
-                        {/* AVAILABLE TRIPS */}
-
-                        <button
-                            type="button"
-                            className="feature-card"
-                            onClick={() =>
-                                navigate(
-                                    "/trips"
-                                )
+                            onClick={
+                                goToBooking
                             }
                         >
 
@@ -2232,20 +2372,40 @@ const Dashboard = () => {
                                 ⛴️
                             </span>
 
-                            <span
-                                className="feature-title"
-                            >
-                                Available Trips
-                            </span>
+                            <strong>
+                                Book a Trip
+                            </strong>
 
-                            <span
-                                className="feature-description"
-                            >
-                                Check available ferries
+                            <span>
+                                Choose your route
                             </span>
 
                         </button>
 
+
+                        <button
+                            type="button"
+                            className="feature-card"
+                            onClick={
+                                viewAllBookings
+                            }
+                        >
+
+                            <span
+                                className="feature-icon"
+                            >
+                                🎫
+                            </span>
+
+                            <strong>
+                                My Bookings
+                            </strong>
+
+                            <span>
+                                View your tickets
+                            </span>
+
+                        </button>
 
                     </section>
 
@@ -2266,14 +2426,13 @@ const Dashboard = () => {
                                 Recent Bookings
                             </h2>
 
-
                             <button
                                 type="button"
                                 onClick={
                                     viewAllBookings
                                 }
                             >
-                                View All
+                                See All
                             </button>
 
                         </div>
@@ -2282,200 +2441,177 @@ const Dashboard = () => {
                         {recentBookings.length === 0 ? (
 
                             <div
-                                className="no-bookings"
+                                className="recent-empty"
                             >
-
-                                <div
-                                    className="empty-icon"
-                                >
-                                    🎫
-                                </div>
-
-
-                                <h3>
-                                    No Recent Bookings
-                                </h3>
-
-
-                                <p>
-                                    You don't have any
-                                    recent bookings yet.
-                                </p>
-
-
-                                <button
-                                    type="button"
-                                    onClick={
-                                        goToBooking
-                                    }
-                                >
-                                    Book a Trip
-                                </button>
-
+                                No bookings yet
                             </div>
 
                         ) : (
 
                             <div
-                                className="booking-list"
+                                className="recent-list"
                             >
 
                                 {recentBookings.map(
                                     (
                                         booking,
                                         index
-                                    ) => (
+                                    ) => {
 
-                                    <div
-                                        className="recent-booking-card"
-                                        key={
-                                            booking.bookingReference ||
-                                            index
-                                        }
-                                    >
+                                        const status =
+                                            (
+                                                booking.status ||
+                                                "PENDING"
+                                            ).toUpperCase();
 
-
-                                        {/* TOP */}
-
-                                        <div
-                                            className="booking-top"
-                                        >
-
-                                            <div>
-
-                                                <strong>
-                                                    {
-                                                        booking.origin ||
-                                                        "Iloilo"
-                                                    }
-
-                                                    {" → "}
-
-                                                    {
-                                                        booking.destination ||
-                                                        "Guimaras"
-                                                    }
-                                                </strong>
-
-
-                                                <span
-                                                    className="booking-reference"
-                                                >
-                                                    {
-                                                        booking.bookingReference ||
-                                                        "Booking"
-                                                    }
-                                                </span>
-
-                                            </div>
-
-
-                                            <span
-                                                className="confirmed"
-                                            >
-                                                {
-                                                    booking.status ||
-                                                    "CONFIRMED"
-                                                }
-                                            </span>
-
-                                        </div>
-
-
-                                        {/* INFORMATION */}
-
-                                        <div
-                                            className="booking-info"
-                                        >
-
-                                            <div>
-
-                                                <small>
-                                                    Date
-                                                </small>
-
-                                                <strong>
-                                                    {
-                                                        booking.date ||
-                                                        "N/A"
-                                                    }
-                                                </strong>
-
-                                            </div>
-
-
-                                            <div>
-
-                                                <small>
-                                                    Departure
-                                                </small>
-
-                                                <strong>
-                                                    {
-                                                        booking.time ||
-                                                        "N/A"
-                                                    }
-                                                </strong>
-
-                                            </div>
-
-
-                                            <div>
-
-                                                <small>
-                                                    Vehicle
-                                                </small>
-
-                                                <strong>
-                                                    {
-                                                        booking.vehicleType ||
-                                                        booking.vehicle ||
-                                                        "Motorcycle"
-                                                    }
-                                                </strong>
-
-                                            </div>
-
-                                        </div>
-
-
-                                        {/* BOTTOM */}
-
-                                        <div
-                                            className="booking-bottom"
-                                        >
-
-                                            <strong>
-                                                ₱
-                                                {
-                                                    Number(
-                                                        booking.totalFare ||
-                                                        booking.totalPaid ||
-                                                        0
-                                                    ).toFixed(
-                                                        2
-                                                    )
-                                                }
-                                            </strong>
-
+                                        return (
 
                                             <button
                                                 type="button"
-                                                className="view-booking-button"
+                                                className="booking-card"
+                                                key={
+                                                    booking.bookingReference ||
+                                                    index
+                                                }
                                                 onClick={() =>
                                                     viewBooking(
                                                         booking
                                                     )
                                                 }
                                             >
-                                                View Booking
+
+                                                <div
+                                                    className="booking-top"
+                                                >
+
+                                                    <div
+                                                        className="booking-route"
+                                                    >
+
+                                                        <span
+                                                            className="booking-icon"
+                                                        >
+                                                            ⛴️
+                                                        </span>
+
+                                                        <div>
+
+                                                            <strong>
+                                                                {
+                                                                    booking.origin ||
+                                                                    "Iloilo"
+                                                                }
+
+                                                                {" → "}
+
+                                                                {
+                                                                    booking.destination ||
+                                                                    "Guimaras"
+                                                                }
+                                                            </strong>
+
+                                                            <span
+                                                                className="booking-reference"
+                                                            >
+                                                                {
+                                                                    booking.bookingReference ||
+                                                                    "Booking Reference"
+                                                                }
+                                                            </span>
+
+                                                        </div>
+
+                                                    </div>
+
+
+                                                    <span
+                                                        className="booking-status"
+                                                    >
+                                                        {status}
+                                                    </span>
+
+                                                </div>
+
+
+                                                <div
+                                                    className="booking-info"
+                                                >
+
+                                                    <div>
+
+                                                        <small>
+                                                            Date
+                                                        </small>
+
+                                                        <strong>
+                                                            {
+                                                                booking.date ||
+                                                                "N/A"
+                                                            }
+                                                        </strong>
+
+                                                    </div>
+
+
+                                                    <div>
+
+                                                        <small>
+                                                            Departure
+                                                        </small>
+
+                                                        <strong>
+                                                            {
+                                                                booking.time ||
+                                                                "N/A"
+                                                            }
+                                                        </strong>
+
+                                                    </div>
+
+
+                                                    <div>
+
+                                                        <small>
+                                                            Passengers
+                                                        </small>
+
+                                                        <strong>
+                                                            {
+                                                                booking.passengers ||
+                                                                booking.numberOfPassengers ||
+                                                                1
+                                                            }
+                                                        </strong>
+
+                                                    </div>
+
+
+                                                    <div>
+
+                                                        <small>
+                                                            Total
+                                                        </small>
+
+                                                        <strong>
+                                                            ₱
+                                                            {Number(
+                                                                booking.totalFare ||
+                                                                0
+                                                            ).toFixed(
+                                                                2
+                                                            )}
+                                                        </strong>
+
+                                                    </div>
+
+                                                </div>
+
                                             </button>
 
-                                        </div>
+                                        );
 
-                                    </div>
-
-                                ))}
+                                    }
+                                )}
 
                             </div>
 
@@ -2497,12 +2633,8 @@ const Dashboard = () => {
                         >
 
                             <h2>
-                                Popular Routes
+                                Popular Ferry Routes
                             </h2>
-
-                            <span>
-                                GuimarasGo Ferry Routes
-                            </span>
 
                         </div>
 
@@ -2517,76 +2649,176 @@ const Dashboard = () => {
                                     index
                                 ) => (
 
-                                <button
-                                    type="button"
-                                    className="popular-route"
-                                    key={index}
-                                    onClick={() =>
-                                        navigate(
-                                            "/trips"
-                                        )
-                                    }
-                                >
-
-                                    <div
-                                        className="route-icon"
-                                    >
-                                        {
-                                            route.icon
+                                    <button
+                                        type="button"
+                                        className="popular-route"
+                                        key={
+                                            `${route.origin}-${route.destination}-${index}`
                                         }
-                                    </div>
-
-
-                                    <div
-                                        className="route-name"
+                                        onClick={
+                                            goToBooking
+                                        }
                                     >
 
-                                        {
-                                            route.origin
-                                        }
-
-                                        {" → "}
-
-                                        {
-                                            route.destination
-                                        }
-
-                                    </div>
+                                        <div
+                                            className="route-icon"
+                                        >
+                                            {route.icon}
+                                        </div>
 
 
-                                    <div
-                                        className="route-duration"
-                                    >
-                                        Travel time:
-                                        {" "}
-                                        {
-                                            route.duration
-                                        }
-                                    </div>
+                                        <div
+                                            className="route-name"
+                                        >
+                                            {route.origin}
+                                            {" → "}
+                                            {route.destination}
+                                        </div>
 
 
-                                    <div
-                                        className="route-fare"
-                                    >
+                                        <div
+                                            className="route-duration"
+                                        >
+                                            {route.duration}
+                                        </div>
 
-                                        {
-                                            route.fare
-                                        }
 
-                                        <small>
-                                            Starting fare
-                                        </small>
+                                        <div
+                                            className="route-fare"
+                                        >
+                                            {route.fare}
+                                        </div>
 
-                                    </div>
+                                    </button>
 
-                                </button>
-
-                            ))}
+                                )
+                            )}
 
                         </div>
 
                     </section>
 
+
+                    {/* =================================================
+                       FOOTER
+                    ================================================= */}
+
+                    <footer
+                        className="dashboard-footer"
+                    >
+
+                        <span>
+                            GuimarasGo
+                        </span>
+
+                        <span>
+                            Travel Smarter Across Guimaras
+                        </span>
+
+                    </footer>
+
+
+                    {/* =================================================
+                       BOTTOM NAVIGATION
+                    ================================================= */}
+
+                    <nav
+                        className="bottom-navigation"
+                        aria-label="Main navigation"
+                    >
+
+                        {/* HOME */}
+
+                        <button
+                            type="button"
+                            className="nav-item active"
+                            onClick={() =>
+                                navigate(
+                                    "/dashboard"
+                                )
+                            }
+                        >
+
+                            <span>
+                                <FaHome />
+                            </span>
+
+                            <small>
+                                Home
+                            </small>
+
+                        </button>
+
+
+                        {/* SEARCH */}
+
+                        <button
+                            type="button"
+                            className="nav-item"
+                            onClick={() =>
+                                navigate(
+                                    "/trips"
+                                )
+                            }
+                        >
+
+                            <span>
+                                <FaSearch />
+                            </span>
+
+                            <small>
+                                Search
+                            </small>
+
+                        </button>
+
+
+                        {/* TICKETS */}
+
+                        <button
+                            type="button"
+                            className="nav-item"
+                            onClick={() =>
+                                navigate(
+                                    "/bookings"
+                                )
+                            }
+                        >
+
+                            <span>
+                                <FaTicketAlt />
+                            </span>
+
+                            <small>
+                                Tickets
+                            </small>
+
+                        </button>
+
+
+                        {/* PROFILE */}
+
+                        <button
+                            type="button"
+                            className="nav-item"
+                            onClick={() =>
+                                navigate(
+                                    "/profile"
+                                )
+                            }
+                        >
+
+                            <span>
+                                <FaUser />
+                            </span>
+
+                            <small>
+                                Profile
+                            </small>
+
+                        </button>
+
+                    </nav>
 
                 </div>
 
@@ -2608,9 +2840,7 @@ const Dashboard = () => {
 
                     <div
                         className="logout-modal"
-                        onClick={(
-                            event
-                        ) =>
+                        onClick={(event) =>
                             event.stopPropagation()
                         }
                     >
@@ -2628,9 +2858,8 @@ const Dashboard = () => {
 
 
                         <p>
-                            Are you sure you want
-                            to log out of your
-                            GuimarasGo account?
+                            Are you sure you want to
+                            logout from GuimarasGo?
                         </p>
 
 
@@ -2656,7 +2885,7 @@ const Dashboard = () => {
                                     handleConfirmLogout
                                 }
                             >
-                                Logout
+                                Yes, Logout
                             </button>
 
                         </div>
@@ -2668,9 +2897,7 @@ const Dashboard = () => {
             )}
 
         </>
-
     );
-
 };
 
 
