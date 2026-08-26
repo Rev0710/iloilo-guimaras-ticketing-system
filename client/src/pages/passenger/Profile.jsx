@@ -3190,6 +3190,697 @@ textarea {
     }
 }
 
+/* =========================================================
+   CHANGE PASSWORD MODAL
+   UI ONLY
+========================================================= */
+
+.password-change-overlay {
+    background:
+        rgba(25, 23, 21, 0.52);
+
+    backdrop-filter:
+        blur(7px);
+
+    -webkit-backdrop-filter:
+        blur(7px);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 20px;
+}
+
+
+/* =========================================================
+   MAIN PASSWORD MODAL
+========================================================= */
+
+.password-change-modal {
+
+    width: 100%;
+
+    max-width: 420px;
+
+    max-height: 92vh;
+
+    overflow-y: auto;
+
+    background:
+        linear-gradient(
+            180deg,
+            #fff8f0 0%,
+            #fff0df 100%
+        );
+
+    border-radius: 16px;
+
+    box-shadow:
+        0 25px 70px
+        rgba(0, 0, 0, 0.25);
+
+    overflow: hidden;
+
+    animation:
+        passwordModalIn
+        0.22s ease-out;
+}
+
+
+@keyframes passwordModalIn {
+
+    from {
+        opacity: 0;
+
+        transform:
+            translateY(15px)
+            scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+
+        transform:
+            translateY(0)
+            scale(1);
+    }
+
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.password-change-header {
+
+    position: relative;
+
+    height: 58px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background:
+        linear-gradient(
+            180deg,
+            #fffaf5,
+            #fff3e7
+        );
+
+    border-bottom:
+        1px solid
+        rgba(255, 160, 95, 0.15);
+}
+
+
+.password-change-header h2 {
+
+    margin: 0;
+
+    color: #171717;
+
+    font-size: 16px;
+
+    font-weight: 500;
+
+    line-height: 1;
+}
+
+
+.password-back-button {
+
+    position: absolute;
+
+    left: 15px;
+
+    top: 50%;
+
+    transform:
+        translateY(-50%);
+
+    width: 34px;
+
+    height: 34px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border: none;
+
+    background: transparent;
+
+    color: #333;
+
+    font-size: 22px;
+
+    font-weight: 400;
+
+    cursor: pointer;
+
+    border-radius: 50%;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+
+.password-back-button:hover {
+
+    background:
+        rgba(255, 120, 24, 0.10);
+
+    color:
+        #ff7417;
+}
+
+
+/* =========================================================
+   BODY
+========================================================= */
+
+.password-change-body {
+
+    padding:
+        20px 22px 22px;
+
+}
+
+
+/* =========================================================
+   FORM GROUP
+========================================================= */
+
+.password-field-group {
+
+    margin-bottom: 17px;
+
+}
+
+
+.password-field-group label {
+
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #444;
+
+    font-size: 11px;
+
+    font-weight: 400;
+
+}
+
+
+.password-field-group input {
+
+    width: 100%;
+
+    height: 43px;
+
+    padding:
+        0 12px;
+
+    border:
+        1px solid
+        #d9d9d9;
+
+    border-radius: 7px;
+
+    outline: none;
+
+    background:
+        #ffffff;
+
+    color: #222;
+
+    font-size: 12px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.password-field-group input::placeholder {
+
+    color:
+        #888;
+}
+
+
+.password-field-group input:focus {
+
+    border-color:
+        #ff8a3d;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(255, 116, 23, 0.10);
+}
+
+
+/* =========================================================
+   PASSWORD STRENGTH
+========================================================= */
+
+.password-strength {
+
+    margin-top: -7px;
+
+    margin-bottom: 20px;
+
+}
+
+
+.strength-bars {
+
+    display: flex;
+
+    gap: 4px;
+
+    width: 100%;
+
+    margin-bottom: 5px;
+}
+
+
+.strength-bars span {
+
+    flex: 1;
+
+    height: 3px;
+
+    border-radius: 5px;
+
+    background:
+        #dedede;
+
+    transition:
+        background 0.2s ease;
+}
+
+
+.strength-bars span.strength-active {
+
+    background:
+        #ff7417;
+}
+
+
+.strength-label {
+
+    display: block;
+
+    margin-bottom: 6px;
+
+    color:
+        #858585;
+
+    font-size: 9px;
+
+}
+
+
+/* =========================================================
+   PASSWORD REQUIREMENTS
+========================================================= */
+
+.password-requirements {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 3px;
+
+}
+
+
+.password-requirements div {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    color:
+        #777;
+
+    font-size: 9px;
+
+    line-height: 1.35;
+}
+
+
+.password-requirements div span:first-child {
+
+    color:
+        #999;
+
+    font-size: 9px;
+
+}
+
+
+/* =========================================================
+   CONFIRM PASSWORD
+========================================================= */
+
+.confirm-password-group {
+
+    margin-top: 2px;
+
+    margin-bottom: 17px;
+
+}
+
+
+/* =========================================================
+   ERROR / INFORMATION MESSAGE
+========================================================= */
+
+.password-modal-message {
+
+    width: 100%;
+
+    padding:
+        9px 11px;
+
+    margin-bottom: 12px;
+
+    border-radius: 7px;
+
+    background:
+        #fff1eb;
+
+    border:
+        1px solid
+        #ffd3c2;
+
+    color:
+        #c94e19;
+
+    font-size: 10px;
+
+    line-height: 1.4;
+}
+
+
+/* =========================================================
+   UPDATE PASSWORD BUTTON
+========================================================= */
+
+.password-update-button {
+
+    width: 100%;
+
+    height: 43px;
+
+    border: none;
+
+    border-radius: 7px;
+
+    background:
+        #171717;
+
+    color:
+        #ffffff;
+
+    font-size: 12px;
+
+    font-weight: 500;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.password-update-button:hover {
+
+    background:
+        #292929;
+
+    transform:
+        translateY(-1px);
+
+    box-shadow:
+        0 7px 15px
+        rgba(0, 0, 0, 0.15);
+}
+
+
+.password-update-button:active {
+
+    transform:
+        translateY(0);
+
+}
+
+
+/* =========================================================
+   SECURITY TIPS
+========================================================= */
+
+.security-tips {
+
+    margin-top: 20px;
+
+    padding:
+        13px 14px;
+
+    background:
+        #ffffff;
+
+    border-radius: 7px;
+
+    box-shadow:
+        0 2px 8px
+        rgba(0, 0, 0, 0.04);
+}
+
+
+.security-tips-title {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-bottom: 8px;
+
+    color:
+        #444;
+
+    font-size: 10px;
+
+    font-weight: 500;
+}
+
+
+.security-shield {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 15px;
+
+    height: 15px;
+
+    color:
+        #555;
+
+    font-size: 13px;
+}
+
+
+.security-tips ul {
+
+    margin:
+        0;
+
+    padding-left:
+        18px;
+}
+
+
+.security-tips li {
+
+    margin-bottom: 4px;
+
+    color:
+        #666;
+
+    font-size: 9px;
+
+    line-height: 1.4;
+}
+
+
+.security-tips li:last-child {
+
+    margin-bottom: 0;
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 480px) {
+
+    .password-change-overlay {
+
+        padding: 0;
+
+        align-items: center;
+
+    }
+
+
+    .password-change-modal {
+
+        width: calc(100vw - 30px);
+
+        max-width: 340px;
+
+        max-height: 94vh;
+
+        border-radius: 0;
+
+    }
+
+
+    .password-change-header {
+
+        height: 55px;
+
+    }
+
+
+    .password-change-header h2 {
+
+        font-size: 15px;
+
+    }
+
+
+    .password-change-body {
+
+        padding:
+            19px 12px 20px;
+
+    }
+
+
+    .password-field-group {
+
+        margin-bottom: 15px;
+
+    }
+
+
+    .password-field-group input {
+
+        height: 40px;
+
+        font-size: 11px;
+
+    }
+
+
+    .password-update-button {
+
+        height: 40px;
+
+        font-size: 11px;
+
+    }
+
+
+    .security-tips {
+
+        margin-top: 18px;
+
+        padding:
+            12px;
+
+    }
+
+}
+
+
+/* =========================================================
+   VERY SMALL MOBILE
+========================================================= */
+
+@media (max-width: 360px) {
+
+    .password-change-modal {
+
+        width: calc(100vw - 28px);
+
+    }
+
+
+    .password-change-body {
+
+        padding:
+            17px 11px 18px;
+
+    }
+
+
+    .password-field-group label {
+
+        font-size: 10px;
+
+    }
+
+
+    .password-field-group input {
+
+        height: 39px;
+
+    }
+
+
+    .password-requirements div {
+
+        font-size: 8px;
+
+    }
+
+
+    .security-tips li {
+
+        font-size: 8px;
+
+    }
+
+}
+    
 `}</style>
 
 
@@ -3770,157 +4461,295 @@ textarea {
 
             )}
 
-
             {/* =========================================================
-               SETTINGS MODAL
-            ========================================================= */}
+   CHANGE PASSWORD MODAL
+========================================================= */}
 
-            {activeModal === "settings" && (
+{activeModal === "settings" && (
 
-                <div
-                    className="profile-modal-overlay"
-                    onMouseDown={handleBackdropClick}
+    <div
+        className="profile-modal-overlay password-change-overlay"
+        onMouseDown={handleBackdropClick}
+    >
+
+        <div className="password-change-modal">
+
+            {/* =================================================
+               HEADER
+            ================================================= */}
+
+            <div className="password-change-header">
+
+                <button
+                    type="button"
+                    className="password-back-button"
+                    onClick={closeModal}
+                    aria-label="Back"
                 >
+                    ←
+                </button>
 
-                    <div className="profile-modal">
+                <h2>
+                    Change Password
+                </h2>
 
-                        <div className="profile-modal-header">
+            </div>
 
-                            <h2>
-                                Settings
-                            </h2>
 
-                            <button
-                                type="button"
-                                className="profile-modal-close"
-                                onClick={closeModal}
-                            >
-                                ×
-                            </button>
+            {/* =================================================
+               FORM
+            ================================================= */}
 
+            <form
+                className="password-change-body"
+                onSubmit={handleChangePassword}
+            >
+
+                {/* CURRENT PASSWORD */}
+
+                <div className="password-field-group">
+
+                    <label>
+                        Current Password
+                    </label>
+
+                    <input
+                        type="password"
+                        value={
+                            passwordForm.currentPassword
+                        }
+                        onChange={(event) =>
+                            setPasswordForm({
+                                ...passwordForm,
+                                currentPassword:
+                                    event.target.value,
+                            })
+                        }
+                        placeholder="Enter current password"
+                    />
+
+                </div>
+
+
+                {/* NEW PASSWORD */}
+
+                <div className="password-field-group">
+
+                    <label>
+                        New Password
+                    </label>
+
+                    <input
+                        type="password"
+                        value={
+                            passwordForm.newPassword
+                        }
+                        onChange={(event) =>
+                            setPasswordForm({
+                                ...passwordForm,
+                                newPassword:
+                                    event.target.value,
+                            })
+                        }
+                        placeholder="Enter new password"
+                    />
+
+                </div>
+
+
+                {/* PASSWORD STRENGTH */}
+
+                <div className="password-strength">
+
+                    <div className="strength-bars">
+
+                        <span
+                            className={
+                                passwordForm.newPassword.length >= 1
+                                    ? "strength-active"
+                                    : ""
+                            }
+                        />
+
+                        <span
+                            className={
+                                passwordForm.newPassword.length >= 4
+                                    ? "strength-active"
+                                    : ""
+                            }
+                        />
+
+                        <span
+                            className={
+                                passwordForm.newPassword.length >= 8
+                                    ? "strength-active"
+                                    : ""
+                            }
+                        />
+
+                        <span
+                            className={
+                                passwordForm.newPassword.length >= 12
+                                    ? "strength-active"
+                                    : ""
+                            }
+                        />
+
+                    </div>
+
+
+                    <span className="strength-label">
+                        Password strength:{" "}
+
+                        {passwordForm.newPassword.length === 0
+                            ? "Weak"
+                            : passwordForm.newPassword.length < 8
+                            ? "Weak"
+                            : passwordForm.newPassword.length < 12
+                            ? "Medium"
+                            : "Strong"
+                        }
+                    </span>
+
+
+                    {/* PASSWORD REQUIREMENTS */}
+
+                    <div className="password-requirements">
+
+                        <div>
+                            <span>
+                                ●
+                            </span>
+
+                            <span>
+                                At least 8 characters
+                            </span>
                         </div>
 
+                        <div>
+                            <span>
+                                ●
+                            </span>
 
-                        <form
-                            className="profile-modal-body"
-                            onSubmit={
-                                handleChangePassword
-                            }
-                        >
+                            <span>
+                                One uppercase letter
+                            </span>
+                        </div>
 
-                            <p className="profile-modal-description">
-                                Manage your account security and
-                                change your password.
-                            </p>
+                        <div>
+                            <span>
+                                ●
+                            </span>
 
+                            <span>
+                                One number
+                            </span>
+                        </div>
 
-                            <div className="profile-form-group">
+                        <div>
+                            <span>
+                                ●
+                            </span>
 
-                                <label>
-                                    Current Password
-                                </label>
-
-                                <input
-                                    type="password"
-                                    value={
-                                        passwordForm.currentPassword
-                                    }
-                                    onChange={(event) =>
-                                        setPasswordForm({
-                                            ...passwordForm,
-                                            currentPassword:
-                                                event.target.value,
-                                        })
-                                    }
-                                    placeholder="Current password"
-                                />
-
-                            </div>
-
-
-                            <div className="profile-form-group">
-
-                                <label>
-                                    New Password
-                                </label>
-
-                                <input
-                                    type="password"
-                                    value={
-                                        passwordForm.newPassword
-                                    }
-                                    onChange={(event) =>
-                                        setPasswordForm({
-                                            ...passwordForm,
-                                            newPassword:
-                                                event.target.value,
-                                        })
-                                    }
-                                    placeholder="At least 8 characters"
-                                />
-
-                            </div>
-
-
-                            <div className="profile-form-group">
-
-                                <label>
-                                    Confirm New Password
-                                </label>
-
-                                <input
-                                    type="password"
-                                    value={
-                                        passwordForm.confirmPassword
-                                    }
-                                    onChange={(event) =>
-                                        setPasswordForm({
-                                            ...passwordForm,
-                                            confirmPassword:
-                                                event.target.value,
-                                        })
-                                    }
-                                    placeholder="Confirm new password"
-                                />
-
-                            </div>
-
-
-                            {modalMessage && (
-
-                                <div className="logout-warning">
-                                    {modalMessage}
-                                </div>
-
-                            )}
-
-
-                            <div className="profile-modal-actions">
-
-                                <button
-                                    type="button"
-                                    className="modal-button secondary"
-                                    onClick={closeModal}
-                                >
-                                    Cancel
-                                </button>
-
-                                <button
-                                    type="submit"
-                                    className="modal-button primary"
-                                >
-                                    Update Password
-                                </button>
-
-                            </div>
-
-                        </form>
+                            <span>
+                                One special character
+                            </span>
+                        </div>
 
                     </div>
 
                 </div>
 
-            )}
+
+                {/* CONFIRM PASSWORD */}
+
+                <div className="password-field-group confirm-password-group">
+
+                    <label>
+                        Confirm New Password
+                    </label>
+
+                    <input
+                        type="password"
+                        value={
+                            passwordForm.confirmPassword
+                        }
+                        onChange={(event) =>
+                            setPasswordForm({
+                                ...passwordForm,
+                                confirmPassword:
+                                    event.target.value,
+                            })
+                        }
+                        placeholder="Confirm new password"
+                    />
+
+                </div>
+
+
+                {/* EXISTING MESSAGE */}
+
+                {modalMessage && (
+
+                    <div className="password-modal-message">
+                        {modalMessage}
+                    </div>
+
+                )}
+
+
+                {/* UPDATE BUTTON */}
+
+                <button
+                    type="submit"
+                    className="password-update-button"
+                >
+                    Update Password
+                </button>
+
+
+                {/* SECURITY TIPS */}
+
+                <div className="security-tips">
+
+                    <div className="security-tips-title">
+
+                        <span className="security-shield">
+                            ◐
+                        </span>
+
+                        <span>
+                            Security Tips
+                        </span>
+
+                    </div>
+
+
+                    <ul>
+
+                        <li>
+                            Use a unique password you haven't used before
+                        </li>
+
+                        <li>
+                            Avoid common words or personal information
+                        </li>
+
+                        <li>
+                            Consider using a password manager
+                        </li>
+
+                    </ul>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+)}
 
 
             {/* =========================================================
