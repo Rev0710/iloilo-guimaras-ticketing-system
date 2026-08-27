@@ -1,9 +1,26 @@
-import React, { useEffect, useState } from "react";
+import React, {
+    useEffect,
+    useState
+} from "react";
+
 import { useNavigate } from "react-router-dom";
+
+import "./AdminDashboard.css";
+
+
+const API_URL =
+    "http://localhost:5000";
+
 
 const AdminDashboard = () => {
 
-    const navigate = useNavigate();
+    const navigate =
+        useNavigate();
+
+
+    // =========================================================
+    // ADMIN
+    // =========================================================
 
     const [admin, setAdmin] =
         useState(null);
@@ -12,12 +29,215 @@ const AdminDashboard = () => {
         useState(true);
 
 
+    // =========================================================
+    // PAGE
+    // =========================================================
+
+    const [activePage, setActivePage] =
+        useState("dashboard");
+
+
+    // =========================================================
+    // STATISTICS
+    // =========================================================
+
+    const [statistics, setStatistics] =
+        useState({
+            totalBookings: 0,
+            pendingPayments: 0,
+            verifiedPayments: 0,
+            rejectedPayments: 0
+        });
+
+
+    // =========================================================
+    // PAYMENTS
+    // =========================================================
+
+    const [pendingPayments, setPendingPayments] =
+        useState([]);
+
+    const [paymentLoading, setPaymentLoading] =
+        useState(false);
+
+
+    const [actionLoading, setActionLoading] =
+        useState(null);
+
+
+    // =========================================================
+    // NOTIFICATION
+    // =========================================================
+
+    const [notification, setNotification] =
+        useState({
+            show: false,
+            type: "",
+            message: ""
+        });
+
+
+    // =========================================================
+    // CONFIRMATION MODAL
+    // =========================================================
+
+    const [showConfirmModal, setShowConfirmModal] =
+        useState(false);
+
+    const [selectedPayment, setSelectedPayment] =
+        useState(null);
+
+    const [confirmAction, setConfirmAction] =
+        useState(null);
+
+
+    // =========================================================
+    // TOKEN
+    // =========================================================
+
+    const getToken = () => {
+
+        return localStorage.getItem(
+            "adminToken"
+        );
+
+    };
+
+
+    // =========================================================
+    // NOTIFICATION
+    // =========================================================
+
+    const showNotification = (
+        message,
+        type = "info"
+    ) => {
+
+        setNotification({
+            show: true,
+            type,
+            message
+        });
+
+
+        setTimeout(() => {
+
+            setNotification({
+                show: false,
+                type: "",
+                message: ""
+            });
+
+        }, 4000);
+
+    };
+
+
+    const closeNotification = () => {
+
+        setNotification({
+            show: false,
+            type: "",
+            message: ""
+        });
+
+    };
+
+
+    // =========================================================
+    // SAFE RESPONSE READER
+    // =========================================================
+    //
+    // IMPORTANT:
+    // This prevents:
+    //
+    // Unexpected token '<'
+    //
+    // when Express returns an HTML 404 page.
+    //
+    // =========================================================
+
+    const getResponseData = async (
+        response
+    ) => {
+
+        const contentType =
+            response.headers.get(
+                "content-type"
+            );
+
+
+        if (
+            contentType &&
+            contentType.includes(
+                "application/json"
+            )
+        ) {
+
+            return await response.json();
+
+        }
+
+
+        const text =
+            await response.text();
+
+
+        console.error(
+            "Server returned non-JSON response:",
+            text
+        );
+
+
+        if (
+            response.status === 404
+        ) {
+
+            throw new Error(
+                "The payment API route was not found. Check your backend booking routes."
+            );
+
+        }
+
+
+        if (
+            response.status === 401
+        ) {
+
+            throw new Error(
+                "Your admin session has expired. Please login again."
+            );
+
+        }
+
+
+        if (
+            response.status === 403
+        ) {
+
+            throw new Error(
+                "You do not have permission to perform this action."
+            );
+
+        }
+
+
+        throw new Error(
+            `Server returned an invalid response (${response.status}).`
+        );
+
+    };
+
+
+    // =========================================================
+    // LOAD ADMIN
+    // =========================================================
+
     useEffect(() => {
 
         const token =
-            localStorage.getItem(
-                "adminToken"
-            );
+            getToken();
+
 
         if (!token) {
 
@@ -29,6 +249,7 @@ const AdminDashboard = () => {
             );
 
             return;
+
         }
 
 
@@ -39,8 +260,10 @@ const AdminDashboard = () => {
 
                     const response =
                         await fetch(
-                            "http://localhost:5000/api/admin/me",
+                            `${API_URL}/api/admin/me`,
                             {
+                                method: "GET",
+
                                 headers: {
                                     Authorization:
                                         `Bearer ${token}`
@@ -50,14 +273,20 @@ const AdminDashboard = () => {
 
 
                     const data =
-                        await response.json();
+                        await getResponseData(
+                            response
+                        );
 
 
-                    if (!response.ok) {
+                    if (
+                        !response.ok
+                    ) {
 
                         throw new Error(
-                            data.message
+                            data.message ||
+                            "Unable to load administrator."
                         );
+
                     }
 
 
@@ -65,11 +294,14 @@ const AdminDashboard = () => {
                         data.admin
                     );
 
+
                 } catch (error) {
 
                     console.error(
+                        "Load admin error:",
                         error
                     );
+
 
                     localStorage.removeItem(
                         "adminToken"
@@ -78,6 +310,7 @@ const AdminDashboard = () => {
                     localStorage.removeItem(
                         "adminData"
                     );
+
 
                     navigate(
                         "/admin-login",
@@ -88,8 +321,12 @@ const AdminDashboard = () => {
 
                 } finally {
 
-                    setLoading(false);
+                    setLoading(
+                        false
+                    );
+
                 }
+
             };
 
 
@@ -98,83 +335,804 @@ const AdminDashboard = () => {
     }, [navigate]);
 
 
-    const handleLogout = () => {
+    // =========================================================
+    // LOAD STATISTICS
+    // =========================================================
 
-        localStorage.removeItem(
-            "adminToken"
-        );
+    const loadStatistics =
+        async () => {
 
-        localStorage.removeItem(
-            "adminData"
-        );
+            const token =
+                getToken();
 
-       navigate(
-    "/",
-    {
-        replace: true
-    }
-);
-    };
 
+            if (!token) {
+                return;
+            }
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${API_URL}/api/bookings/statistics`,
+                        {
+                            method: "GET",
+
+                            headers: {
+                                Authorization:
+                                    `Bearer ${token}`
+                            }
+                        }
+                    );
+
+
+                const data =
+                    await getResponseData(
+                        response
+                    );
+
+
+                if (
+                    !response.ok
+                ) {
+
+                    throw new Error(
+                        data.message ||
+                        "Unable to load statistics."
+                    );
+
+                }
+
+
+                if (
+                    data.statistics
+                ) {
+
+                    setStatistics(
+                        data.statistics
+                    );
+
+                }
+
+
+            } catch (error) {
+
+                console.error(
+                    "Statistics error:",
+                    error
+                );
+
+            }
+
+        };
+
+
+    // =========================================================
+    // LOAD PENDING PAYMENTS
+    // =========================================================
+
+    const loadPendingPayments =
+        async () => {
+
+            const token =
+                getToken();
+
+
+            if (!token) {
+                return;
+            }
+
+
+            setPaymentLoading(
+                true
+            );
+
+
+            try {
+
+                /*
+                 * IMPORTANT:
+                 *
+                 * We use:
+                 *
+                 * /api/bookings/pending-payments
+                 *
+                 * NOT:
+                 *
+                 * /api/admin/bookings/pending-payments
+                 *
+                 * because your current backend is returning:
+                 *
+                 * Cannot GET /api/admin/bookings/pending-payments
+                 */
+
+                const response =
+                    await fetch(
+                        `${API_URL}/api/bookings/pending-payments`,
+                        {
+                            method: "GET",
+
+                            headers: {
+                                Authorization:
+                                    `Bearer ${token}`
+                            }
+                        }
+                    );
+
+
+                const data =
+                    await getResponseData(
+                        response
+                    );
+
+
+                if (
+                    !response.ok
+                ) {
+
+                    throw new Error(
+                        data.message ||
+                        "Unable to load payment submissions."
+                    );
+
+                }
+
+
+                setPendingPayments(
+                    Array.isArray(
+                        data.bookings
+                    )
+                        ? data.bookings
+                        : []
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Payment loading error:",
+                    error
+                );
+
+
+                setPendingPayments(
+                    []
+                );
+
+
+                showNotification(
+                    error.message ||
+                    "Unable to load payment submissions.",
+                    "error"
+                );
+
+            } finally {
+
+                setPaymentLoading(
+                    false
+                );
+
+            }
+
+        };
+
+
+    // =========================================================
+    // LOAD INITIAL DATA
+    // =========================================================
+
+    useEffect(() => {
+
+        if (!loading) {
+
+            loadStatistics();
+
+        }
+
+    }, [loading]);
+
+
+    // =========================================================
+    // CHANGE PAGE
+    // =========================================================
+
+    const handleViewChange =
+        (page) => {
+
+            setActivePage(
+                page
+            );
+
+
+            if (
+                page === "payments"
+            ) {
+
+                loadPendingPayments();
+
+            }
+
+        };
+
+
+    // =========================================================
+    // DASHBOARD VIEW
+    // =========================================================
+
+    const handleDashboard =
+        () => {
+
+            setActivePage(
+                "dashboard"
+            );
+
+            loadStatistics();
+
+        };
+
+
+    // =========================================================
+    // OPEN CONFIRM MODAL
+    // =========================================================
+
+    const openConfirmModal =
+        (
+            payment,
+            action
+        ) => {
+
+            setSelectedPayment(
+                payment
+            );
+
+            setConfirmAction(
+                action
+            );
+
+            setShowConfirmModal(
+                true
+            );
+
+        };
+
+
+    // =========================================================
+    // CLOSE CONFIRM MODAL
+    // =========================================================
+
+    const closeConfirmModal =
+        () => {
+
+            setShowConfirmModal(
+                false
+            );
+
+            setSelectedPayment(
+                null
+            );
+
+            setConfirmAction(
+                null
+            );
+
+        };
+
+
+    // =========================================================
+    // VERIFY PAYMENT
+    // =========================================================
+
+    const handleVerifyPayment =
+        async (
+            bookingId
+        ) => {
+
+            const token =
+                getToken();
+
+
+            if (!token) {
+                return;
+            }
+
+
+            try {
+
+                setActionLoading(
+                    bookingId
+                );
+
+
+                /*
+                 * Current booking API structure.
+                 */
+
+                const response =
+                    await fetch(
+                        `${API_URL}/api/bookings/${bookingId}/verify-payment`,
+                        {
+                            method: "PUT",
+
+                            headers: {
+                                Authorization:
+                                    `Bearer ${token}`,
+
+                                "Content-Type":
+                                    "application/json"
+                            }
+                        }
+                    );
+
+
+                const data =
+                    await getResponseData(
+                        response
+                    );
+
+
+                if (
+                    !response.ok
+                ) {
+
+                    throw new Error(
+                        data.message ||
+                        "Unable to verify payment."
+                    );
+
+                }
+
+
+                showNotification(
+                    "Payment verified successfully.",
+                    "success"
+                );
+
+
+                await loadPendingPayments();
+
+                await loadStatistics();
+
+
+            } catch (error) {
+
+                console.error(
+                    "Verify payment error:",
+                    error
+                );
+
+
+                showNotification(
+                    error.message ||
+                    "Unable to verify payment.",
+                    "error"
+                );
+
+            } finally {
+
+                setActionLoading(
+                    null
+                );
+
+            }
+
+        };
+
+
+    // =========================================================
+    // REJECT PAYMENT
+    // =========================================================
+
+    const handleRejectPayment =
+        async (
+            bookingId
+        ) => {
+
+            const token =
+                getToken();
+
+
+            if (!token) {
+                return;
+            }
+
+
+            try {
+
+                setActionLoading(
+                    bookingId
+                );
+
+
+                /*
+                 * Current booking API structure.
+                 */
+
+                const response =
+                    await fetch(
+                        `${API_URL}/api/bookings/${bookingId}/reject-payment`,
+                        {
+                            method: "PUT",
+
+                            headers: {
+                                Authorization:
+                                    `Bearer ${token}`,
+
+                                "Content-Type":
+                                    "application/json"
+                            }
+                        }
+                    );
+
+
+                const data =
+                    await getResponseData(
+                        response
+                    );
+
+
+                if (
+                    !response.ok
+                ) {
+
+                    throw new Error(
+                        data.message ||
+                        "Unable to reject payment."
+                    );
+
+                }
+
+
+                showNotification(
+                    "Payment rejected successfully.",
+                    "success"
+                );
+
+
+                await loadPendingPayments();
+
+                await loadStatistics();
+
+
+            } catch (error) {
+
+                console.error(
+                    "Reject payment error:",
+                    error
+                );
+
+
+                showNotification(
+                    error.message ||
+                    "Unable to reject payment.",
+                    "error"
+                );
+
+            } finally {
+
+                setActionLoading(
+                    null
+                );
+
+            }
+
+        };
+
+
+    // =========================================================
+    // EXECUTE CONFIRM ACTION
+    // =========================================================
+
+    const executeConfirmAction =
+        async () => {
+
+            if (
+                !selectedPayment
+            ) {
+
+                return;
+
+            }
+
+
+            const bookingId =
+                selectedPayment._id;
+
+
+            const action =
+                confirmAction;
+
+
+            closeConfirmModal();
+
+
+            if (
+                action === "verify"
+            ) {
+
+                await handleVerifyPayment(
+                    bookingId
+                );
+
+            }
+
+
+            if (
+                action === "reject"
+            ) {
+
+                await handleRejectPayment(
+                    bookingId
+                );
+
+            }
+
+        };
+
+
+    // =========================================================
+    // FORMAT DATE
+    // =========================================================
+
+    const formatDate =
+        (date) => {
+
+            if (!date) {
+                return "—";
+            }
+
+
+            const parsedDate =
+                new Date(date);
+
+
+            if (
+                Number.isNaN(
+                    parsedDate.getTime()
+                )
+            ) {
+
+                return "—";
+
+            }
+
+
+            return parsedDate.toLocaleDateString(
+                "en-US",
+                {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric"
+                }
+            );
+
+        };
+
+
+    // =========================================================
+    // FORMAT AMOUNT
+    // =========================================================
+
+    const formatAmount =
+        (amount) => {
+
+            if (
+                amount === null ||
+                amount === undefined
+            ) {
+
+                return "₱0.00";
+
+            }
+
+
+            return `₱${Number(
+                amount
+            ).toLocaleString(
+                "en-PH",
+                {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }
+            )}`;
+
+        };
+
+
+    // =========================================================
+    // GET PAYMENT PROOF
+    // =========================================================
+
+    const getPaymentProof =
+        (payment) => {
+
+            return (
+                payment?.paymentProof?.url ||
+                payment?.paymentProof?.fileUrl ||
+                payment?.paymentReceipt ||
+                payment?.receiptUrl ||
+                payment?.proofOfPayment ||
+                ""
+            );
+
+        };
+
+
+    // =========================================================
+    // LOGOUT
+    // =========================================================
+
+    const handleLogout =
+        () => {
+
+            localStorage.removeItem(
+                "adminToken"
+            );
+
+            localStorage.removeItem(
+                "adminData"
+            );
+
+
+            navigate(
+                "/",
+                {
+                    replace: true
+                }
+            );
+
+        };
+
+
+    // =========================================================
+    // LOADING
+    // =========================================================
 
     if (loading) {
 
         return (
+
             <div className="dashboard-loading">
-                Loading Admin Dashboard...
+
+                <div className="loading-spinner">
+                </div>
+
+                <p>
+                    Loading Admin Dashboard...
+                </p>
+
             </div>
+
         );
+
     }
 
 
+    // =========================================================
+    // MAIN UI
+    // =========================================================
+
     return (
+
         <main className="admin-dashboard">
+
+
+            {/* =================================================
+                SIDEBAR
+            ================================================= */}
 
             <aside className="sidebar">
 
-                <div className="sidebar-title">
-                    GuimarasGo
+
+                <div className="brand-section">
+
+                    <div className="sidebar-title">
+                        GuimarasGo
+                    </div>
+
+                    <div className="admin-label">
+                        ADMINISTRATOR
+                    </div>
+
                 </div>
 
 
-                <div className="admin-label">
-                    ADMINISTRATOR
+                <nav className="sidebar-navigation">
+
+
+                    {/* DASHBOARD */}
+
+                    <button
+                        className={
+                            `side-item ${
+                                activePage ===
+                                "dashboard"
+                                    ? "active"
+                                    : ""
+                            }`
+                        }
+
+                        onClick={
+                            handleDashboard
+                        }
+                    >
+
+                        <span>
+                            Dashboard
+                        </span>
+
+                    </button>
+
+
+                    {/* PAYMENT */}
+
+                    <button
+                        className={
+                            `side-item ${
+                                activePage ===
+                                "payments"
+                                    ? "active"
+                                    : ""
+                            }`
+                        }
+
+                        onClick={() =>
+                            handleViewChange(
+                                "payments"
+                            )
+                        }
+                    >
+
+                        <span>
+                            Payment Verification
+                        </span>
+
+
+                        {pendingPayments.length >
+                            0 && (
+
+                            <span className="payment-count">
+                                {
+                                    pendingPayments.length
+                                }
+                            </span>
+
+                        )}
+
+                    </button>
+
+
+                </nav>
+
+
+                <div className="sidebar-spacer">
                 </div>
 
 
-                <button
-                    className="side-item active"
-                >
-                    Dashboard
-                </button>
-
-
-                <button
-                    className="side-item"
-                    onClick={() =>
-                        alert(
-                            "Payment Verification will be connected next."
-                        )
-                    }
-                >
-                    Payment Verification
-                </button>
-
-
-                <div className="sidebar-spacer" />
-
+                {/* LOGOUT */}
 
                 <button
                     className="logout-button"
-                    onClick={handleLogout}
+
+                    onClick={
+                        handleLogout
+                    }
                 >
                     Logout
                 </button>
 
+
             </aside>
 
 
+            {/* =================================================
+                MAIN CONTENT
+            ================================================= */}
+
             <section className="dashboard-content">
+
+
+                {/* HEADER */}
 
                 <header className="dashboard-header">
 
@@ -186,12 +1144,18 @@ const AdminDashboard = () => {
 
                         <p>
                             Welcome back,{" "}
+
                             <strong>
-                                {admin?.fullName}
+                                {
+                                    admin?.fullName ||
+                                    "Admin"
+                                }
                             </strong>
+
                         </p>
 
                     </div>
+
 
                     <div className="admin-badge">
                         ADMIN
@@ -200,153 +1164,683 @@ const AdminDashboard = () => {
                 </header>
 
 
-                <div className="dashboard-body">
+                {/* =================================================
+                    DASHBOARD PAGE
+                ================================================= */}
 
-                    <h2>
-                        Dashboard Overview
-                    </h2>
+                {activePage ===
+                    "dashboard" && (
 
-                    <p className="dashboard-description">
-                        Here's what's happening with
-                        your GuimarasGo system.
-                    </p>
+                    <div className="dashboard-body">
 
 
-                    <div className="cards">
+                        <h2>
+                            Dashboard Overview
+                        </h2>
 
-                        <div className="stat-card">
 
-                            <span>
-                                Total Bookings
-                            </span>
+                        <p className="dashboard-description">
+                            Here's what's happening
+                            with your GuimarasGo
+                            system.
+                        </p>
 
-                            <strong>
-                                0
-                            </strong>
 
-                            <small>
-                                Current records
-                            </small>
+                        {/* STATISTICS */}
+
+                        <div className="cards">
+
+
+                            <div className="stat-card">
+
+                                <span>
+                                    Total Bookings
+                                </span>
+
+                                <strong>
+                                    {
+                                        statistics.totalBookings
+                                    }
+                                </strong>
+
+                                <small>
+                                    Current records
+                                </small>
+
+                            </div>
+
+
+                            <div className="stat-card">
+
+                                <span>
+                                    Pending Payments
+                                </span>
+
+                                <strong>
+                                    {
+                                        statistics.pendingPayments
+                                    }
+                                </strong>
+
+                                <small>
+                                    Awaiting verification
+                                </small>
+
+                            </div>
+
+
+                            <div className="stat-card">
+
+                                <span>
+                                    Verified Payments
+                                </span>
+
+                                <strong>
+                                    {
+                                        statistics.verifiedPayments
+                                    }
+                                </strong>
+
+                                <small>
+                                    Verified transactions
+                                </small>
+
+                            </div>
+
 
                         </div>
 
 
-                        <div className="stat-card">
+                        {/* PAYMENT VERIFICATION */}
 
-                            <span>
-                                Pending Payments
-                            </span>
+                        <div className="welcome-card">
 
-                            <strong>
-                                0
-                            </strong>
 
-                            <small>
-                                Awaiting verification
-                            </small>
+                            <div className="welcome-card-info">
+
+                                <div className="payment-icon">
+                                    ₱
+                                </div>
+
+
+                                <div>
+
+                                    <h3>
+                                        Payment Verification
+                                    </h3>
+
+                                    <p>
+                                        Review customer
+                                        payment receipts
+                                        and verify or
+                                        reject pending
+                                        bookings.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+
+                            <button
+                                className="view-payment-button"
+
+                                onClick={() =>
+                                    handleViewChange(
+                                        "payments"
+                                    )
+                                }
+                            >
+                                View Payments
+                            </button>
+
 
                         </div>
 
 
-                        <div className="stat-card">
+                        {/* ADMIN ACCOUNT */}
 
-                            <span>
-                                Verified Payments
-                            </span>
-
-                            <strong>
-                                0
-                            </strong>
-
-                            <small>
-                                Verified transactions
-                            </small>
-
-                        </div>
-
-                    </div>
-
-
-                    <div className="welcome-card">
-
-                        <div>
+                        <div className="system-card">
 
                             <h3>
-                                Payment Verification
+                                Administrator Account
                             </h3>
 
-                            <p>
-                                Uploaded customer payment
-                                receipts will appear here
-                                once the payment verification
-                                module is connected to
-                                MongoDB.
-                            </p>
+
+                            <div className="account-row">
+
+                                <span>
+                                    Name
+                                </span>
+
+                                <strong>
+                                    {
+                                        admin?.fullName ||
+                                        "Admin"
+                                    }
+                                </strong>
+
+                            </div>
+
+
+                            <div className="account-row">
+
+                                <span>
+                                    Email
+                                </span>
+
+                                <strong>
+                                    {
+                                        admin?.email ||
+                                        "—"
+                                    }
+                                </strong>
+
+                            </div>
+
+
+                            <div className="account-row">
+
+                                <span>
+                                    Role
+                                </span>
+
+                                <strong>
+                                    {
+                                        admin?.role ||
+                                        "ADMIN"
+                                    }
+                                </strong>
+
+                            </div>
+
 
                         </div>
 
-
-                        <button
-                            onClick={() =>
-                                alert(
-                                    "Payment Verification will be implemented next."
-                                )
-                            }
-                        >
-                            View Payments
-                        </button>
 
                     </div>
 
+                )}
 
-                    <div className="system-card">
 
-                        <h3>
-                            Administrator Account
-                        </h3>
+                {/* =================================================
+                    PAYMENT PAGE
+                ================================================= */}
 
-                        <div className="account-row">
+                {activePage ===
+                    "payments" && (
 
-                            <span>
-                                Name
-                            </span>
+                    <div className="payments-page">
 
-                            <strong>
-                                {admin?.fullName}
-                            </strong>
+
+                        {/* PAGE HEADER */}
+
+                        <div className="payment-page-header">
+
+
+                            <div>
+
+                                <h2>
+                                    Payment Verification
+                                </h2>
+
+                                <p>
+                                    Review and process
+                                    customer payment
+                                    submissions.
+                                </p>
+
+                            </div>
+
+
+                            <div className="payment-summary">
+
+                                <strong>
+                                    {
+                                        pendingPayments.length
+                                    }
+                                </strong>
+
+                                <span>
+                                    Pending
+                                </span>
+
+                            </div>
+
 
                         </div>
 
 
-                        <div className="account-row">
+                        {/* ACTION BAR */}
 
-                            <span>
-                                Email
-                            </span>
+                        <div className="payment-toolbar">
 
-                            <strong>
-                                {admin?.email}
-                            </strong>
+                            <button
+                                className="back-button"
+
+                                onClick={
+                                    handleDashboard
+                                }
+                            >
+                                ← Back to Dashboard
+                            </button>
+
+
+                            <button
+                                className="refresh-button"
+
+                                onClick={
+                                    loadPendingPayments
+                                }
+
+                                disabled={
+                                    paymentLoading
+                                }
+                            >
+
+                                {paymentLoading
+                                    ? "Refreshing..."
+                                    : "↻ Refresh"
+                                }
+
+                            </button>
 
                         </div>
 
 
-                        <div className="account-row">
+                        {/* LOADING */}
 
-                            <span>
-                                Role
-                            </span>
+                        {paymentLoading && (
 
-                            <strong>
-                                {admin?.role}
-                            </strong>
+                            <div className="payment-loading">
 
-                        </div>
+                                <div className="loading-spinner">
+                                </div>
+
+                                <p>
+                                    Loading payment
+                                    submissions...
+                                </p>
+
+                            </div>
+
+                        )}
+
+
+                        {/* EMPTY */}
+
+                        {!paymentLoading &&
+                            pendingPayments.length ===
+                                0 && (
+
+                            <div className="empty-payment-card">
+
+
+                                <div className="empty-icon">
+                                    ✓
+                                </div>
+
+
+                                <h3>
+                                    No Pending Payments
+                                </h3>
+
+
+                                <p>
+                                    There are currently
+                                    no payment submissions
+                                    waiting for
+                                    verification.
+                                </p>
+
+
+                                <button
+                                    className="secondary-button"
+
+                                    onClick={
+                                        loadPendingPayments
+                                    }
+                                >
+                                    Refresh
+                                </button>
+
+
+                            </div>
+
+                        )}
+
+
+                        {/* PAYMENT LIST */}
+
+                        {!paymentLoading &&
+                            pendingPayments.length >
+                                0 && (
+
+                            <div className="payment-list">
+
+
+                                {pendingPayments.map(
+                                    (payment) => {
+
+                                    const proof =
+                                        getPaymentProof(
+                                            payment
+                                        );
+
+
+                                    const passenger =
+                                        payment.passengerName ||
+                                        payment.passenger?.fullName ||
+                                        payment.user?.fullName ||
+                                        "—";
+
+
+                                    const route =
+                                        payment.route ||
+                                        (
+                                            payment.origin &&
+                                            payment.destination
+                                                ? `${payment.origin} → ${payment.destination}`
+                                                : "—"
+                                        );
+
+
+                                    const date =
+                                        payment.date ||
+                                        payment.travelDate ||
+                                        payment.departureDate;
+
+
+                                    const time =
+                                        payment.time ||
+                                        payment.departureTime ||
+                                        "—";
+
+
+                                    const amount =
+                                        payment.requiredAmount ??
+                                        payment.totalAmount ??
+                                        payment.amount ??
+                                        payment.totalFare ??
+                                        0;
+
+
+                                    const method =
+                                        payment.paymentMethod ||
+                                        "Maya / QRPh";
+
+
+                                    return (
+
+                                        <div
+                                            className="payment-card"
+
+                                            key={
+                                                payment._id
+                                            }
+                                        >
+
+
+                                            {/* CARD HEADER */}
+
+                                            <div className="payment-card-header">
+
+
+                                                <div>
+
+                                                    <span className="booking-label">
+                                                        BOOKING REFERENCE
+                                                    </span>
+
+
+                                                    <h3>
+                                                        {
+                                                            payment.bookingReference ||
+                                                            payment.referenceNumber ||
+                                                            payment._id
+                                                        }
+                                                    </h3>
+
+                                                </div>
+
+
+                                                <span className="pending-badge">
+                                                    PENDING VERIFICATION
+                                                </span>
+
+
+                                            </div>
+
+
+                                            {/* DETAILS */}
+
+                                            <div className="payment-details">
+
+
+                                                <div className="detail-item">
+
+                                                    <span>
+                                                        Passenger
+                                                    </span>
+
+                                                    <strong>
+                                                        {
+                                                            passenger
+                                                        }
+                                                    </strong>
+
+                                                </div>
+
+
+                                                <div className="detail-item">
+
+                                                    <span>
+                                                        Route
+                                                    </span>
+
+                                                    <strong>
+                                                        {
+                                                            route
+                                                        }
+                                                    </strong>
+
+                                                </div>
+
+
+                                                <div className="detail-item">
+
+                                                    <span>
+                                                        Date
+                                                    </span>
+
+                                                    <strong>
+                                                        {
+                                                            formatDate(
+                                                                date
+                                                            )
+                                                        }
+                                                    </strong>
+
+                                                </div>
+
+
+                                                <div className="detail-item">
+
+                                                    <span>
+                                                        Time
+                                                    </span>
+
+                                                    <strong>
+                                                        {
+                                                            time
+                                                        }
+                                                    </strong>
+
+                                                </div>
+
+
+                                                <div className="detail-item">
+
+                                                    <span>
+                                                        Required Amount
+                                                    </span>
+
+                                                    <strong>
+                                                        {
+                                                            formatAmount(
+                                                                amount
+                                                            )
+                                                        }
+                                                    </strong>
+
+                                                </div>
+
+
+                                                <div className="detail-item">
+
+                                                    <span>
+                                                        Payment Method
+                                                    </span>
+
+                                                    <strong>
+                                                        {
+                                                            method
+                                                        }
+                                                    </strong>
+
+                                                </div>
+
+
+                                            </div>
+
+
+                                            {/* PAYMENT PROOF */}
+
+                                            <div className="payment-proof-section">
+
+
+                                                <h4>
+                                                    Payment Proof
+                                                </h4>
+
+
+                                                {proof ? (
+
+                                                    <a
+                                                        href={
+                                                            proof
+                                                        }
+
+                                                        target="_blank"
+
+                                                        rel="noreferrer"
+
+                                                        className="payment-proof-link"
+                                                    >
+
+                                                        <img
+                                                            src={
+                                                                proof
+                                                            }
+
+                                                            alt="Payment Proof"
+
+                                                            className="payment-proof-image"
+                                                        />
+
+                                                        <span>
+                                                            Click to view full receipt
+                                                        </span>
+
+                                                    </a>
+
+                                                ) : (
+
+                                                    <div className="no-proof">
+                                                        No payment receipt uploaded.
+                                                    </div>
+
+                                                )}
+
+                                            </div>
+
+
+                                            {/* ACTIONS */}
+
+                                            <div className="payment-actions">
+
+
+                                                <button
+                                                    className="reject-button"
+
+                                                    disabled={
+                                                        actionLoading ===
+                                                        payment._id
+                                                    }
+
+                                                    onClick={() =>
+                                                        openConfirmModal(
+                                                            payment,
+                                                            "reject"
+                                                        )
+                                                    }
+                                                >
+
+                                                    {actionLoading ===
+                                                    payment._id
+                                                        ? "Processing..."
+                                                        : "Reject Payment"
+                                                    }
+
+                                                </button>
+
+
+                                                <button
+                                                    className="verify-button"
+
+                                                    disabled={
+                                                        actionLoading ===
+                                                        payment._id
+                                                    }
+
+                                                    onClick={() =>
+                                                        openConfirmModal(
+                                                            payment,
+                                                            "verify"
+                                                        )
+                                                    }
+                                                >
+
+                                                    {actionLoading ===
+                                                    payment._id
+                                                        ? "Processing..."
+                                                        : "✓ Verify Payment"
+                                                    }
+
+                                                </button>
+
+
+                                            </div>
+
+
+                                        </div>
+
+                                    );
+
+                                })}
+
+
+                            </div>
+
+                        )}
+
 
                     </div>
 
-                </div>
+                )}
 
+
+                {/* FOOTER */}
 
                 <footer className="dashboard-footer">
 
@@ -360,713 +1854,180 @@ const AdminDashboard = () => {
 
                 </footer>
 
+
             </section>
 
 
-            <style>{`
-
-                * {
-                    box-sizing: border-box;
-                }
-
-                body {
-                    margin: 0;
-                }
-
-                .admin-dashboard {
-                    min-height: 100vh;
-
-                    display: flex;
-
-                    background:
-                        #f5f7fa;
-
-                    font-family:
-                        Arial,
-                        Helvetica,
-                        sans-serif;
-                }
-
-
-                /* SIDEBAR */
-
-                .sidebar {
-                    width: 230px;
-
-                    min-height: 100vh;
-
-                    display: flex;
-
-                    flex-direction: column;
-
-                    padding: 25px 15px;
-
-                    background:
-                        #ffffff;
-
-                    border-right:
-                        1px solid #e5e5e5;
-                }
-
-
-                .sidebar-title {
-                    padding:
-                        0 10px;
-
-                    color:
-                        #f28c28;
-
-                    font-size:
-                        20px;
-
-                    font-weight:
-                        900;
-
-                    margin-bottom:
-                        5px;
-                }
-
-
-                .admin-label {
-                    padding:
-                        0 10px;
-
-                    margin-bottom:
-                        25px;
-
-                    color:
-                        #999999;
-
-                    font-size:
-                        10px;
-
-                    font-weight:
-                        700;
-
-                    letter-spacing:
-                        1px;
-                }
-
-
-                .side-item {
-                    width: 100%;
-
-                    padding:
-                        12px 13px;
-
-                    margin-bottom:
-                        6px;
-
-                    border: none;
-
-                    border-radius:
-                        8px;
-
-                    background:
-                        transparent;
-
-                    color:
-                        #555555;
-
-                    text-align:
-                        left;
-
-                    font-size:
-                        13px;
-
-                    cursor:
-                        pointer;
-                }
-
-
-                .side-item:hover {
-                    background:
-                        #f7f7f7;
-                }
-
-
-                .side-item.active {
-                    background:
-                        #fff2e6;
-
-                    color:
-                        #f28c28;
-
-                    font-weight:
-                        700;
-                }
-
-
-                .sidebar-spacer {
-                    flex: 1;
-                }
-
-
-                .logout-button {
-                    width: 100%;
-
-                    padding:
-                        12px;
-
-                    border: none;
-
-                    border-radius:
-                        8px;
-
-                    background:
-                        #fff0f0;
-
-                    color:
-                        #d32f2f;
-
-                    font-size:
-                        13px;
-
-                    font-weight:
-                        700;
-
-                    cursor:
-                        pointer;
-                }
-
-
-                /* CONTENT */
-
-                .dashboard-content {
-                    flex: 1;
-
-                    min-width: 0;
-
-                    display: flex;
-
-                    flex-direction: column;
-                }
-
-
-                .dashboard-header {
-                    min-height:
-                        76px;
-
-                    padding:
-                        0 35px;
-
-                    display:
-                        flex;
-
-                    align-items:
-                        center;
-
-                    justify-content:
-                        space-between;
-
-                    background:
-                        #ffffff;
-
-                    border-bottom:
-                        1px solid #e5e5e5;
-                }
-
-
-                .dashboard-header h1 {
-                    margin:
-                        0 0 5px;
-
-                    color:
-                        #222222;
-
-                    font-size:
-                        22px;
-                }
-
-
-                .dashboard-header p {
-                    margin: 0;
-
-                    color:
-                        #888888;
-
-                    font-size:
-                        12px;
-                }
-
-
-                .admin-badge {
-                    padding:
-                        8px 13px;
-
-                    border-radius:
-                        20px;
-
-                    background:
-                        #fff2e6;
-
-                    color:
-                        #f28c28;
-
-                    font-size:
-                        11px;
-
-                    font-weight:
-                        800;
-                }
-
-
-                .dashboard-body {
-                    width:
-                        100%;
-
-                    max-width:
-                        1100px;
-
-                    margin:
-                        0 auto;
-
-                    padding:
-                        35px;
-                }
-
-
-                .dashboard-body h2 {
-                    margin:
-                        0 0 5px;
-
-                    color:
-                        #222222;
-
-                    font-size:
-                        24px;
-                }
-
-
-                .dashboard-description {
-                    margin:
-                        0 0 25px;
-
-                    color:
-                        #888888;
-
-                    font-size:
-                        13px;
-                }
-
-
-                /* CARDS */
-
-                .cards {
-                    display:
-                        grid;
-
-                    grid-template-columns:
-                        repeat(3, 1fr);
-
-                    gap:
-                        18px;
-
-                    margin-bottom:
-                        25px;
-                }
-
-
-                .stat-card {
-                    padding:
-                        20px;
-
-                    background:
-                        #ffffff;
-
-                    border:
-                        1px solid #e8e8e8;
-
-                    border-radius:
-                        12px;
-
-                    box-shadow:
-                        0 3px 12px
-                        rgba(
-                            0,
-                            0,
-                            0,
-                            0.03
-                        );
-                }
-
-
-                .stat-card span {
-                    display:
-                        block;
-
-                    color:
-                        #777777;
-
-                    font-size:
-                        12px;
-
-                    margin-bottom:
-                        12px;
-                }
-
-
-                .stat-card strong {
-                    display:
-                        block;
-
-                    color:
-                        #222222;
-
-                    font-size:
-                        28px;
-
-                    margin-bottom:
-                        5px;
-                }
-
-
-                .stat-card small {
-                    color:
-                        #999999;
-
-                    font-size:
-                        10px;
-                }
-
-
-                /* PAYMENT CARD */
-
-                .welcome-card {
-                    display:
-                        flex;
-
-                    align-items:
-                        center;
-
-                    justify-content:
-                        space-between;
-
-                    gap:
-                        20px;
-
-                    padding:
-                        24px;
-
-                    margin-bottom:
-                        20px;
-
-                    background:
-                        #ffffff;
-
-                    border:
-                        1px solid #e8e8e8;
-
-                    border-radius:
-                        12px;
-                }
-
-
-                .welcome-card h3,
-                .system-card h3 {
-                    margin:
-                        0 0 8px;
-
-                    color:
-                        #222222;
-
-                    font-size:
-                        17px;
-                }
-
-
-                .welcome-card p {
-                    margin:
-                        0;
-
-                    max-width:
-                        650px;
-
-                    color:
-                        #777777;
-
-                    font-size:
-                        12px;
-
-                    line-height:
-                        1.6;
-                }
-
-
-                .welcome-card button {
-                    flex-shrink:
-                        0;
-
-                    padding:
-                        11px 18px;
-
-                    border:
-                        none;
-
-                    border-radius:
-                        8px;
-
-                    background:
-                        #333333;
-
-                    color:
-                        white;
-
-                    font-size:
-                        12px;
-
-                    font-weight:
-                        700;
-
-                    cursor:
-                        pointer;
-                }
-
-
-                /* ACCOUNT */
-
-                .system-card {
-                    padding:
-                        24px;
-
-                    background:
-                        #ffffff;
-
-                    border:
-                        1px solid #e8e8e8;
-
-                    border-radius:
-                        12px;
-                }
-
-
-                .account-row {
-                    display:
-                        flex;
-
-                    justify-content:
-                        space-between;
-
-                    padding:
-                        12px 0;
-
-                    border-bottom:
-                        1px solid #f0f0f0;
-                }
-
-
-                .account-row:last-child {
-                    border-bottom:
-                        none;
-                }
-
-
-                .account-row span {
-                    color:
-                        #888888;
-
-                    font-size:
-                        12px;
-                }
-
-
-                .account-row strong {
-                    color:
-                        #333333;
-
-                    font-size:
-                        12px;
-                }
-
-
-                /* FOOTER */
-
-                .dashboard-footer {
-                    margin-top:
-                        auto;
-
-                    padding:
-                        18px 35px;
-
-                    display:
-                        flex;
-
-                    justify-content:
-                        space-between;
-
-                    color:
-                        #999999;
-
-                    font-size:
-                        11px;
-
-                    background:
-                        #ffffff;
-
-                    border-top:
-                        1px solid #e5e5e5;
-                }
-
-
-                .dashboard-loading {
-                    min-height:
-                        100vh;
-
-                    display:
-                        flex;
-
-                    align-items:
-                        center;
-
-                    justify-content:
-                        center;
-
-                    font-family:
-                        Arial,
-                        Helvetica,
-                        sans-serif;
-
-                    color:
-                        #777777;
-                }
-
-
-                /* MOBILE */
-
-                @media (
-                    max-width: 800px
-                ) {
-
-                    .sidebar {
-                        width:
-                            190px;
+            {/* =================================================
+                NOTIFICATION
+            ================================================= */}
+
+            {notification.show && (
+
+                <div
+                    className={
+                        `notification ${
+                            notification.type
+                        }`
                     }
+                >
 
-                    .dashboard-header {
-                        padding:
-                            0 20px;
+                    <div className="notification-content">
+
+                        <span className="notification-icon">
+
+                            {notification.type ===
+                            "success"
+                                ? "✓"
+                                : notification.type ===
+                                  "error"
+                                    ? "!"
+                                    : "i"}
+
+                        </span>
+
+
+                        <span>
+                            {
+                                notification.message
+                            }
+                        </span>
+
+                    </div>
+
+
+                    <button
+                        className="notification-close"
+
+                        onClick={
+                            closeNotification
+                        }
+                    >
+                        ×
+                    </button>
+
+                </div>
+
+            )}
+
+
+            {/* =================================================
+                CONFIRMATION MODAL
+            ================================================= */}
+
+            {showConfirmModal && (
+
+                <div
+                    className="modal-overlay"
+
+                    onClick={
+                        closeConfirmModal
                     }
+                >
 
-                    .dashboard-body {
-                        padding:
-                            25px 20px;
-                    }
+                    <div
+                        className="confirm-modal"
 
-                    .cards {
-                        grid-template-columns:
-                            1fr;
-                    }
-
-                }
+                        onClick={(event) =>
+                            event.stopPropagation()
+                        }
+                    >
 
 
-                @media (
-                    max-width: 600px
-                ) {
+                        <div
+                            className={
+                                `modal-icon ${
+                                    confirmAction ===
+                                    "reject"
+                                        ? "danger-icon"
+                                        : "success-icon"
+                                }`
+                            }
+                        >
 
-                    .admin-dashboard {
-                        flex-direction:
-                            column;
-                    }
+                            {confirmAction ===
+                            "reject"
+                                ? "!"
+                                : "✓"}
 
-                    .sidebar {
-                        width:
-                            100%;
+                        </div>
 
-                        min-height:
-                            auto;
 
-                        padding:
-                            15px;
+                        <h3>
 
-                        flex-direction:
-                            row;
+                            {confirmAction ===
+                            "reject"
+                                ? "Reject Payment?"
+                                : "Verify Payment?"
+                            }
 
-                        align-items:
-                            center;
+                        </h3>
 
-                        gap:
-                            5px;
 
-                        overflow-x:
-                            auto;
-                    }
+                        <p>
 
-                    .sidebar-title,
-                    .admin-label {
-                        display:
-                            none;
-                    }
+                            {confirmAction ===
+                            "reject"
 
-                    .side-item {
-                        width:
-                            auto;
+                                ? "Are you sure you want to reject this payment? This will cancel the booking."
 
-                        white-space:
-                            nowrap;
+                                : "Are you sure you want to verify this payment? This will confirm the customer's booking."
+                            }
 
-                        margin:
-                            0;
-                    }
+                        </p>
 
-                    .sidebar-spacer {
-                        display:
-                            none;
-                    }
 
-                    .logout-button {
-                        width:
-                            auto;
+                        <div className="confirm-modal-actions">
 
-                        white-space:
-                            nowrap;
-                    }
 
-                    .dashboard-header {
-                        min-height:
-                            90px;
-                    }
+                            <button
+                                className="modal-cancel"
 
-                    .dashboard-header h1 {
-                        font-size:
-                            18px;
-                    }
+                                onClick={
+                                    closeConfirmModal
+                                }
+                            >
+                                Cancel
+                            </button>
 
-                    .admin-badge {
-                        display:
-                            none;
-                    }
 
-                    .welcome-card {
-                        flex-direction:
-                            column;
+                            <button
+                                className={
+                                    confirmAction ===
+                                    "reject"
+                                        ? "modal-confirm danger"
+                                        : "modal-confirm success"
+                                }
 
-                        align-items:
-                            flex-start;
-                    }
+                                onClick={
+                                    executeConfirmAction
+                                }
+                            >
 
-                    .welcome-card button {
-                        width:
-                            100%;
-                    }
+                                {confirmAction ===
+                                "reject"
+                                    ? "Reject Payment"
+                                    : "Verify Payment"
+                                }
 
-                    .dashboard-footer {
-                        padding:
-                            15px 20px;
+                            </button>
 
-                        flex-direction:
-                            column;
 
-                        gap:
-                            5px;
-                    }
+                        </div>
 
-                }
 
-            `}</style>
+                    </div>
+
+                </div>
+
+            )}
+
 
         </main>
+
     );
+
 };
+
 
 export default AdminDashboard;
