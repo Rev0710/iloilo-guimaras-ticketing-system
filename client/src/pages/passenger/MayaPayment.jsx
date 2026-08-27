@@ -6,7 +6,7 @@ const MayaPayment = () => {
     const navigate = useNavigate();
 
     // =========================================================
-    // API URL
+    // API
     // =========================================================
 
     const API_URL = "http://localhost:5000";
@@ -19,22 +19,26 @@ const MayaPayment = () => {
         "https://scontent.fcgy2-2.fna.fbcdn.net/v/t1.15752-9/775468126_1793367781697550_3767041847597317415_n.png?stp=dst-png&cstp=mx532x469&ctp=s532x469&_nc_cat=103&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeEKTnmoEB20Fs5gE6WYWTxBd_QaoqEL1HV39BqioQvUdc9ZjhsVKyPy19OQYcSyO20Y_14PqMHIf2M01vrRKE4U&_nc_ohc=fK0ygs4SALUQ7kNvwEhUgQl&_nc_oc=Adr97yUKqKQuY-Rb-Lpj__Sjoqm7YY75sVczdULR8n8AbUyhy3oVy9DJ-YO_YUPfnTE&_nc_zt=23&_nc_ht=scontent.fcgy2-2.fna&_nc_ss=7a2a8&oh=03_Q7cD6AFmBhmkMTNembwVy95XQOYfaHONnpCT7udBE1IJnmNvHg&oe=6AB20956";
 
     // =========================================================
-    // MAYA MERCHANT QR
+    // MAYA QR
     // =========================================================
 
     const MAYA_QR_URL = "/images/maya-qr.jpg";
 
     // =========================================================
-    // PAYMENT PROOF
+    // PAYMENT PROOF STATE
     // =========================================================
 
-    const [paymentProof, setPaymentProof] = useState(null);
+    const [paymentProof, setPaymentProof] =
+        useState(null);
 
     const [proofPreview, setProofPreview] =
         useState(null);
 
     const [errorMessage, setErrorMessage] =
         useState("");
+
+    const [isSubmitting, setIsSubmitting] =
+        useState(false);
 
     // =========================================================
     // GET TRIP DETAILS
@@ -63,7 +67,7 @@ const MayaPayment = () => {
     }
 
     // =========================================================
-    // NORMALIZE TRIP INFORMATION
+    // NORMALIZE TRIP
     // =========================================================
 
     const normalizedTrip = trip
@@ -109,12 +113,11 @@ const MayaPayment = () => {
                 trip.vehicleDetails?.plate ||
                 trip.motorcycle?.plateNumber ||
                 ""
-
         }
         : null;
 
     // =========================================================
-    // IF TRIP INFORMATION IS MISSING
+    // MISSING TRIP
     // =========================================================
 
     if (!normalizedTrip) {
@@ -123,7 +126,11 @@ const MayaPayment = () => {
 
             <main className="maya-page">
 
-                <div className="maya-container missing-container">
+                <div className="maya-container maya-missing-container">
+
+                    <div className="maya-missing-icon">
+                        !
+                    </div>
 
                     <h2>
                         Trip Details Not Found
@@ -136,7 +143,7 @@ const MayaPayment = () => {
 
                     <button
                         type="button"
-                        className="primary-button"
+                        className="maya-primary-button"
                         onClick={() =>
                             navigate("/book-trip")
                         }
@@ -156,7 +163,6 @@ const MayaPayment = () => {
                         min-height: 100vh;
 
                         display: flex;
-
                         align-items: center;
                         justify-content: center;
 
@@ -170,26 +176,65 @@ const MayaPayment = () => {
                             sans-serif;
                     }
 
-                    .missing-container {
-                        text-align: center;
-                    }
-
-                    .maya-container {
+                    .maya-missing-container {
                         width: 100%;
                         max-width: 520px;
 
                         padding: 40px;
 
+                        text-align: center;
+
                         background: #ffffff;
 
-                        border-radius: 20px;
+                        border:
+                            1px solid #e8e8e8;
+
+                        border-radius: 18px;
 
                         box-shadow:
                             0 10px 35px
-                            rgba(0, 0, 0, 0.08);
+                            rgba(0,0,0,0.06);
                     }
 
-                    .primary-button {
+                    .maya-missing-icon {
+                        width: 55px;
+                        height: 55px;
+
+                        margin: 0 auto 15px;
+
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+
+                        border-radius: 50%;
+
+                        background: #fff1e4;
+
+                        color: #f28c28;
+
+                        font-size: 25px;
+                        font-weight: 800;
+                    }
+
+                    .maya-missing-container h2 {
+                        margin: 0 0 8px;
+
+                        color: #222222;
+
+                        font-size: 22px;
+                    }
+
+                    .maya-missing-container p {
+                        margin: 0 0 25px;
+
+                        color: #777777;
+
+                        font-size: 13px;
+
+                        line-height: 1.5;
+                    }
+
+                    .maya-primary-button {
                         width: 100%;
 
                         height: 50px;
@@ -202,7 +247,7 @@ const MayaPayment = () => {
 
                         color: #ffffff;
 
-                        font-size: 15px;
+                        font-size: 14px;
 
                         font-weight: 700;
 
@@ -220,8 +265,14 @@ const MayaPayment = () => {
     // =========================================================
 
     const passengers =
-        Number(
-            normalizedTrip.passengers || 1
+        Math.min(
+            5,
+            Math.max(
+                1,
+                Number(
+                    normalizedTrip.passengers || 1
+                )
+            )
         );
 
     const passengerFare =
@@ -250,6 +301,7 @@ const MayaPayment = () => {
     if (!bookingReference) {
 
         bookingReference =
+            trip.bookingReference ||
             "GG-" +
             Math.floor(
                 100000 +
@@ -263,7 +315,118 @@ const MayaPayment = () => {
     }
 
     // =========================================================
-    // HANDLE PAYMENT PROOF UPLOAD
+    // DISPLAY VALUES
+    // =========================================================
+
+    const displayPassengerName =
+        normalizedTrip.passengerName ||
+        "N/A";
+
+    const displayPassengerAge =
+        normalizedTrip.passengerAge ||
+        "N/A";
+
+    const displayPassengerGender =
+        normalizedTrip.passengerGender ||
+        "N/A";
+
+    const displayRoute =
+        `${normalizedTrip.origin || "N/A"} → ${
+            normalizedTrip.destination || "N/A"
+        }`;
+
+    const displayVehicle =
+        normalizedTrip.vehicleType ||
+        "Motorcycle";
+
+    const displayPlate =
+        normalizedTrip.plateNumber
+            ? String(
+                normalizedTrip.plateNumber
+            )
+                .trim()
+                .toUpperCase()
+            : "N/A";
+
+    // =========================================================
+    // FORMAT DATE
+    // =========================================================
+
+    const formatDate = (date) => {
+
+        if (!date) {
+            return "N/A";
+        }
+
+        try {
+
+            return new Date(
+                `${date}T00:00:00`
+            ).toLocaleDateString(
+                "en-US",
+                {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric"
+                }
+            );
+
+        } catch (error) {
+
+            return date;
+        }
+    };
+
+    // =========================================================
+    // FORMAT TIME
+    // =========================================================
+
+    const formatTime = (time) => {
+
+        if (!time) {
+            return "N/A";
+        }
+
+        const stringTime =
+            String(time);
+
+        if (
+            stringTime
+                .toUpperCase()
+                .includes("AM") ||
+            stringTime
+                .toUpperCase()
+                .includes("PM")
+        ) {
+            return stringTime;
+        }
+
+        const parts =
+            stringTime.split(":");
+
+        if (parts.length < 2) {
+            return stringTime;
+        }
+
+        const hours =
+            Number(parts[0]);
+
+        const minutes =
+            parts[1];
+
+        const suffix =
+            hours >= 12
+                ? "PM"
+                : "AM";
+
+        const displayHour =
+            hours % 12 || 12;
+
+        return `${displayHour}:${minutes} ${suffix}`;
+    };
+
+    // =========================================================
+    // PAYMENT PROOF UPLOAD
     // =========================================================
 
     const handleProofUpload = (event) => {
@@ -278,7 +441,7 @@ const MayaPayment = () => {
         }
 
         // =====================================================
-        // CHECK FILE TYPE
+        // FILE TYPE
         // =====================================================
 
         const allowedTypes = [
@@ -303,7 +466,7 @@ const MayaPayment = () => {
         }
 
         // =====================================================
-        // CHECK FILE SIZE
+        // FILE SIZE
         // =====================================================
 
         if (
@@ -372,21 +535,21 @@ const MayaPayment = () => {
             );
 
         if (input) {
-
             input.value = "";
         }
     };
 
     // =========================================================
-    // COMPLETE PAYMENT / SUBMIT BOOKING
+    // COMPLETE PAYMENT
     // =========================================================
 
-    const handleCompletedPayment = async () => {
+    const handleCompletedPayment =
+        async () => {
 
         setErrorMessage("");
 
         // =====================================================
-        // PAYMENT PROOF REQUIRED
+        // CHECK PAYMENT PROOF
         // =====================================================
 
         if (
@@ -400,6 +563,8 @@ const MayaPayment = () => {
 
             return;
         }
+
+        setIsSubmitting(true);
 
         try {
 
@@ -421,7 +586,8 @@ const MayaPayment = () => {
                     {
                         method: "POST",
 
-                        body: formData
+                        body:
+                            formData
                     }
                 );
 
@@ -450,23 +616,21 @@ const MayaPayment = () => {
                 );
             }
 
-            console.log(
-                "Payment proof uploaded:",
-                uploadResult.file
-            );
-
             const uploadedProof =
                 uploadResult.file;
 
+            if (!uploadedProof) {
+
+                throw new Error(
+                    "The server did not return the uploaded payment proof."
+                );
+            }
+
             // =================================================
-            // STEP 2 — CREATE BOOKING OBJECT
+            // STEP 2 — CREATE COMPLETE BOOKING
             // =================================================
 
             const completedBooking = {
-
-                // ---------------------------------------------
-                // BOOKING REFERENCE
-                // ---------------------------------------------
 
                 bookingReference,
 
@@ -530,8 +694,6 @@ const MayaPayment = () => {
                 requiredAmount:
                     totalFare,
 
-                // Do not assume payment is verified yet.
-
                 totalPaid:
                     null,
 
@@ -578,17 +740,12 @@ const MayaPayment = () => {
                 },
 
                 // ---------------------------------------------
-                // BOOKING TIMESTAMP
+                // TIMESTAMP
                 // ---------------------------------------------
 
                 bookedAt:
                     new Date().toISOString()
             };
-
-            console.log(
-                "Booking prepared:",
-                completedBooking
-            );
 
             // =================================================
             // STEP 3 — SAVE BOOKING TO MONGODB
@@ -637,13 +794,8 @@ const MayaPayment = () => {
                 );
             }
 
-            console.log(
-                "Booking saved to MongoDB:",
-                bookingResult.booking
-            );
-
             // =================================================
-            // USE MONGODB BOOKING
+            // STEP 4 — GET SAVED BOOKING
             // =================================================
 
             const savedBooking =
@@ -651,7 +803,7 @@ const MayaPayment = () => {
                 completedBooking;
 
             // =================================================
-            // STEP 4 — SAVE PAYMENT STATUS
+            // STEP 5 — SAVE PAYMENT STATUS
             // =================================================
 
             sessionStorage.setItem(
@@ -665,7 +817,7 @@ const MayaPayment = () => {
             );
 
             // =================================================
-            // STEP 5 — SAVE CONFIRMED BOOKING
+            // STEP 6 — SAVE CONFIRMED BOOKING
             // =================================================
 
             sessionStorage.setItem(
@@ -676,7 +828,7 @@ const MayaPayment = () => {
             );
 
             // =================================================
-            // STEP 6 — SAVE LATEST BOOKING
+            // STEP 7 — SAVE LATEST BOOKING
             // =================================================
 
             sessionStorage.setItem(
@@ -687,7 +839,7 @@ const MayaPayment = () => {
             );
 
             // =================================================
-            // STEP 7 — SAVE BOOKING HISTORY
+            // STEP 8 — SAVE BOOKING HISTORY
             // =================================================
 
             let allBookings = [];
@@ -726,7 +878,7 @@ const MayaPayment = () => {
             }
 
             // =================================================
-            // CHECK EXISTING BOOKING
+            // CHECK DUPLICATE
             // =================================================
 
             const existingIndex =
@@ -759,7 +911,7 @@ const MayaPayment = () => {
             }
 
             // =================================================
-            // STEP 8 — SAVE ALL BOOKINGS
+            // SAVE ALL BOOKINGS
             // =================================================
 
             sessionStorage.setItem(
@@ -770,7 +922,7 @@ const MayaPayment = () => {
             );
 
             // =================================================
-            // STEP 9 — SAVE RECENT BOOKINGS
+            // SAVE RECENT BOOKINGS
             // =================================================
 
             const recentBookings =
@@ -786,7 +938,7 @@ const MayaPayment = () => {
             );
 
             // =================================================
-            // STEP 10 — SAVE PAYMENT DETAILS
+            // SAVE PAYMENT DETAILS
             // =================================================
 
             const paymentDetails = {
@@ -835,7 +987,7 @@ const MayaPayment = () => {
             );
 
             // =================================================
-            // STEP 11 — CLEAN CURRENT BOOKING REFERENCE
+            // CLEAN CURRENT REFERENCE
             // =================================================
 
             sessionStorage.removeItem(
@@ -847,7 +999,7 @@ const MayaPayment = () => {
             );
 
             // =================================================
-            // STEP 12 — GO TO CONFIRMATION
+            // GO TO CONFIRMATION
             // =================================================
 
             navigate(
@@ -868,59 +1020,11 @@ const MayaPayment = () => {
                 error.message ||
                 "Unable to submit payment. Please try again."
             );
+
+        } finally {
+
+            setIsSubmitting(false);
         }
-    };
-
-    // =========================================================
-    // FORMAT TIME
-    // =========================================================
-
-    const formatTime = (time) => {
-
-        if (!time) {
-            return "N/A";
-        }
-
-        const stringTime =
-            String(time);
-
-        if (
-            stringTime
-                .toUpperCase()
-                .includes("AM") ||
-            stringTime
-                .toUpperCase()
-                .includes("PM")
-        ) {
-
-            return stringTime;
-        }
-
-        const parts =
-            stringTime.split(":");
-
-        if (
-            parts.length < 2
-        ) {
-
-            return stringTime;
-        }
-
-        const hours =
-            Number(parts[0]);
-
-        const minutes =
-            parts[1];
-
-        const suffix =
-            hours >= 12
-                ? "PM"
-                : "AM";
-
-        const displayHour =
-            hours % 12 || 12;
-
-        return `${displayHour}:${minutes} ${suffix}`;
     };
 
     // =========================================================
@@ -933,19 +1037,24 @@ const MayaPayment = () => {
 
             <div className="maya-container">
 
-                {/* BACK */}
+                {/* =================================================
+                    BACK BUTTON
+                ================================================= */}
 
                 <button
                     type="button"
-                    className="maya-back"
+                    className="maya-back-button"
                     onClick={() =>
                         navigate("/payment")
                     }
                 >
-                    ← Back to Payment Method
+                    ← Back to Payment
                 </button>
 
-                {/* LOGO */}
+
+                {/* =================================================
+                    LOGO
+                ================================================= */}
 
                 <div className="maya-logo">
 
@@ -956,7 +1065,10 @@ const MayaPayment = () => {
 
                 </div>
 
-                {/* TITLE */}
+
+                {/* =================================================
+                    HEADER
+                ================================================= */}
 
                 <div className="maya-heading">
 
@@ -979,31 +1091,39 @@ const MayaPayment = () => {
 
                 </div>
 
-                {/* PAYMENT NOTICE */}
 
-                <div className="payment-notice">
+                {/* =================================================
+                    PAYMENT NOTICE
+                ================================================= */}
 
-    <strong>
-        IMPORTANT
-    </strong>
+                <div className="maya-payment-notice">
 
-    <p>
-        • Scan the QR code below using Maya or
-        another supported QRPh payment app.
-    </p>
+                    <strong>
+                        IMPORTANT
+                    </strong>
 
-    <p>
-        • After successfully paying, save a
-        screenshot of your Maya payment receipt.
-    </p>
+                    <p>
+                        • Scan the QR code below using
+                        Maya or another supported QRPh
+                        payment app.
+                    </p>
 
-</div>
+                    <p>
+                        • After successfully paying,
+                        save a screenshot of your Maya
+                        payment receipt.
+                    </p>
 
-                {/* MAYA QR */}
+                </div>
 
-                <div className="qr-section">
 
-                    <div className="merchant-label">
+                {/* =================================================
+                    MAYA QR
+                ================================================= */}
+
+                <div className="maya-qr-section">
+
+                    <div className="maya-merchant-label">
                         Maya Business Merchant
                     </div>
 
@@ -1019,14 +1139,18 @@ const MayaPayment = () => {
 
                     <p>
                         Scan this QR code using
-                        Maya or any supported QRPh app.
+                        Maya or any supported QRPh
+                        payment app.
                     </p>
 
                 </div>
 
-                {/* AMOUNT TO PAY */}
 
-                <div className="amount-to-pay">
+                {/* =================================================
+                    AMOUNT
+                ================================================= */}
+
+                <div className="maya-amount-card">
 
                     <span>
                         Amount to Pay
@@ -1043,247 +1167,261 @@ const MayaPayment = () => {
 
                 </div>
 
-                {/* PAYMENT DETAILS */}
 
-                <div className="payment-details">
+                {/* =================================================
+                    PAYMENT DETAILS
+                    UNIQUE CLASS NAMES
+                    TO PREVENT CSS CONFLICTS
+                ================================================= */}
 
-                    <h2>
-                        Payment Details
-                    </h2>
+                <section className="maya-payment-details">
 
-                    <div className="detail-row">
+                    <div className="maya-payment-details-header">
 
-                        <span>
-                            Booking Reference
-                        </span>
+                        <div>
 
-                        <strong>
-                            {bookingReference}
-                        </strong>
+                            <h2>
+                                Payment Details
+                            </h2>
 
-                    </div>
+                            <p>
+                                Review your booking information
+                                before submitting your payment.
+                            </p>
 
-                    <div className="detail-row">
-
-                        <span>
-                            Passenger
-                        </span>
-
-                        <strong>
-                            {
-                                normalizedTrip
-                                    .passengerName ||
-                                "N/A"
-                            }
-                        </strong>
+                        </div>
 
                     </div>
 
-                    <div className="detail-row">
 
-                        <span>
-                            Age
-                        </span>
+                    <div className="maya-details-grid">
 
-                        <strong>
-                            {
-                                normalizedTrip
-                                    .passengerAge ||
-                                "N/A"
-                            }
-                        </strong>
+                        {/* =================================================
+                            BOOKING REFERENCE
+                        ================================================= */}
+
+                        <div className="maya-detail-item">
+
+                            <span className="maya-detail-label">
+                                Booking Reference
+                            </span>
+
+                            <strong className="maya-detail-value maya-reference">
+                                {bookingReference}
+                            </strong>
+
+                        </div>
+
+
+                        {/* =================================================
+                            PASSENGER
+                        ================================================= */}
+
+                        <div className="maya-detail-item">
+
+                            <span className="maya-detail-label">
+                                Passenger
+                            </span>
+
+                            <strong className="maya-detail-value">
+                                {displayPassengerName}
+                            </strong>
+
+                        </div>
+
+
+                        {/* =================================================
+                            AGE
+                        ================================================= */}
+
+                        <div className="maya-detail-item">
+
+                            <span className="maya-detail-label">
+                                Age
+                            </span>
+
+                            <strong className="maya-detail-value">
+                                {displayPassengerAge}
+                            </strong>
+
+                        </div>
+
+
+                        {/* =================================================
+                            GENDER
+                        ================================================= */}
+
+                        <div className="maya-detail-item">
+
+                            <span className="maya-detail-label">
+                                Gender
+                            </span>
+
+                            <strong className="maya-detail-value">
+                                {displayPassengerGender}
+                            </strong>
+
+                        </div>
+
+
+                        {/* =================================================
+                            PASSENGERS
+                        ================================================= */}
+
+                        <div className="maya-detail-item">
+
+                            <span className="maya-detail-label">
+                                Passengers
+                            </span>
+
+                            <strong className="maya-detail-value">
+                                {passengers}
+                                {" "}
+                                {passengers === 1
+                                    ? "Passenger"
+                                    : "Passengers"}
+                            </strong>
+
+                        </div>
+
+
+                        {/* =================================================
+                            ROUTE
+                        ================================================= */}
+
+                        <div className="maya-detail-item maya-route-item">
+
+                            <span className="maya-detail-label">
+                                Route
+                            </span>
+
+                            <strong className="maya-detail-value maya-route-value">
+                                {displayRoute}
+                            </strong>
+
+                        </div>
+
+
+                        {/* =================================================
+                            DEPARTURE
+                        ================================================= */}
+
+                        <div className="maya-detail-item">
+
+                            <span className="maya-detail-label">
+                                Departure
+                            </span>
+
+                            <strong className="maya-detail-value">
+                                {formatTime(
+                                    normalizedTrip.time
+                                )}
+                            </strong>
+
+                        </div>
+
+
+                        {/* =================================================
+                            VEHICLE
+                        ================================================= */}
+
+                        <div className="maya-detail-item">
+
+                            <span className="maya-detail-label">
+                                Vehicle
+                            </span>
+
+                            <strong className="maya-detail-value">
+                                {displayVehicle}
+                            </strong>
+
+                        </div>
+
+
+                        {/* =================================================
+                            PLATE NUMBER
+                        ================================================= */}
+
+                        <div className="maya-detail-item">
+
+                            <span className="maya-detail-label">
+                                Plate Number
+                            </span>
+
+                            <strong className="maya-detail-value maya-plate-value">
+                                {displayPlate}
+                            </strong>
+
+                        </div>
 
                     </div>
 
-                    <div className="detail-row">
+                </section>
 
-                        <span>
-                            Gender
-                        </span>
 
-                        <strong>
-                            {
-                                normalizedTrip
-                                    .passengerGender ||
-                                "N/A"
-                            }
-                        </strong>
+                {/* =================================================
+                    UPLOAD PAYMENT RECEIPT
+                ================================================= */}
 
-                    </div>
+                <section className="maya-payment-proof-section">
 
-                    <div className="detail-row">
+                    <div className="maya-section-heading">
 
-                        <span>
-                            Passengers
-                        </span>
+                        <h2>
+                            Upload Payment Receipt
+                        </h2>
 
-                        <strong>
-                            {passengers}
-                        </strong>
+                        <p>
+                            Upload a screenshot of your
+                            Maya payment receipt.
+                        </p>
 
                     </div>
 
-                    <div className="detail-row">
-
-                        <span>
-                            Route
-                        </span>
-
-                        <strong>
-                            {normalizedTrip.origin}
-                            {" → "}
-                            {normalizedTrip.destination}
-                        </strong>
-
-                    </div>
-
-                    <div className="detail-row">
-
-                        <span>
-                            Departure
-                        </span>
-
-                        <strong>
-                            {formatTime(
-                                normalizedTrip.time
-                            )}
-                        </strong>
-
-                    </div>
-
-                    <div className="detail-row">
-
-                        <span>
-                            Vehicle
-                        </span>
-
-                        <strong>
-                            {normalizedTrip.vehicleType}
-                        </strong>
-
-                    </div>
-
-                    <div className="detail-row">
-
-                        <span>
-                            Plate Number
-                        </span>
-
-                        <strong>
-                            {
-                                normalizedTrip
-                                    .plateNumber ||
-                                "N/A"
-                            }
-                        </strong>
-
-                    </div>
-
-                </div>
-
-                {/* FARE SUMMARY */}
-
-                <div className="fare-card">
-
-                    <h2>
-                        Fare Summary
-                    </h2>
-
-                    <div className="fare-row">
-
-                        <span>
-                            Passenger Fare
-                        </span>
-
-                        <span>
-                            ₱
-                            {passengerFare.toFixed(2)}
-                        </span>
-
-                    </div>
-
-                    <div className="fare-row">
-
-                        <span>
-                            Motorcycle
-                        </span>
-
-                        <span>
-                            ₱
-                            {motorcycleFare.toFixed(2)}
-                        </span>
-
-                    </div>
-
-                    <div className="fare-row">
-
-                        <span>
-                            PPA Fee
-                        </span>
-
-                        <span>
-                            ₱
-                            {ppaFee.toFixed(2)}
-                        </span>
-
-                    </div>
-
-                    <div className="fare-divider" />
-
-                    <div className="total-row">
-
-                        <strong>
-                            Total to Pay
-                        </strong>
-
-                        <strong>
-                            ₱
-                            {totalFare.toFixed(2)}
-                        </strong>
-
-                    </div>
-
-                </div>
-
-                {/* PAYMENT PROOF */}
-
-                <div className="proof-card">
-
-                    <h2>
-                        Payment Proof
-                    </h2>
-
-                    <p className="proof-description">
-                        After you successfully pay
-                        through Maya, take a screenshot
-                        of the Maya payment receipt and
-                        upload it here.
-                    </p>
 
                     <label
                         htmlFor="payment-proof"
-                        className="upload-button"
+                        className="maya-upload-button"
                     >
-                        📷 Upload Payment Receipt
+
+                        <span className="maya-upload-icon">
+                            ↑
+                        </span>
+
+                        <span>
+                            {paymentProof
+                                ? "Change Payment Receipt"
+                                : "Choose Payment Receipt"}
+                        </span>
+
                     </label>
+
 
                     <input
                         id="payment-proof"
                         type="file"
-                        accept="image/png,image/jpeg,image/jpg"
+                        accept="image/jpeg,image/jpg,image/png"
                         onChange={
                             handleProofUpload
                         }
                         hidden
                     />
 
-                    {/* RECEIPT PREVIEW */}
+
+                    <p className="maya-upload-note">
+                        JPG, JPEG, or PNG only • Maximum 5 MB
+                    </p>
+
+
+                    {/* =================================================
+                        PREVIEW
+                    ================================================= */}
 
                     {proofPreview && (
 
-                        <div className="proof-preview">
+                        <div className="maya-proof-preview">
 
-                            <div className="proof-preview-header">
+                            <div className="maya-proof-preview-header">
 
                                 <strong>
                                     Payment Receipt Preview
@@ -1291,122 +1429,200 @@ const MayaPayment = () => {
 
                                 <button
                                     type="button"
+                                    className="maya-remove-proof"
                                     onClick={
                                         handleRemoveProof
                                     }
-                                    className="remove-proof"
                                 >
                                     Remove
                                 </button>
 
                             </div>
 
+
                             <img
                                 src={proofPreview}
-                                alt="Uploaded Maya payment proof"
+                                alt="Payment receipt preview"
                             />
+
 
                             <p>
                                 {paymentProof?.name}
                             </p>
 
                         </div>
+
                     )}
 
-                    {/* ERROR */}
+
+                    {/* =================================================
+                        ERROR
+                    ================================================= */}
 
                     {errorMessage && (
 
-                        <div className="error-message">
+                        <div className="maya-error-message">
 
-                            {errorMessage}
+                            <strong>
+                                Unable to continue
+                            </strong>
+
+                            <span>
+                                {errorMessage}
+                            </span>
 
                         </div>
+
                     )}
 
-                </div>
+                </section>
 
-                {/* SUBMIT */}
+
+                {/* =================================================
+                    SUBMIT BUTTON
+                ================================================= */}
 
                 <button
                     type="button"
-                    className="complete-payment-button"
+                    className="maya-complete-payment-button"
                     onClick={
                         handleCompletedPayment
                     }
+                    disabled={isSubmitting}
                 >
-                    Payment Completed & Submit
+
+                    {isSubmitting
+                        ? "Submitting Payment..."
+                        : "Submit Payment"
+                    }
+
                 </button>
 
-                <p className="bottom-note">
-                    Your payment receipt will be reviewed
-                    by GuimarasGo staff before the booking
-                    is confirmed.
+
+                {/* =================================================
+                    BOTTOM NOTE
+                ================================================= */}
+
+                <p className="maya-bottom-note">
+
+                    Your payment will remain
+                    <strong>
+                        {" "}Pending Verification
+                    </strong>
+                    {" "}until an administrator
+                    verifies your receipt.
+
                 </p>
 
             </div>
 
+
             {/* =====================================================
-                CSS
+                ALL PAGE CSS
             ===================================================== */}
 
             <style>{`
+
+                /* =================================================
+                   GLOBAL
+                ================================================= */
 
                 * {
                     box-sizing: border-box;
                 }
 
-                .maya-page {
+                html,
+                body,
+                #root {
+                    margin: 0;
+                    padding: 0;
+                    width: 100%;
+                    min-height: 100%;
+                }
 
-                    min-height: 100vh;
-
-                    background:
-                        linear-gradient(
-                            180deg,
-                            #f8f4ff 0%,
-                            #f7f8fa 100%
-                        );
-
+                body {
                     font-family:
                         Arial,
                         Helvetica,
                         sans-serif;
 
-                    padding:
-                        30px 20px;
+                    background:
+                        #f7f8fa;
                 }
+
+                button,
+                input {
+                    font-family: inherit;
+                }
+
+
+                /* =================================================
+                   PAGE
+                ================================================= */
+
+                .maya-page {
+
+                    width: 100%;
+                    min-height: 100vh;
+
+                    padding:
+                        35px 20px 60px;
+
+                    background:
+                        linear-gradient(
+                            180deg,
+                            #fffaf7 0%,
+                            #f7f8fa 45%,
+                            #f7f8fa 100%
+                        );
+                }
+
+
+                /* =================================================
+                   MAIN CONTAINER
+                ================================================= */
 
                 .maya-container {
 
                     width: 100%;
 
-                    max-width: 650px;
+                    max-width:
+                        760px;
 
-                    margin: 0 auto;
+                    margin:
+                        0 auto;
 
                     padding:
-                        25px
-                        25px
-                        35px;
+                        28px 32px 35px;
 
                     background:
                         #ffffff;
 
+                    border:
+                        1px solid #e7e7e7;
+
                     border-radius:
-                        24px;
+                        20px;
 
                     box-shadow:
-                        0 10px 35px
-                        rgba(0, 0, 0, 0.08);
+                        0 12px 40px
+                        rgba(
+                            0,
+                            0,
+                            0,
+                            0.06
+                        );
                 }
+
 
                 /* =================================================
                    BACK BUTTON
                 ================================================= */
 
-                .maya-back {
+                .maya-back-button {
 
-                    border: none;
+                    border:
+                        none;
 
                     background:
                         transparent;
@@ -1415,20 +1631,26 @@ const MayaPayment = () => {
                         #777777;
 
                     font-size:
-                        13px;
+                        12px;
+
+                    font-weight:
+                        600;
 
                     cursor:
                         pointer;
 
+                    padding:
+                        4px 0;
+
                     margin-bottom:
-                        20px;
+                        12px;
                 }
 
-                .maya-back:hover {
-
+                .maya-back-button:hover {
                     color:
-                        #7b4ce2;
+                        #f28c28;
                 }
+
 
                 /* =================================================
                    LOGO
@@ -1436,33 +1658,43 @@ const MayaPayment = () => {
 
                 .maya-logo {
 
+                    width:
+                        150px;
+
+                    height:
+                        90px;
+
+                    margin:
+                        0 auto 5px;
+
                     display:
                         flex;
 
-                    justify-content:
+                    align-items:
                         center;
 
-                    margin-bottom:
-                        15px;
+                    justify-content:
+                        center;
                 }
 
                 .maya-logo img {
 
                     width:
-                        110px;
+                        150px;
 
                     height:
-                        auto;
-
-                    max-height:
                         90px;
 
                     object-fit:
                         contain;
+
+                    display:
+                        block;
                 }
 
+
                 /* =================================================
-                   HEADING
+                   HEADER
                 ================================================= */
 
                 .maya-heading {
@@ -1477,10 +1709,16 @@ const MayaPayment = () => {
                         center;
 
                     gap:
-                        15px;
+                        12px;
 
-                    margin-bottom:
-                        20px;
+                    margin:
+                        5px auto 22px;
+
+                    text-align:
+                        left;
+
+                    max-width:
+                        560px;
                 }
 
                 .maya-icon {
@@ -1490,6 +1728,9 @@ const MayaPayment = () => {
 
                     height:
                         48px;
+
+                    flex:
+                        0 0 48px;
 
                     display:
                         flex;
@@ -1501,19 +1742,19 @@ const MayaPayment = () => {
                         center;
 
                     border-radius:
-                        12px;
+                        13px;
 
                     background:
-                        #eee7ff;
+                        #eaf8ef;
 
                     color:
-                        #7046d8;
+                        #159447;
 
                     font-size:
-                        24px;
+                        22px;
 
                     font-weight:
-                        900;
+                        800;
                 }
 
                 .maya-heading h1 {
@@ -1522,10 +1763,13 @@ const MayaPayment = () => {
                         0;
 
                     color:
-                        #111111;
+                        #222222;
 
                     font-size:
-                        24px;
+                        23px;
+
+                    line-height:
+                        1.2;
 
                     font-weight:
                         800;
@@ -1537,112 +1781,167 @@ const MayaPayment = () => {
                         5px 0 0;
 
                     color:
-                        #777777;
+                        #888888;
 
                     font-size:
-                        13px;
+                        12px;
+
+                    line-height:
+                        1.4;
                 }
+
 
                 /* =================================================
                    PAYMENT NOTICE
                 ================================================= */
 
-                .payment-notice {
-    display: block;
-    padding: 16px 20px;
-    border: 1px solid #d8c4ff;
-    border-radius: 12px;
-    background: #f8f3ff;
-}
-
-.payment-notice strong {
-    display: block;
-    margin-bottom: 12px;
-    color: #7040e8;
-    font-size: 14px;
-    font-weight: 700;
-}
-
-.payment-notice p {
-    margin: 8px 0;
-    color: #333;
-    font-size: 14px;
-    line-height: 1.6;
-}
-
-                /* =================================================
-                   QR SECTION
-                ================================================= */
-
-                .qr-section {
-
-                    text-align:
-                        center;
-
-                    padding:
-                        10px
-                        0
-                        25px;
-                }
-
-                .merchant-label {
-
-                    margin-bottom:
-                        12px;
-
-                    color:
-                        #555555;
-
-                    font-size:
-                        13px;
-
-                    font-weight:
-                        700;
-                }
-
-                .maya-qr {
+                .maya-payment-notice {
 
                     width:
-                        280px;
+                        100%;
 
-                    height:
-                        280px;
+                    margin-bottom:
+                        20px;
+
+                    padding:
+                        15px 17px;
+
+                    border:
+                        1px solid #f4dfc7;
+
+                    border-left:
+                        4px solid #f28c28;
+
+                    border-radius:
+                        11px;
+
+                    background:
+                        #fff9f1;
+                }
+
+                .maya-payment-notice strong {
 
                     display:
                         block;
 
+                    margin-bottom:
+                        6px;
+
+                    color:
+                        #c56d13;
+
+                    font-size:
+                        12px;
+
+                    font-weight:
+                        800;
+                }
+
+                .maya-payment-notice p {
+
                     margin:
-                        0 auto
+                        4px 0;
+
+                    color:
+                        #777777;
+
+                    font-size:
+                        11px;
+
+                    line-height:
+                        1.55;
+                }
+
+
+                /* =================================================
+                   MAYA QR SECTION
+                ================================================= */
+
+                .maya-qr-section {
+
+                    width:
+                        100%;
+
+                    margin-bottom:
+                        20px;
+
+                    padding:
+                        22px;
+
+                    text-align:
+                        center;
+
+                    border:
+                        1px solid #e8e8e8;
+
+                    border-radius:
                         15px;
+
+                    background:
+                        #ffffff;
+                }
+
+                .maya-merchant-label {
+
+                    margin-bottom:
+                        14px;
+
+                    color:
+                        #777777;
+
+                    font-size:
+                        12px;
+
+                    font-weight:
+                        600;
+                }
+
+                .maya-qr {
+
+                    display:
+                        block;
+
+                    width:
+                        260px;
+
+                    height:
+                        260px;
+
+                    max-width:
+                        100%;
+
+                    margin:
+                        0 auto;
 
                     object-fit:
                         contain;
 
+                    border:
+                        1px solid #eeeeee;
+
+                    border-radius:
+                        8px;
+
                     background:
                         #ffffff;
-
-                    border:
-                        8px solid
-                        #ffffff;
-
-                    box-shadow:
-                        0 5px 20px
-                        rgba(0, 0, 0, 0.10);
                 }
 
-                .qr-section h3 {
+                .maya-qr-section h3 {
 
                     margin:
-                        5px 0 5px;
+                        15px 0 5px;
 
                     color:
                         #222222;
 
                     font-size:
                         17px;
+
+                    font-weight:
+                        800;
                 }
 
-                .qr-section p {
+                .maya-qr-section p {
 
                     margin:
                         0;
@@ -1651,54 +1950,57 @@ const MayaPayment = () => {
                         #888888;
 
                     font-size:
-                        12px;
+                        11px;
+
+                    line-height:
+                        1.5;
                 }
 
+
                 /* =================================================
-                   AMOUNT TO PAY
+                   AMOUNT
                 ================================================= */
 
-                .amount-to-pay {
+                .maya-amount-card {
 
-                    margin:
-                        5px auto 18px;
+                    width:
+                        100%;
+
+                    margin-bottom:
+                        20px;
 
                     padding:
-                        18px;
-
-                    max-width:
-                        350px;
-
-                    border-radius:
-                        14px;
-
-                    background:
-                        #f5f0ff;
-
-                    border:
-                        1px solid
-                        #ddd0ff;
+                        20px;
 
                     text-align:
                         center;
+
+                    border:
+                        1px solid #eee4ff;
+
+                    border-radius:
+                        15px;
+
+                    background:
+                        #faf8ff;
                 }
 
-                .amount-to-pay span {
+                .maya-amount-card span {
 
                     display:
                         block;
+
+                    margin-bottom:
+                        5px;
 
                     color:
                         #777777;
 
                     font-size:
                         12px;
-
-                    margin-bottom:
-                        5px;
                 }
 
-                .amount-to-pay strong {
+                .maya-amount-card strong {
 
                     display:
                         block;
@@ -1709,163 +2011,400 @@ const MayaPayment = () => {
                     font-size:
                         30px;
 
+                    line-height:
+                        1.2;
+
                     font-weight:
                         800;
                 }
 
-                .amount-to-pay p {
+                .maya-amount-card p {
 
                     margin:
-                        6px 0 0;
+                        7px 0 0;
 
                     color:
-                        #777777;
+                        #888888;
 
                     font-size:
-                        12px;
+                        11px;
+
+                    line-height:
+                        1.45;
                 }
 
+
                 /* =================================================
-                   CARDS
+                   PAYMENT DETAILS CARD
+                   IMPORTANT:
+                   UNIQUE CLASS NAMES
                 ================================================= */
 
-                .payment-details,
-                .fare-card,
-                .proof-card {
+                .maya-payment-details {
 
-                    border:
-                        1px solid
-                        #eeeeee;
-
-                    border-radius:
-                        13px;
-
-                    padding:
-                        18px;
+                    width:
+                        100%;
 
                     margin-bottom:
+                        20px;
+
+                    padding:
+                        22px;
+
+                    border:
+                        1px solid #e5e5e5;
+
+                    border-radius:
                         16px;
+
+                    background:
+                        #ffffff;
+
+                    overflow:
+                        hidden;
                 }
 
-                .payment-details h2,
-                .fare-card h2,
-                .proof-card h2 {
+
+                .maya-payment-details-header {
+
+                    width:
+                        100%;
+
+                    margin-bottom:
+                        18px;
+
+                    padding-bottom:
+                        14px;
+
+                    border-bottom:
+                        1px solid #eeeeee;
+                }
+
+
+                .maya-payment-details-header h2 {
 
                     margin:
-                        0 0 15px;
-
-                    font-size:
-                        17px;
+                        0;
 
                     color:
                         #222222;
+
+                    font-size:
+                        18px;
+
+                    line-height:
+                        1.25;
+
+                    font-weight:
+                        800;
                 }
 
+
+                .maya-payment-details-header p {
+
+                    margin:
+                        5px 0 0;
+
+                    color:
+                        #888888;
+
+                    font-size:
+                        11px;
+
+                    line-height:
+                        1.5;
+                }
+
+
                 /* =================================================
-                   DETAILS
+                   NEW GRID
                 ================================================= */
 
-                .detail-row,
-                .fare-row {
+                .maya-details-grid {
+
+                    width:
+                        100%;
+
+                    display:
+                        grid;
+
+                    grid-template-columns:
+                        repeat(
+                            3,
+                            minmax(
+                                0,
+                                1fr
+                            )
+                        );
+
+                    gap:
+                        0;
+
+                    border:
+                        1px solid #eeeeee;
+
+                    border-radius:
+                        12px;
+
+                    overflow:
+                        hidden;
+
+                    background:
+                        #ffffff;
+                }
+
+
+                /* =================================================
+                   EACH DETAIL
+                ================================================= */
+
+                .maya-detail-item {
+
+                    min-width:
+                        0;
+
+                    min-height:
+                        88px;
+
+                    padding:
+                        16px 17px;
 
                     display:
                         flex;
 
+                    flex-direction:
+                        column;
+
                     justify-content:
-                        space-between;
+                        center;
 
-                    gap:
-                        15px;
+                    background:
+                        #ffffff;
 
-                    padding:
-                        9px 0;
+                    border-right:
+                        1px solid #eeeeee;
 
-                    font-size:
-                        13px;
+                    border-bottom:
+                        1px solid #eeeeee;
                 }
 
-                .detail-row span,
-                .fare-row span:first-child {
+
+                /* Remove right border
+                   from every third item */
+
+                .maya-detail-item:nth-child(3n) {
+
+                    border-right:
+                        none;
+                }
+
+
+                /* Remove bottom border
+                   from the final row */
+
+                .maya-detail-item:nth-child(7),
+                .maya-detail-item:nth-child(8),
+                .maya-detail-item:nth-child(9) {
+
+                    border-bottom:
+                        none;
+                }
+
+
+                /* =================================================
+                   LABEL
+                ================================================= */
+
+                .maya-detail-label {
+
+                    display:
+                        block;
+
+                    margin-bottom:
+                        7px;
 
                     color:
                         #777777;
-                }
-
-                .detail-row strong {
-
-                    color:
-                        #222222;
-
-                    text-align:
-                        right;
-
-                    max-width:
-                        60%;
-                }
-
-                .fare-row span:last-child {
-
-                    color:
-                        #222222;
-
-                    font-weight:
-                        600;
-                }
-
-                /* =================================================
-                   FARE
-                ================================================= */
-
-                .fare-divider {
-
-                    height:
-                        1px;
-
-                    background:
-                        #dddddd;
-
-                    margin:
-                        7px 0;
-                }
-
-                .total-row {
-
-                    display:
-                        flex;
-
-                    justify-content:
-                        space-between;
-
-                    padding-top:
-                        5px;
 
                     font-size:
-                        17px;
+                        11px;
+
+                    line-height:
+                        1.3;
+
+                    font-weight:
+                        500;
+
+                    white-space:
+                        normal;
+                }
+
+
+                /* =================================================
+                   VALUE
+                ================================================= */
+
+                .maya-detail-value {
+
+                    display:
+                        block;
+
+                    min-width:
+                        0;
+
+                    max-width:
+                        100%;
 
                     color:
                         #222222;
+
+                    font-size:
+                        14px;
+
+                    line-height:
+                        1.35;
+
+                    font-weight:
+                        700;
+
+                    white-space:
+                        normal;
+
+                    overflow-wrap:
+                        break-word;
+
+                    word-break:
+                        normal;
                 }
+
+
+                /* =================================================
+                   BOOKING REFERENCE
+                ================================================= */
+
+                .maya-reference {
+
+                    color:
+                        #f28c28;
+
+                    letter-spacing:
+                        0.2px;
+
+                    white-space:
+                        nowrap;
+                }
+
+
+                /* =================================================
+                   ROUTE
+                ================================================= */
+
+                .maya-route-value {
+
+                    white-space:
+                        normal;
+
+                    overflow-wrap:
+                        normal;
+
+                    word-break:
+                        normal;
+                }
+
+
+                /* =================================================
+                   PLATE
+                ================================================= */
+
+                .maya-plate-value {
+
+                    text-transform:
+                        uppercase;
+
+                    letter-spacing:
+                        0.3px;
+
+                    white-space:
+                        nowrap;
+                }
+
 
                 /* =================================================
                    PAYMENT PROOF
                 ================================================= */
 
-                .proof-description {
+                .maya-payment-proof-section {
+
+                    width:
+                        100%;
+
+                    margin-bottom:
+                        18px;
+
+                    padding:
+                        22px;
+
+                    border:
+                        1px solid #e5e5e5;
+
+                    border-radius:
+                        16px;
+
+                    background:
+                        #ffffff;
+                }
+
+
+                .maya-section-heading {
+
+                    margin-bottom:
+                        15px;
+                }
+
+
+                .maya-section-heading h2 {
+
+                    margin:
+                        0;
 
                     color:
-                        #777777;
+                        #222222;
 
                     font-size:
-                        12px;
+                        18px;
+
+                    font-weight:
+                        800;
+                }
+
+
+                .maya-section-heading p {
+
+                    margin:
+                        5px 0 0;
+
+                    color:
+                        #888888;
+
+                    font-size:
+                        11px;
 
                     line-height:
                         1.5;
-
-                    margin:
-                        0 0 15px;
                 }
 
-                .upload-button {
+
+                /* =================================================
+                   UPLOAD
+                ================================================= */
+
+                .maya-upload-button {
+
+                    width:
+                        100%;
+
+                    min-height:
+                        54px;
 
                     display:
                         flex;
@@ -1876,21 +2415,17 @@ const MayaPayment = () => {
                     justify-content:
                         center;
 
-                    width:
-                        100%;
-
-                    min-height:
-                        50px;
+                    gap:
+                        9px;
 
                     padding:
                         12px;
 
                     border:
-                        1px dashed
-                        #9a7be8;
+                        1px dashed #9a7be8;
 
                     border-radius:
-                        10px;
+                        11px;
 
                     background:
                         #faf8ff;
@@ -1899,7 +2434,7 @@ const MayaPayment = () => {
                         #7046d8;
 
                     font-size:
-                        14px;
+                        13px;
 
                     font-weight:
                         700;
@@ -1911,17 +2446,66 @@ const MayaPayment = () => {
                         0.2s ease;
                 }
 
-                .upload-button:hover {
+
+                .maya-upload-button:hover {
 
                     background:
                         #f2edff;
+
+                    border-color:
+                        #7046d8;
                 }
 
+
+                .maya-upload-icon {
+
+                    width:
+                        25px;
+
+                    height:
+                        25px;
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    justify-content:
+                        center;
+
+                    border-radius:
+                        50%;
+
+                    background:
+                        #eee7ff;
+
+                    font-size:
+                        16px;
+                }
+
+
+                .maya-upload-note {
+
+                    margin:
+                        8px 0 0;
+
+                    text-align:
+                        center;
+
+                    color:
+                        #999999;
+
+                    font-size:
+                        10px;
+                }
+
+
                 /* =================================================
-                   PROOF PREVIEW
+                   PREVIEW
                 ================================================= */
 
-                .proof-preview {
+                .maya-proof-preview {
 
                     margin-top:
                         18px;
@@ -1930,8 +2514,7 @@ const MayaPayment = () => {
                         12px;
 
                     border:
-                        1px solid
-                        #eeeeee;
+                        1px solid #eeeeee;
 
                     border-radius:
                         10px;
@@ -1940,7 +2523,8 @@ const MayaPayment = () => {
                         #fafafa;
                 }
 
-                .proof-preview-header {
+
+                .maya-proof-preview-header {
 
                     display:
                         flex;
@@ -1958,7 +2542,8 @@ const MayaPayment = () => {
                         10px;
                 }
 
-                .proof-preview-header strong {
+
+                .maya-proof-preview-header strong {
 
                     color:
                         #333333;
@@ -1967,7 +2552,8 @@ const MayaPayment = () => {
                         13px;
                 }
 
-                .remove-proof {
+
+                .maya-remove-proof {
 
                     border:
                         none;
@@ -1988,7 +2574,15 @@ const MayaPayment = () => {
                         pointer;
                 }
 
-                .proof-preview img {
+
+                .maya-remove-proof:hover {
+
+                    text-decoration:
+                        underline;
+                }
+
+
+                .maya-proof-preview img {
 
                     display:
                         block;
@@ -2009,7 +2603,8 @@ const MayaPayment = () => {
                         #ffffff;
                 }
 
-                .proof-preview p {
+
+                .maya-proof-preview p {
 
                     margin:
                         8px 0 0;
@@ -2024,43 +2619,63 @@ const MayaPayment = () => {
                         break-word;
                 }
 
+
                 /* =================================================
                    ERROR
                 ================================================= */
 
-                .error-message {
+                .maya-error-message {
+
+                    display:
+                        flex;
+
+                    flex-direction:
+                        column;
+
+                    gap:
+                        3px;
 
                     margin-top:
                         12px;
 
                     padding:
-                        10px;
-
-                    border-radius:
-                        8px;
-
-                    background:
-                        #fff1f1;
+                        11px 12px;
 
                     border:
-                        1px solid
-                        #ffd1d1;
+                        1px solid #ffd1d1;
+
+                    border-left:
+                        4px solid #d33b3b;
+
+                    border-radius:
+                        9px;
+
+                    background:
+                        #fff4f4;
 
                     color:
                         #c62828;
 
                     font-size:
-                        12px;
+                        11px;
 
                     line-height:
                         1.4;
                 }
 
+
+                .maya-error-message strong {
+
+                    font-size:
+                        12px;
+                }
+
+
                 /* =================================================
-                   SUBMIT BUTTON
+                   SUBMIT
                 ================================================= */
 
-                .complete-payment-button {
+                .maya-complete-payment-button {
 
                     width:
                         100%;
@@ -2081,7 +2696,7 @@ const MayaPayment = () => {
                         #ffffff;
 
                     font-size:
-                        15px;
+                        14px;
 
                     font-weight:
                         700;
@@ -2093,26 +2708,48 @@ const MayaPayment = () => {
                         0.2s ease;
                 }
 
-                .complete-payment-button:hover {
+
+                .maya-complete-payment-button:hover:not(:disabled) {
 
                     transform:
                         translateY(-1px);
 
-                    opacity:
-                        0.93;
+                    box-shadow:
+                        0 7px 18px
+                        rgba(
+                            112,
+                            70,
+                            216,
+                            0.20
+                        );
                 }
 
-                .complete-payment-button:active {
+
+                .maya-complete-payment-button:active:not(:disabled) {
 
                     transform:
                         translateY(0);
                 }
 
+
+                .maya-complete-payment-button:disabled {
+
+                    opacity:
+                        0.65;
+
+                    cursor:
+                        not-allowed;
+                }
+
+
                 /* =================================================
                    BOTTOM NOTE
                 ================================================= */
 
-                .bottom-note {
+                .maya-bottom-note {
+
+                    margin:
+                        14px 0 0;
 
                     text-align:
                         center;
@@ -2121,74 +2758,316 @@ const MayaPayment = () => {
                         #888888;
 
                     font-size:
-                        11px;
+                        10px;
 
                     line-height:
                         1.5;
-
-                    margin:
-                        15px 0 0;
                 }
+
+
+                .maya-bottom-note strong {
+
+                    color:
+                        #7046d8;
+                }
+
+
+                /* =================================================
+                   TABLET
+                ================================================= */
+
+                @media (max-width: 700px) {
+
+                    .maya-page {
+
+                        padding:
+                            20px 14px 40px;
+                    }
+
+
+                    .maya-container {
+
+                        padding:
+                            24px 20px 28px;
+
+                        border-radius:
+                            17px;
+                    }
+
+
+                    .maya-details-grid {
+
+                        grid-template-columns:
+                            repeat(
+                                2,
+                                minmax(
+                                    0,
+                                    1fr
+                                )
+                            );
+                    }
+
+
+                    .maya-detail-item:nth-child(3n) {
+
+                        border-right:
+                            1px solid #eeeeee;
+                    }
+
+
+                    .maya-detail-item:nth-child(2n) {
+
+                        border-right:
+                            none;
+                    }
+
+
+                    .maya-detail-item:nth-child(7),
+                    .maya-detail-item:nth-child(8),
+                    .maya-detail-item:nth-child(9) {
+
+                        border-bottom:
+                            1px solid #eeeeee;
+                    }
+
+
+                    .maya-detail-item:nth-last-child(-n + 2) {
+
+                        border-bottom:
+                            none;
+                    }
+
+
+                    .maya-heading {
+
+                        justify-content:
+                            flex-start;
+                    }
+
+                }
+
 
                 /* =================================================
                    MOBILE
                 ================================================= */
 
-                @media (max-width: 600px) {
+                @media (max-width: 480px) {
 
                     .maya-page {
 
                         padding:
-                            15px 10px;
+                            12px 9px 30px;
                     }
+
 
                     .maya-container {
 
                         padding:
-                            22px 18px;
+                            20px 14px 24px;
 
                         border-radius:
-                            20px;
+                            15px;
                     }
+
+
+                    .maya-logo {
+
+                        width:
+                            125px;
+
+                        height:
+                            80px;
+                    }
+
+
+                    .maya-logo img {
+
+                        width:
+                            125px;
+
+                        height:
+                            80px;
+                    }
+
+
+                    .maya-heading {
+
+                        gap:
+                            10px;
+
+                        margin-bottom:
+                            17px;
+                    }
+
+
+                    .maya-icon {
+
+                        width:
+                            40px;
+
+                        height:
+                            40px;
+
+                        flex:
+                            0 0 40px;
+
+                        border-radius:
+                            11px;
+
+                        font-size:
+                            18px;
+                    }
+
 
                     .maya-heading h1 {
 
                         font-size:
-                            21px;
+                            19px;
                     }
+
+
+                    .maya-heading p {
+
+                        font-size:
+                            10px;
+                    }
+
+
+                    .maya-payment-notice {
+
+                        padding:
+                            13px 14px;
+                    }
+
+
+                    .maya-payment-notice p {
+
+                        font-size:
+                            11px;
+                    }
+
 
                     .maya-qr {
 
                         width:
-                            240px;
+                            220px;
 
                         height:
-                            240px;
+                            220px;
                     }
 
-                    .detail-row {
 
-                        flex-direction:
-                            column;
+                    .maya-amount-card {
 
-                        gap:
-                            3px;
+                        padding:
+                            15px;
+
+                        margin-bottom:
+                            18px;
                     }
 
-                    .detail-row strong {
 
-                        max-width:
-                            100%;
-
-                        text-align:
-                            left;
-                    }
-
-                    .amount-to-pay strong {
+                    .maya-amount-card strong {
 
                         font-size:
-                            26px;
+                            27px;
                     }
+
+
+                    .maya-payment-details,
+                    .maya-payment-proof-section {
+
+                        padding:
+                            15px;
+                    }
+
+
+                    .maya-payment-details-header h2,
+                    .maya-section-heading h2 {
+
+                        font-size:
+                            16px;
+                    }
+
+
+                    /* =================================================
+                       PHONE = ONE CLEAN COLUMN
+                    ================================================= */
+
+                    .maya-details-grid {
+
+                        grid-template-columns:
+                            1fr;
+                    }
+
+
+                    .maya-detail-item {
+
+                        min-height:
+                            auto;
+
+                        padding:
+                            13px 14px;
+
+                        border-right:
+                            none !important;
+
+                        border-bottom:
+                            1px solid #eeeeee;
+                    }
+
+
+                    .maya-detail-item:last-child {
+
+                        border-bottom:
+                            none;
+                    }
+
+
+                    .maya-detail-label {
+
+                        margin-bottom:
+                            5px;
+
+                        font-size:
+                            10px;
+                    }
+
+
+                    .maya-detail-value {
+
+                        font-size:
+                            13px;
+
+                        line-height:
+                            1.4;
+                    }
+
+
+                    .maya-reference,
+                    .maya-plate-value {
+
+                        white-space:
+                            normal;
+                    }
+
+
+                    .maya-route-value {
+
+                        white-space:
+                            normal;
+                    }
+
+
+                    .maya-upload-button {
+
+                        min-height:
+                            50px;
+
+                        font-size:
+                            12px;
+                    }
+
                 }
 
             `}</style>

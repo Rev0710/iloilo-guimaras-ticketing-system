@@ -405,5 +405,51 @@ router.post(
         }
     }
 );
+// =========================================================
+// GET BOOKING BY BOOKING REFERENCE
+// Used by tourist Bookings page to get latest status
+// =========================================================
+
+router.get(
+    "/booking/:bookingReference",
+    async (req, res) => {
+
+        try {
+
+            const booking =
+                await Booking.findOne({
+                    bookingReference:
+                        req.params.bookingReference
+                });
+
+            if (!booking) {
+
+                return res.status(404).json({
+                    success: false,
+                    message:
+                        "Booking not found."
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                booking
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Get booking by reference error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    "Unable to retrieve booking."
+            });
+        }
+    }
+);
 
 module.exports = router;

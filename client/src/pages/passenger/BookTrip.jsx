@@ -1,313 +1,404 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+
 const LOGO_URL =
-    "https://scontent.fcgy2-2.fna.fbcdn.net/v/t1.15752-9/775468126_1793367781697550_3767041847597317415_n.png?stp=dst-png&cstp=mx532x469&ctp=s532x469&_nc_cat=103&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeEKTnmoEB20Fs5gE6WYWTxBd_QaoqEL1HV39BqioQvUdc9ZjhsVKyPy19OQYcSyO20Y_14PqMHIf2M01vrRKE4U&_nc_ohc=fK0ygs4SALUQ7kNvwEhUgQl&_nc_oc=Adr97yUKqKQuY-Rb-Lpj__SjoqmY7Y75sVczdULR8n8AbUyhy3oVy9DJ-YO_YUPfnTE&_nc_zt=23&_nc_ht=scontent.fcgy2-2.fna&_nc_ss=7a2a8&oh=03_Q7cD6AFmBhmkMTNembwVy95XQOYfaHONnpCT7udBE1IJnmNvHg&oe=6AB20956";
+    "https://scontent.fcgy2-2.fna.fbcdn.net/v/t1.15752-9/775468126_1793367781697550_3767041847597317415_n.png?stp=dst-png&cstp=mx532x469&ctp=s532x469&_nc_cat=103&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeEKTnmoEB20Fs5gE6WYWTxBd_QaoqEL1HV39BqioQvUdc9ZjhsVKyPy19OQYcSyO20Y_14PqMHIf2M01vrRKE4U&_nc_ohc=fK0ygs4SALUQ7kNvwEhUgQl&_nc_oc=Adr97yUKqKQuY-Rb-Lpj__SjoqmY7YY75sVczdULR8n8AbUyhy3oVy9DJ-YO_YUPfnTE&_nc_zt=23&_nc_ht=scontent.fcgy2-2.fna&_nc_ss=7a2a8&oh=03_Q7cD6AFmBhmkMTNembwVy95XQOYfaHONnpCT7udBE1IJnmNvHg&oe=6AB20956";
+
+
+const MAX_PASSENGERS = 5;
+const MIN_PASSENGERS = 1;
+
 
 const BookTrip = () => {
+
     const navigate = useNavigate();
 
-    // =========================================================
-    // SELECTED FERRY / VESSEL
-    // =========================================================
 
-    const [selectedTrip, setSelectedTrip] = useState(null);
+    /*
+     * =========================================================
+     * RECOVER PREVIOUS TRIP
+     * =========================================================
+     */
 
-    // =========================================================
-    // RECOVER SAVED TRIP
-    // =========================================================
+    const savedTrip =
+        sessionStorage.getItem("tripDetails");
 
-    const [previousTrip, setPreviousTrip] = useState({});
 
-    // =========================================================
-    // LOAD SELECTED FERRY
-    // =========================================================
+    let previousTrip = {};
 
-    useEffect(() => {
-        try {
-            const savedSelectedTrip =
-                sessionStorage.getItem("selectedTrip");
 
-            if (savedSelectedTrip) {
-                const parsedSelectedTrip =
-                    JSON.parse(savedSelectedTrip);
+    try {
 
-                setSelectedTrip(parsedSelectedTrip);
-            }
-        } catch (error) {
-            console.error(
-                "Error loading selected ferry:",
-                error
-            );
-        }
-    }, []);
+        previousTrip = savedTrip
+            ? JSON.parse(savedTrip)
+            : {};
 
-    // =========================================================
-    // LOAD PREVIOUS TRIP INFORMATION
-    // =========================================================
+    } catch (error) {
 
-    useEffect(() => {
-        try {
-            const savedTrip =
-                sessionStorage.getItem("tripDetails");
+        console.error(
+            "Unable to recover saved trip:",
+            error
+        );
 
-            if (savedTrip) {
-                const parsedTrip =
-                    JSON.parse(savedTrip);
+        previousTrip = {};
+    }
 
-                setPreviousTrip(parsedTrip);
-            }
-        } catch (error) {
-            console.error(
-                "Unable to recover saved trip:",
-                error
-            );
 
-            setPreviousTrip({});
-        }
-    }, []);
+    /*
+     * =========================================================
+     * TRIP INFORMATION
+     * =========================================================
+     */
 
-    // =========================================================
-    // TRIP STATES
-    // =========================================================
-
-    const [origin, setOrigin] = useState("");
-
-    const [destination, setDestination] =
-        useState("");
-
-    const [date, setDate] = useState("");
-
-    const [time, setTime] = useState("");
-
-    // =========================================================
-    // PASSENGER MODE
-    // =========================================================
-
-    const [passengerMode, setPassengerMode] =
-        useState("solo");
-
-    // =========================================================
-    // PASSENGER INFORMATION
-    // =========================================================
-
-    const [passengerName, setPassengerName] =
-        useState("");
-
-    const [passengerAge, setPassengerAge] =
-        useState("");
-
-    const [passengerGender, setPassengerGender] =
-        useState("");
-
-    // =========================================================
-    // PASSENGER COUNT
-    // =========================================================
-
-    const [passengers, setPassengers] =
-        useState(1);
-
-    // =========================================================
-    // VEHICLE
-    // =========================================================
-
-    const vehicleType = "Motorcycle";
-
-    // =========================================================
-    // PLATE NUMBER
-    // =========================================================
-
-    const [plateNumber, setPlateNumber] =
-        useState("");
-
-    // =========================================================
-    // DEPARTURE TIME POPUP
-    // =========================================================
-
-    const [showTimeModal, setShowTimeModal] =
-        useState(false);
-
-    // =========================================================
-    // APPLY SAVED DATA AFTER LOADING
-    // =========================================================
-
-    useEffect(() => {
-        if (!previousTrip) {
-            return;
-        }
-
-        setOrigin(
+    const [origin, setOrigin] =
+        useState(
             previousTrip.origin || ""
         );
 
-        setDestination(
+
+    const [destination, setDestination] =
+        useState(
             previousTrip.destination || ""
         );
 
-        setDate(
+
+    const [date, setDate] =
+        useState(
             previousTrip.date || ""
         );
 
-        setTime(
+
+    const [time, setTime] =
+        useState(
             previousTrip.time || ""
         );
 
-        setPassengerMode(
+
+    /*
+     * =========================================================
+     * PASSENGER MODE
+     *
+     * solo          = 1 passenger
+     * withPassenger = 2 to 5 passengers
+     * =========================================================
+     */
+
+    const [passengerMode, setPassengerMode] =
+        useState(
             previousTrip.passengerMode ||
-            "solo"
+            (
+                Number(previousTrip.passengers || 1) > 1
+                    ? "withPassenger"
+                    : "solo"
+            )
         );
 
-        setPassengerName(
-            previousTrip.passengerName || ""
+
+    /*
+     * =========================================================
+     * PASSENGER INFORMATION
+     *
+     * This is now an ARRAY.
+     *
+     * Every passenger gets:
+     * - name
+     * - age
+     * - gender
+     * =========================================================
+     */
+
+    const createPassenger = (
+        existing = {}
+    ) => ({
+        name:
+            existing.name ||
+            "",
+        age:
+            existing.age ||
+            "",
+        gender:
+            existing.gender ||
+            "",
+    });
+
+
+    const existingPassengerDetails =
+        Array.isArray(
+            previousTrip.passengerDetails
+        )
+            ? previousTrip.passengerDetails
+            : [];
+
+
+    /*
+     * =========================================================
+     * INITIAL PASSENGER COUNT
+     *
+     * Default:
+     * - previous saved count
+     * - otherwise 2 for with passenger
+     * - otherwise 1 for solo
+     * =========================================================
+     */
+
+    const savedPassengerCount =
+        Number(
+            previousTrip.passengers ||
+            (
+                previousTrip.passengerMode ===
+                "solo"
+                    ? 1
+                    : 2
+            )
         );
 
-        setPassengerAge(
-            previousTrip.passengerAge || ""
+
+    const initialPassengerCount =
+        Math.min(
+            Math.max(
+                savedPassengerCount,
+                MIN_PASSENGERS
+            ),
+            MAX_PASSENGERS
         );
 
-        setPassengerGender(
-            previousTrip.passengerGender || ""
-        );
 
-        setPassengers(
-            previousTrip.passengers || 1
-        );
+    /*
+     * =========================================================
+     * CREATE PASSENGER ARRAY
+     * =========================================================
+     */
 
-        setPlateNumber(
-            previousTrip.plateNumber || ""
-        );
-    }, [previousTrip]);
+    const buildInitialPassengers = () => {
 
-    // =========================================================
-    // APPLY SELECTED FERRY
-    // =========================================================
+        const result = [];
 
-    useEffect(() => {
-        if (!selectedTrip) {
-            return;
-        }
 
-        /*
-         * The Trips page should save:
-         *
-         * {
-         *   vesselName: "MV Island Princess",
-         *   origin: "Iloilo",
-         *   destination: "Guimaras",
-         *   time: "06:00",
-         *   passengersAvailable: 45,
-         *   vehicleAvailable: 8
-         * }
-         *
-         * We also support alternate property names
-         * so the page remains compatible.
-         */
-
-        if (
-            selectedTrip.origin
+        for (
+            let index = 0;
+            index < initialPassengerCount;
+            index++
         ) {
-            setOrigin(
-                selectedTrip.origin
-            );
+
+            if (
+                existingPassengerDetails[index]
+            ) {
+
+                result.push(
+                    createPassenger(
+                        existingPassengerDetails[index]
+                    )
+                );
+
+            } else if (
+                index === 0 &&
+                (
+                    previousTrip.passengerName ||
+                    previousTrip.passengerAge ||
+                    previousTrip.passengerGender
+                )
+            ) {
+
+                /*
+                 * Backward compatibility
+                 *
+                 * Old saved bookings only had:
+                 * passengerName
+                 * passengerAge
+                 * passengerGender
+                 */
+
+                result.push({
+
+                    name:
+                        previousTrip.passengerName ||
+                        "",
+
+                    age:
+                        previousTrip.passengerAge ||
+                        "",
+
+                    gender:
+                        previousTrip.passengerGender ||
+                        "",
+
+                });
+
+            } else {
+
+                result.push(
+                    createPassenger()
+                );
+            }
         }
 
-        if (
-            selectedTrip.destination
-        ) {
-            setDestination(
-                selectedTrip.destination
-            );
-        }
 
-        if (
-            selectedTrip.time
-        ) {
-            setTime(
-                selectedTrip.time
-            );
-        }
-
-    }, [selectedTrip]);
-
-    // =========================================================
-    // DEPARTURE TIME
-    // 3:30 AM - 7:30 PM
-    // =========================================================
-
-    const MIN_TIME = "03:30";
-
-    const MAX_TIME = "19:30";
-
-    // =========================================================
-    // AVAILABLE DEPARTURE TIMES
-    // =========================================================
-
-    const departureTimes = [];
-
-    for (
-        let minutes = 3 * 60 + 30;
-        minutes <= 19 * 60 + 30;
-        minutes += 30
-    ) {
-        const hour =
-            Math.floor(minutes / 60);
-
-        const minute =
-            minutes % 60;
-
-        const value =
-            `${String(hour).padStart(
-                2,
-                "0"
-            )}:${String(minute).padStart(
-                2,
-                "0"
-            )}`;
-
-        departureTimes.push(value);
-    }
-
-    // =========================================================
-    // PASSENGER DECREASE
-    // =========================================================
-
-    const handlePassengerDecrease = () => {
-
-        if (
-            passengerMode ===
-                "withPassenger" &&
-            passengers > 2
-        ) {
-            setPassengers(
-                (previous) =>
-                    previous - 1
-            );
-        }
-
+        return result;
     };
 
-    // =========================================================
-    // PASSENGER INCREASE
-    // =========================================================
+
+    const [
+        passengerDetails,
+        setPassengerDetails
+    ] = useState(
+        buildInitialPassengers()
+    );
+
+
+    /*
+     * =========================================================
+     * PASSENGER COUNT
+     * =========================================================
+     */
+
+    const passengers =
+        passengerDetails.length;
+
+
+    /*
+     * =========================================================
+     * MOTORCYCLE
+     * =========================================================
+     */
+
+    const vehicleType =
+        previousTrip.vehicleType ||
+        "Motorcycle";
+
+
+    const [plateNumber, setPlateNumber] =
+        useState(
+            previousTrip.plateNumber ||
+            ""
+        );
+
+
+    /*
+     * =========================================================
+     * PASSENGER FIELD UPDATE
+     * =========================================================
+     */
+
+    const updatePassenger = (
+        index,
+        field,
+        value
+    ) => {
+
+        setPassengerDetails(
+            (previous) => {
+
+                const updated =
+                    [...previous];
+
+
+                updated[index] = {
+
+                    ...updated[index],
+
+                    [field]:
+                        value,
+
+                };
+
+
+                return updated;
+            }
+        );
+    };
+
+
+    /*
+     * =========================================================
+     * PASSENGER INCREASE
+     *
+     * MAXIMUM = 5
+     * =========================================================
+     */
 
     const handlePassengerIncrease = () => {
 
         if (
-            passengerMode ===
-                "withPassenger" &&
-            passengers < 10
+            passengers >=
+            MAX_PASSENGERS
         ) {
-            setPassengers(
-                (previous) =>
-                    previous + 1
-            );
+            return;
         }
 
+
+        setPassengerDetails(
+            (previous) => [
+                ...previous,
+                createPassenger()
+            ]
+        );
+
+
+        /*
+         * If user is adding passengers,
+         * automatically switch to
+         * "With Passenger".
+         */
+
+        if (
+            passengerMode !==
+            "withPassenger"
+        ) {
+
+            setPassengerMode(
+                "withPassenger"
+            );
+        }
     };
 
-    // =========================================================
-    // PASSENGER MODE
-    // =========================================================
+
+    /*
+     * =========================================================
+     * PASSENGER DECREASE
+     * =========================================================
+     */
+
+    const handlePassengerDecrease = () => {
+
+        if (
+            passengers <=
+            MIN_PASSENGERS
+        ) {
+            return;
+        }
+
+
+        setPassengerDetails(
+            (previous) =>
+                previous.slice(
+                    0,
+                    previous.length - 1
+                )
+        );
+
+
+        /*
+         * If only one passenger
+         * remains, switch to Solo.
+         */
+
+        if (
+            passengers - 1 === 1
+        ) {
+
+            setPassengerMode(
+                "solo"
+            );
+        }
+    };
+
+
+    /*
+     * =========================================================
+     * PASSENGER MODE CHANGE
+     * =========================================================
+     */
 
     const handlePassengerModeChange = (
         mode
@@ -315,126 +406,80 @@ const BookTrip = () => {
 
         setPassengerMode(mode);
 
-        if (mode === "solo") {
 
-            setPassengers(1);
-
-        } else {
-
-            setPassengers(
-                passengers < 2
-                    ? 2
-                    : passengers
-            );
-
-        }
-
-    };
-
-    // =========================================================
-    // TIME CHANGE
-    // =========================================================
-
-    const handleTimeChange = (
-        event
-    ) => {
-
-        const selectedTime =
-            event.target.value;
-
-        if (!selectedTime) {
-
-            setTime("");
-
-            return;
-        }
+        /*
+         * SOLO
+         *
+         * Only one passenger.
+         */
 
         if (
-            selectedTime <
-            MIN_TIME
+            mode === "solo"
         ) {
 
-            setTime(
-                MIN_TIME
-            );
+            setPassengerDetails(
+                (previous) => {
 
-            setShowTimeModal(true);
+                    /*
+                     * Keep the first passenger's
+                     * information.
+                     */
 
-            return;
-        }
-
-        if (
-            selectedTime >
-            MAX_TIME
-        ) {
-
-            setTime(
-                MAX_TIME
-            );
-
-            setShowTimeModal(true);
-
-            return;
-        }
-
-        setTime(
-            selectedTime
-        );
-
-        setShowTimeModal(true);
-    };
-
-    // =========================================================
-    // SELECT DEPARTURE TIME
-    // =========================================================
-
-    const handleDepartureTimeSelect =
-        (selectedTime) => {
-
-            handleTimeChange({
-                target: {
-                    value:
-                        selectedTime
+                    return [
+                        previous[0] ||
+                        createPassenger()
+                    ];
                 }
-            });
+            );
 
-        };
-
-    // =========================================================
-    // FORMAT TIME
-    // =========================================================
-
-    const formatTime = (
-        timeValue
-    ) => {
-
-        if (!timeValue) {
-            return "";
+            return;
         }
 
-        const [
-            hours,
-            minutes
-        ] =
-            timeValue.split(":");
 
-        const hourNumber =
-            Number(hours);
+        /*
+         * WITH PASSENGER
+         *
+         * Minimum = 2
+         */
 
-        const period =
-            hourNumber >= 12
-                ? "PM"
-                : "AM";
+        setPassengerDetails(
+            (previous) => {
 
-        const displayHour =
-            hourNumber % 12 || 12;
+                if (
+                    previous.length >= 2
+                ) {
 
-        return `${displayHour}:${minutes} ${period}`;
+                    return previous;
+                }
+
+
+                return [
+                    ...previous,
+
+                    createPassenger()
+                ];
+            }
+        );
     };
 
-    // =========================================================
-    // SUBMIT BOOKING
-    // =========================================================
+
+    /*
+     * =========================================================
+     * DATE
+     * =========================================================
+     */
+
+    const today =
+        new Date()
+            .toISOString()
+            .split("T")[0];
+
+
+    /*
+     * =========================================================
+     * SUBMIT BOOKING
+     * =========================================================
+     */
 
     const handleSubmit = (
         event
@@ -442,57 +487,37 @@ const BookTrip = () => {
 
         event.preventDefault();
 
-        // =====================================================
-        // VALIDATION
-        // =====================================================
+
+        /*
+         * =====================================================
+         * BASIC TRIP VALIDATION
+         * =====================================================
+         */
 
         if (
             !origin ||
             !destination ||
             !date ||
             !time ||
-            !passengerName.trim() ||
-            !passengerAge ||
-            !passengerGender ||
             !plateNumber.trim()
         ) {
 
             alert(
-                "Please complete all trip and passenger details."
+                "Please complete all trip details."
             );
 
             return;
         }
 
-        // =====================================================
-        // AGE VALIDATION
-        // =====================================================
 
-        const ageNumber =
-            Number(passengerAge);
-
-        if (
-            Number.isNaN(
-                ageNumber
-            ) ||
-            ageNumber < 1 ||
-            ageNumber > 120
-        ) {
-
-            alert(
-                "Please enter a valid passenger age."
-            );
-
-            return;
-        }
-
-        // =====================================================
-        // SAME PORT VALIDATION
-        // =====================================================
+        /*
+         * =====================================================
+         * SAME PORT VALIDATION
+         * =====================================================
+         */
 
         if (
-            origin ===
-            destination
+            origin === destination
         ) {
 
             alert(
@@ -502,77 +527,240 @@ const BookTrip = () => {
             return;
         }
 
-        // =====================================================
-        // TIME VALIDATION
-        // =====================================================
+
+        /*
+         * =====================================================
+         * PASSENGER COUNT VALIDATION
+         * =====================================================
+         */
 
         if (
-            time < MIN_TIME ||
-            time > MAX_TIME
+            passengers <
+            MIN_PASSENGERS ||
+            passengers >
+            MAX_PASSENGERS
         ) {
 
             alert(
-                "Departure time must be between 3:30 AM and 7:30 PM."
+                "You can book a maximum of 5 passengers."
             );
 
             return;
         }
 
-        // =====================================================
-        // COMPLETE TRIP DETAILS
-        // =====================================================
+
+        /*
+         * =====================================================
+         * PASSENGER INFORMATION VALIDATION
+         *
+         * EVERY PASSENGER MUST HAVE:
+         * - NAME
+         * - AGE
+         * - GENDER
+         * =====================================================
+         */
+
+        for (
+            let index = 0;
+            index < passengerDetails.length;
+            index++
+        ) {
+
+            const passenger =
+                passengerDetails[index];
+
+
+            if (
+                !passenger.name.trim()
+            ) {
+
+                alert(
+                    `Please enter the full name of Passenger ${
+                        index + 1
+                    }.`
+                );
+
+                return;
+            }
+
+
+            if (
+                !passenger.age
+            ) {
+
+                alert(
+                    `Please enter the age of Passenger ${
+                        index + 1
+                    }.`
+                );
+
+                return;
+            }
+
+
+            const ageNumber =
+                Number(
+                    passenger.age
+                );
+
+
+            if (
+                Number.isNaN(
+                    ageNumber
+                ) ||
+                ageNumber < 1 ||
+                ageNumber > 120
+            ) {
+
+                alert(
+                    `Please enter a valid age for Passenger ${
+                        index + 1
+                    }.`
+                );
+
+                return;
+            }
+
+
+            if (
+                !passenger.gender
+            ) {
+
+                alert(
+                    `Please select the gender of Passenger ${
+                        index + 1
+                    }.`
+                );
+
+                return;
+            }
+        }
+
+
+        /*
+         * =====================================================
+         * CLEAN PASSENGER DATA
+         * =====================================================
+         */
+
+        const cleanedPassengerDetails =
+            passengerDetails.map(
+                (passenger) => ({
+
+                    name:
+                        passenger.name
+                            .trim(),
+
+                    age:
+                        Number(
+                            passenger.age
+                        ),
+
+                    gender:
+                        passenger.gender,
+
+                })
+            );
+
+
+        /*
+         * =====================================================
+         * FIRST PASSENGER
+         *
+         * These are kept for compatibility
+         * with the existing Payment and
+         * Confirmation pages.
+         * =====================================================
+         */
+
+        const firstPassenger =
+            cleanedPassengerDetails[0];
+
+
+        /*
+         * =====================================================
+         * COMPLETE TRIP DETAILS
+         * =====================================================
+         */
 
         const tripDetails = {
+
+            /*
+             * Route
+             */
 
             origin,
 
             destination,
 
+
+            /*
+             * Schedule
+             */
+
             date,
 
             time,
 
-            // Ferry / Vessel
-            vesselName:
-                selectedTrip?.vesselName ||
-                selectedTrip?.vessel ||
-                selectedTrip?.name ||
-                "Ferry Vessel",
 
-            vesselTime:
-                selectedTrip?.time ||
-                time,
-
-            // Passenger information
-            passengerName:
-                passengerName.trim(),
-
-            passengerAge:
-                ageNumber,
-
-            passengerGender,
+            /*
+             * Passenger mode
+             */
 
             passengerMode,
 
+
+            /*
+             * Total number of passengers
+             */
+
             passengers,
 
-            // Vehicle
+
+            /*
+             * NEW:
+             * Complete passenger list
+             */
+
+            passengerDetails:
+                cleanedPassengerDetails,
+
+
+            /*
+             * OLD COMPATIBILITY FIELDS
+             *
+             * These represent Passenger 1.
+             */
+
+            passengerName:
+                firstPassenger.name,
+
+            passengerAge:
+                firstPassenger.age,
+
+            passengerGender:
+                firstPassenger.gender,
+
+
+            /*
+             * Vehicle
+             */
+
             vehicleType,
 
             plateNumber:
                 plateNumber
                     .trim()
-                    .toUpperCase()
+                    .toUpperCase(),
+
         };
 
-        console.log(
-            "Complete Trip Details:",
-            tripDetails
-        );
 
-        // =====================================================
-        // SAVE TRIP INFORMATION
-        // =====================================================
+        /*
+         * =====================================================
+         * SAVE TRIP DETAILS
+         * =====================================================
+         */
 
         sessionStorage.setItem(
             "tripDetails",
@@ -581,34 +769,55 @@ const BookTrip = () => {
             )
         );
 
-        // =====================================================
-        // SAVE SELECTED FERRY
-        // =====================================================
 
-        if (selectedTrip) {
+        /*
+         * =====================================================
+         * SAVE PENDING TRIP
+         * =====================================================
+         */
 
-            sessionStorage.setItem(
-                "selectedTrip",
-                JSON.stringify({
-                    ...selectedTrip,
+        sessionStorage.setItem(
+            "pendingTrip",
+            JSON.stringify(
+                tripDetails
+            )
+        );
 
-                    vesselName:
-                        selectedTrip.vesselName ||
-                        selectedTrip.vessel ||
-                        selectedTrip.name ||
-                        "Ferry Vessel",
 
-                    time:
-                        selectedTrip.time ||
-                        time
-                })
-            );
+        /*
+         * =====================================================
+         * SAVE LATEST BOOKING
+         * =====================================================
+         */
 
-        }
+        sessionStorage.setItem(
+            "latestBooking",
+            JSON.stringify(
+                tripDetails
+            )
+        );
 
-        // =====================================================
-        // CONTINUE TO PAYMENT
-        // =====================================================
+
+        /*
+         * =====================================================
+         * CONSOLE CHECK
+         *
+         * You can open browser console
+         * to verify all passengers.
+         * =====================================================
+         */
+
+        console.log(
+            "Complete Trip Details:",
+            tripDetails
+        );
+
+
+        /*
+         * =====================================================
+         * GO TO PAYMENT
+         * =====================================================
+         */
 
         navigate(
             "/payment",
@@ -621,417 +830,425 @@ const BookTrip = () => {
         );
     };
 
-    // =========================================================
-    // TODAY'S DATE
-    // =========================================================
-
-    const today =
-        new Date()
-            .toISOString()
-            .split("T")[0];
 
     return (
+
         <>
+
             <style>{`
 
                 * {
                     box-sizing: border-box;
                 }
 
+
                 html,
                 body,
                 #root {
                     margin: 0;
-                    padding: 0;
                     width: 100%;
                     min-height: 100%;
                 }
 
+
                 body {
                     font-family:
-                        "Poppins",
-                        -apple-system,
-                        BlinkMacSystemFont,
-                        "Segoe UI",
                         Arial,
+                        Helvetica,
                         sans-serif;
 
-                    background: #f5f6f8;
+                    background:
+                        #f7f8fa;
 
-                    color: #222222;
+                    color:
+                        #222222;
                 }
 
-                button,
-                input,
-                select {
-                    font-family: inherit;
-                }
+
+                /* =================================================
+                   PAGE
+                ================================================= */
 
                 .book-trip-page {
-                    min-height: 100vh;
 
-                    min-height: 100dvh;
+                    min-height:
+                        100vh;
 
                     padding:
                         30px
-                        16px
+                        20px
                         60px;
 
                     background:
-                        linear-gradient(
-                            180deg,
-                            #fff8f2 0%,
-                            #f7f8fa 55%,
-                            #f4f5f7 100%
-                        );
+                        #f7f8fa;
+
+                    display:
+                        flex;
+
+                    justify-content:
+                        center;
                 }
 
+
                 .book-trip-container {
-                    width: 100%;
 
-                    max-width: 900px;
+                    width:
+                        100%;
 
-                    margin: 0 auto;
+                    max-width:
+                        850px;
 
-                    background: #ffffff;
+                    background:
+                        #ffffff;
 
                     border:
-                        1px solid #eeeeee;
+                        1px solid #e5e5e5;
 
-                    border-radius: 22px;
-
-                    overflow: hidden;
+                    border-radius:
+                        18px;
 
                     box-shadow:
-                        0 15px 45px
+                        0 10px 35px
                         rgba(
                             0,
                             0,
                             0,
                             0.06
                         );
+
+                    overflow:
+                        hidden;
                 }
+
 
                 /* =================================================
                    HEADER
                 ================================================= */
 
                 .book-trip-header {
-                    height: 76px;
 
-                    display: flex;
+                    height:
+                        82px;
 
-                    align-items: center;
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
 
                     justify-content:
                         space-between;
 
                     padding:
-                        0
-                        28px;
+                        0 28px;
 
                     border-bottom:
                         1px solid #eeeeee;
+
+                    background:
+                        #ffffff;
                 }
 
-                .back-button {
-                    width: 42px;
 
-                    height: 42px;
+                .back-button {
+
+                    width:
+                        42px;
+
+                    height:
+                        42px;
 
                     border:
-                        1px solid #eeeeee;
+                        1px solid #dddddd;
 
-                    border-radius: 11px;
+                    border-radius:
+                        10px;
 
-                    background: #ffffff;
+                    background:
+                        #ffffff;
 
-                    color: #333333;
+                    color:
+                        #333333;
 
-                    font-size: 20px;
+                    font-size:
+                        20px;
 
-                    cursor: pointer;
+                    cursor:
+                        pointer;
 
                     transition:
                         0.2s ease;
                 }
 
-                .back-button:hover {
-                    background: #fff5ed;
 
-                    color: #f28c28;
+                .back-button:hover {
+
+                    background:
+                        #fff7f0;
 
                     border-color:
-                        #f5c9a7;
+                        #f28c28;
+
+                    color:
+                        #f28c28;
                 }
+
 
                 .book-trip-logo {
-                    height: 55px;
 
-                    display: flex;
+                    display:
+                        flex;
 
-                    align-items: center;
+                    align-items:
+                        center;
 
-                    justify-content: center;
+                    justify-content:
+                        center;
+
+                    flex:
+                        1;
                 }
+
 
                 .book-trip-logo img {
-                    width: 70px;
 
-                    height: 55px;
+                    width:
+                        125px;
 
-                    object-fit: contain;
+                    height:
+                        65px;
+
+                    object-fit:
+                        contain;
                 }
+
 
                 .header-spacer {
-                    width: 42px;
 
-                    height: 42px;
+                    width:
+                        42px;
                 }
 
+
                 /* =================================================
-                   HEADING
+                   PAGE HEADING
                 ================================================= */
 
                 .book-trip-heading {
+
                     padding:
-                        30px
                         32px
-                        10px;
+                        42px
+                        20px;
                 }
+
 
                 .book-trip-heading h1 {
-                    margin: 0;
 
-                    color: #222222;
+                    margin:
+                        0;
 
-                    font-size: 28px;
+                    color:
+                        #222222;
 
-                    font-weight: 800;
+                    font-size:
+                        28px;
+
+                    font-weight:
+                        750;
                 }
 
+
                 .book-trip-heading p {
+
                     margin:
                         7px
                         0
                         0;
 
-                    color: #999999;
+                    color:
+                        #999999;
 
-                    font-size: 12px;
+                    font-size:
+                        13px;
                 }
 
-                /* =================================================
-                   SELECTED FERRY
-                ================================================= */
-
-                .selected-vessel-card {
-                    margin:
-                        18px
-                        32px
-                        5px;
-
-                    padding:
-                        16px
-                        18px;
-
-                    display: flex;
-
-                    align-items: center;
-
-                    justify-content:
-                        space-between;
-
-                    gap: 20px;
-
-                    background:
-                        linear-gradient(
-                            135deg,
-                            #fff7ef,
-                            #ffffff
-                        );
-
-                    border:
-                        1px solid #f4d7c0;
-
-                    border-radius: 13px;
-                }
-
-                .selected-vessel-label {
-                    color: #999999;
-
-                    font-size: 10px;
-
-                    font-weight: 600;
-
-                    text-transform:
-                        uppercase;
-
-                    letter-spacing:
-                        0.5px;
-                }
-
-                .selected-vessel-name {
-                    margin-top: 4px;
-
-                    color: #222222;
-
-                    font-size: 15px;
-
-                    font-weight: 800;
-                }
-
-                .selected-vessel-route {
-                    margin-top: 3px;
-
-                    color: #888888;
-
-                    font-size: 10px;
-                }
-
-                .selected-vessel-time {
-                    padding:
-                        8px
-                        12px;
-
-                    border-radius: 9px;
-
-                    background: #ffffff;
-
-                    color: #f28c28;
-
-                    font-size: 12px;
-
-                    font-weight: 700;
-                }
 
                 /* =================================================
                    FORM
                 ================================================= */
 
                 .trip-form {
+
                     padding:
-                        20px
-                        32px
-                        35px;
+                        0
+                        42px
+                        42px;
                 }
 
+
                 .form-section {
+
                     padding:
-                        25px
+                        28px
                         0;
 
-                    border-bottom:
+                    border-top:
                         1px solid #eeeeee;
                 }
 
-                .form-section:last-of-type {
-                    border-bottom: none;
-                }
 
                 .section-title {
-                    display: flex;
 
-                    align-items: center;
+                    display:
+                        flex;
 
-                    gap: 14px;
+                    align-items:
+                        flex-start;
 
-                    margin-bottom: 22px;
+                    gap:
+                        13px;
+
+                    margin-bottom:
+                        24px;
                 }
 
-                .section-number {
-                    width: 38px;
 
-                    height: 38px;
+                .section-number {
+
+                    width:
+                        38px;
+
+                    height:
+                        38px;
 
                     flex:
                         0
                         0
                         38px;
 
-                    display: flex;
+                    display:
+                        flex;
 
-                    align-items: center;
+                    align-items:
+                        center;
 
-                    justify-content: center;
+                    justify-content:
+                        center;
 
-                    border-radius: 11px;
+                    border-radius:
+                        12px;
 
-                    background: #fff0e3;
+                    background:
+                        #fff1e5;
 
-                    color: #f28c28;
+                    color:
+                        #f28c28;
 
-                    font-size: 11px;
+                    font-size:
+                        11px;
 
-                    font-weight: 800;
+                    font-weight:
+                        800;
                 }
+
 
                 .section-title h2 {
-                    margin: 0;
 
-                    color: #222222;
+                    margin:
+                        0;
 
-                    font-size: 19px;
+                    color:
+                        #222222;
 
-                    font-weight: 750;
+                    font-size:
+                        19px;
+
+                    font-weight:
+                        750;
                 }
 
+
                 .section-title p {
+
                     margin:
                         5px
                         0
                         0;
 
-                    color: #999999;
+                    color:
+                        #999999;
 
-                    font-size: 12px;
+                    font-size:
+                        12px;
 
-                    line-height: 1.4;
+                    line-height:
+                        1.4;
                 }
+
 
                 /* =================================================
                    ROUTE
                 ================================================= */
 
                 .route-row {
-                    width: 100%;
 
-                    display: grid;
+                    width:
+                        100%;
+
+                    display:
+                        grid;
 
                     grid-template-columns:
                         minmax(0, 1fr)
                         50px
                         minmax(0, 1fr);
 
-                    align-items: end;
+                    align-items:
+                        end;
 
-                    gap: 15px;
+                    gap:
+                        15px;
                 }
+
 
                 .route-field {
-                    min-width: 0;
+
+                    min-width:
+                        0;
                 }
+
 
                 .route-field label,
                 .form-group label {
-                    display: block;
 
-                    margin-bottom: 8px;
+                    display:
+                        block;
 
-                    color: #444444;
+                    margin-bottom:
+                        8px;
 
-                    font-size: 12px;
+                    color:
+                        #444444;
 
-                    font-weight: 700;
+                    font-size:
+                        12px;
+
+                    font-weight:
+                        700;
                 }
+
 
                 .route-field input,
                 .route-field select,
                 .form-group input,
                 .form-group select {
-                    width: 100%;
 
-                    height: 50px;
+                    width:
+                        100%;
+
+                    height:
+                        50px;
 
                     padding:
                         0
@@ -1040,24 +1257,31 @@ const BookTrip = () => {
                     border:
                         1px solid #dddddd;
 
-                    border-radius: 10px;
+                    border-radius:
+                        10px;
 
-                    outline: none;
+                    outline:
+                        none;
 
-                    background: #ffffff;
+                    background:
+                        #ffffff;
 
-                    color: #222222;
+                    color:
+                        #222222;
 
-                    font-size: 13px;
+                    font-size:
+                        13px;
 
                     transition:
                         0.2s ease;
                 }
 
+
                 .route-field input:focus,
                 .route-field select:focus,
                 .form-group input:focus,
                 .form-group select:focus {
+
                     border-color:
                         #f28c28;
 
@@ -1071,76 +1295,441 @@ const BookTrip = () => {
                         );
                 }
 
+
                 .route-arrow {
-                    width: 50px;
 
-                    height: 50px;
+                    width:
+                        50px;
 
-                    display: flex;
+                    height:
+                        50px;
 
-                    align-items: center;
+                    display:
+                        flex;
 
-                    justify-content: center;
+                    align-items:
+                        center;
 
-                    color: #f28c28;
+                    justify-content:
+                        center;
 
-                    font-size: 22px;
+                    color:
+                        #f28c28;
+
+                    font-size:
+                        22px;
                 }
+
 
                 /* =================================================
                    FORM GROUP
                 ================================================= */
 
                 .form-group {
-                    margin-bottom: 20px;
+
+                    margin-bottom:
+                        20px;
                 }
 
+
                 .form-group:last-child {
-                    margin-bottom: 0;
+
+                    margin-bottom:
+                        0;
                 }
+
 
                 /* =================================================
                    DATE / TIME
                 ================================================= */
 
                 .date-time-row {
-                    width: 100%;
 
-                    display: grid;
+                    width:
+                        100%;
+
+                    display:
+                        grid;
 
                     grid-template-columns:
                         minmax(0, 1fr)
                         minmax(0, 1fr);
 
-                    gap: 20px;
+                    gap:
+                        20px;
                 }
 
+
                 /* =================================================
-                   PASSENGER DETAILS
+                   PASSENGER MODE
                 ================================================= */
 
-                .passenger-details-grid {
-                    display: grid;
+                .passenger-choice {
+
+                    display:
+                        grid;
+
+                    grid-template-columns:
+                        repeat(
+                            2,
+                            minmax(0, 1fr)
+                        );
+
+                    gap:
+                        16px;
+
+                    margin-bottom:
+                        25px;
+                }
+
+
+                .passenger-choice-card {
+
+                    position:
+                        relative;
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    gap:
+                        13px;
+
+                    min-height:
+                        72px;
+
+                    padding:
+                        15px 18px;
+
+                    border:
+                        1px solid #dddddd;
+
+                    border-radius:
+                        12px;
+
+                    background:
+                        #ffffff;
+
+                    cursor:
+                        pointer;
+
+                    transition:
+                        0.2s ease;
+                }
+
+
+                .passenger-choice-card:hover {
+
+                    border-color:
+                        #f28c28;
+
+                    background:
+                        #fffaf6;
+                }
+
+
+                .passenger-choice-card.active {
+
+                    border:
+                        2px solid #f28c28;
+
+                    background:
+                        #fff8f1;
+                }
+
+
+                .choice-radio {
+
+                    width:
+                        18px;
+
+                    height:
+                        18px;
+
+                    flex:
+                        0
+                        0
+                        18px;
+
+                    border:
+                        2px solid #cccccc;
+
+                    border-radius:
+                        50%;
+
+                    position:
+                        relative;
+                }
+
+
+                .passenger-choice-card.active
+                .choice-radio {
+
+                    border-color:
+                        #f28c28;
+                }
+
+
+                .passenger-choice-card.active
+                .choice-radio::after {
+
+                    content:
+                        "";
+
+                    position:
+                        absolute;
+
+                    width:
+                        8px;
+
+                    height:
+                        8px;
+
+                    left:
+                        3px;
+
+                    top:
+                        3px;
+
+                    border-radius:
+                        50%;
+
+                    background:
+                        #f28c28;
+                }
+
+
+                .choice-icon {
+
+                    width:
+                        34px;
+
+                    height:
+                        34px;
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    justify-content:
+                        center;
+
+                    border-radius:
+                        10px;
+
+                    background:
+                        #fff0e3;
+
+                    font-size:
+                        17px;
+                }
+
+
+                .choice-content {
+
+                    display:
+                        flex;
+
+                    flex-direction:
+                        column;
+
+                    gap:
+                        3px;
+                }
+
+
+                .choice-content strong {
+
+                    color:
+                        #222222;
+
+                    font-size:
+                        13px;
+                }
+
+
+                .choice-content span {
+
+                    color:
+                        #999999;
+
+                    font-size:
+                        11px;
+                }
+
+
+                /* =================================================
+                   PASSENGER CARDS
+                ================================================= */
+
+                .passenger-list {
+
+                    display:
+                        flex;
+
+                    flex-direction:
+                        column;
+
+                    gap:
+                        18px;
+
+                    margin-bottom:
+                        24px;
+                }
+
+
+                .passenger-card {
+
+                    padding:
+                        20px;
+
+                    border:
+                        1px solid #e5e5e5;
+
+                    border-radius:
+                        13px;
+
+                    background:
+                        #fcfcfc;
+
+                    transition:
+                        0.2s ease;
+                }
+
+
+                .passenger-card:hover {
+
+                    border-color:
+                        #f0c7a5;
+
+                    box-shadow:
+                        0 5px 18px
+                        rgba(
+                            0,
+                            0,
+                            0,
+                            0.04
+                        );
+                }
+
+
+                .passenger-card-header {
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    justify-content:
+                        space-between;
+
+                    margin-bottom:
+                        18px;
+                }
+
+
+                .passenger-card-title {
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    gap:
+                        9px;
+                }
+
+
+                .passenger-card-number {
+
+                    width:
+                        30px;
+
+                    height:
+                        30px;
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    justify-content:
+                        center;
+
+                    border-radius:
+                        9px;
+
+                    background:
+                        #fff0e3;
+
+                    color:
+                        #f28c28;
+
+                    font-size:
+                        11px;
+
+                    font-weight:
+                        800;
+                }
+
+
+                .passenger-card-title strong {
+
+                    color:
+                        #222222;
+
+                    font-size:
+                        14px;
+                }
+
+
+                .passenger-card-title span {
+
+                    color:
+                        #999999;
+
+                    font-size:
+                        11px;
+                }
+
+
+                .passenger-fields {
+
+                    display:
+                        grid;
 
                     grid-template-columns:
                         minmax(0, 1.5fr)
-                        minmax(0, 0.7fr)
+                        minmax(100px, 0.6fr)
                         minmax(0, 0.9fr);
 
-                    gap: 16px;
-
-                    margin-bottom: 22px;
+                    gap:
+                        15px;
                 }
 
-                .passenger-details-grid
+
+                .passenger-fields
                 .form-group {
-                    margin-bottom: 0;
+
+                    margin-bottom:
+                        0;
                 }
+
 
                 .passenger-input {
-                    width: 100%;
 
-                    height: 50px;
+                    width:
+                        100%;
+
+                    height:
+                        50px;
 
                     padding:
                         0
@@ -1149,20 +1738,28 @@ const BookTrip = () => {
                     border:
                         1px solid #dddddd;
 
-                    border-radius: 10px;
+                    border-radius:
+                        10px;
 
-                    outline: none;
+                    outline:
+                        none;
 
-                    background: #ffffff;
+                    background:
+                        #ffffff;
 
-                    color: #222222;
+                    color:
+                        #222222;
 
-                    font-size: 12px;
+                    font-size:
+                        13px;
 
-                    font-weight: 500;
+                    transition:
+                        0.2s ease;
                 }
 
+
                 .passenger-input:focus {
+
                     border-color:
                         #f28c28;
 
@@ -1176,18 +1773,24 @@ const BookTrip = () => {
                         );
                 }
 
+
                 /* =================================================
                    PASSENGER COUNTER
                 ================================================= */
 
                 .passenger-counter {
-                    width: 100%;
 
-                    height: 52px;
+                    width:
+                        100%;
 
-                    display: flex;
+                    height:
+                        52px;
 
-                    align-items: center;
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
 
                     justify-content:
                         space-between;
@@ -1195,189 +1798,324 @@ const BookTrip = () => {
                     border:
                         1px solid #dddddd;
 
-                    border-radius: 10px;
+                    border-radius:
+                        10px;
 
-                    overflow: hidden;
+                    overflow:
+                        hidden;
 
-                    background: #ffffff;
+                    background:
+                        #ffffff;
                 }
 
-                .passenger-counter button {
-                    width: 58px;
 
-                    height: 100%;
+                .passenger-counter button {
+
+                    width:
+                        60px;
+
+                    height:
+                        100%;
 
                     flex:
                         0
                         0
-                        58px;
+                        60px;
 
-                    border: none;
+                    border:
+                        none;
 
-                    background: #fff7f0;
+                    background:
+                        #fff7f0;
 
-                    color: #f28c28;
+                    color:
+                        #f28c28;
 
-                    font-size: 24px;
+                    font-size:
+                        25px;
 
-                    cursor: pointer;
+                    cursor:
+                        pointer;
+
+                    transition:
+                        0.2s ease;
                 }
+
+
+                .passenger-counter button:hover:not(:disabled) {
+
+                    background:
+                        #ffeddf;
+                }
+
 
                 .passenger-counter button:disabled {
-                    color: #cccccc;
 
-                    background: #f7f7f7;
+                    background:
+                        #f7f7f7;
 
-                    cursor: not-allowed;
+                    color:
+                        #cccccc;
+
+                    cursor:
+                        not-allowed;
                 }
+
 
                 .passenger-value {
-                    flex: 1;
 
-                    display: flex;
+                    flex:
+                        1;
 
-                    align-items: center;
+                    display:
+                        flex;
 
-                    justify-content: center;
+                    align-items:
+                        center;
 
-                    gap: 8px;
+                    justify-content:
+                        center;
+
+                    gap:
+                        8px;
                 }
+
 
                 .passenger-value strong {
-                    color: #222222;
 
-                    font-size: 18px;
+                    color:
+                        #222222;
+
+                    font-size:
+                        18px;
                 }
+
 
                 .passenger-value span {
-                    color: #777777;
 
-                    font-size: 12px;
+                    color:
+                        #999999;
+
+                    font-size:
+                        12px;
                 }
 
-                /* =================================================
-                   HELP TEXT
-                ================================================= */
+
+                .passenger-limit {
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    justify-content:
+                        space-between;
+
+                    margin-top:
+                        8px;
+                }
+
+
+                .passenger-help {
+
+                    color:
+                        #999999;
+
+                    font-size:
+                        11px;
+                }
+
+
+                .passenger-limit-text {
+
+                    color:
+                        #f28c28;
+
+                    font-size:
+                        11px;
+
+                    font-weight:
+                        700;
+                }
+
 
                 .field-help {
-                    display: block;
 
-                    margin-top: 7px;
+                    display:
+                        block;
 
-                    color: #999999;
+                    margin-top:
+                        7px;
 
-                    font-size: 11px;
+                    color:
+                        #999999;
 
-                    line-height: 1.4;
+                    font-size:
+                        11px;
+
+                    line-height:
+                        1.4;
                 }
+
 
                 /* =================================================
                    BOOKING NOTE
                 ================================================= */
 
                 .booking-note {
-                    width: 100%;
 
-                    display: flex;
+                    width:
+                        100%;
 
-                    align-items: flex-start;
+                    display:
+                        flex;
 
-                    gap: 12px;
+                    align-items:
+                        flex-start;
 
-                    padding: 15px;
+                    gap:
+                        12px;
+
+                    padding:
+                        15px;
 
                     border:
                         1px solid #f4dfcf;
 
-                    border-radius: 11px;
+                    border-radius:
+                        11px;
 
-                    background: #fffaf6;
+                    background:
+                        #fffaf6;
                 }
 
-                .note-icon {
-                    width: 28px;
 
-                    height: 28px;
+                .note-icon {
+
+                    width:
+                        28px;
+
+                    height:
+                        28px;
 
                     flex:
                         0
                         0
                         28px;
 
-                    display: flex;
+                    display:
+                        flex;
 
-                    align-items: center;
+                    align-items:
+                        center;
 
-                    justify-content: center;
+                    justify-content:
+                        center;
 
-                    border-radius: 50%;
+                    border-radius:
+                        50%;
 
-                    background: #f28c28;
+                    background:
+                        #f28c28;
 
-                    color: #ffffff;
+                    color:
+                        #ffffff;
 
-                    font-size: 13px;
+                    font-size:
+                        13px;
 
-                    font-weight: 700;
+                    font-weight:
+                        700;
                 }
+
 
                 .booking-note strong {
-                    display: block;
 
-                    margin-bottom: 3px;
+                    display:
+                        block;
 
-                    color: #333333;
+                    margin-bottom:
+                        3px;
 
-                    font-size: 12px;
+                    color:
+                        #333333;
+
+                    font-size:
+                        12px;
                 }
+
 
                 .booking-note p {
-                    margin: 0;
 
-                    color: #888888;
+                    margin:
+                        0;
 
-                    font-size: 11px;
+                    color:
+                        #888888;
 
-                    line-height: 1.5;
+                    font-size:
+                        11px;
+
+                    line-height:
+                        1.5;
                 }
+
 
                 /* =================================================
                    CONTINUE BUTTON
                 ================================================= */
 
                 .continue-button {
-                    width: 100%;
 
-                    height: 54px;
+                    width:
+                        100%;
 
-                    margin-top: 18px;
+                    height:
+                        54px;
 
-                    display: flex;
+                    margin-top:
+                        18px;
 
-                    align-items: center;
+                    display:
+                        flex;
 
-                    justify-content: center;
+                    align-items:
+                        center;
 
-                    gap: 12px;
+                    justify-content:
+                        center;
 
-                    border: none;
+                    gap:
+                        12px;
 
-                    border-radius: 11px;
+                    border:
+                        none;
+
+                    border-radius:
+                        10px;
 
                     background:
                         linear-gradient(
                             135deg,
                             #f28c28,
-                            #ff7417
+                            #ff9d3f
                         );
 
-                    color: #ffffff;
+                    color:
+                        #ffffff;
 
-                    font-size: 13px;
+                    font-size:
+                        14px;
 
-                    font-weight: 700;
+                    font-weight:
+                        700;
 
-                    cursor: pointer;
+                    cursor:
+                        pointer;
+
+                    transition:
+                        0.2s ease;
 
                     box-shadow:
                         0 8px 20px
@@ -1387,17 +2125,23 @@ const BookTrip = () => {
                             40,
                             0.20
                         );
-
-                    transition:
-                        0.2s ease;
                 }
 
+
                 .continue-button:hover {
+
+                    background:
+                        linear-gradient(
+                            135deg,
+                            #e97f1d,
+                            #f28c28
+                        );
+
                     transform:
-                        translateY(-1px);
+                        translateY(-2px);
 
                     box-shadow:
-                        0 10px 24px
+                        0 12px 25px
                         rgba(
                             242,
                             140,
@@ -1406,277 +2150,284 @@ const BookTrip = () => {
                         );
                 }
 
+
+                .continue-button:active {
+
+                    transform:
+                        translateY(0);
+                }
+
+
                 .button-arrow {
-                    font-size: 18px;
-                }
 
-                /* =================================================
-                   TIME MODAL
-                ================================================= */
-
-                .time-modal-overlay {
-                    position: fixed;
-
-                    inset: 0;
-
-                    z-index: 1000;
-
-                    display: flex;
-
-                    align-items: center;
-
-                    justify-content: center;
-
-                    padding: 20px;
-
-                    background:
-                        rgba(
-                            0,
-                            0,
-                            0,
-                            0.45
-                        );
-
-                    backdrop-filter:
-                        blur(4px);
-                }
-
-                .time-modal {
-                    width: 100%;
-
-                    max-width: 400px;
-
-                    padding: 25px;
-
-                    background: #ffffff;
-
-                    border-radius: 18px;
-
-                    text-align: center;
-
-                    box-shadow:
-                        0 25px 60px
-                        rgba(
-                            0,
-                            0,
-                            0,
-                            0.20
-                        );
-                }
-
-                .time-modal h2 {
-                    margin:
-                        0
-                        0
-                        8px;
-
-                    font-size: 19px;
-                }
-
-                .time-modal p {
-                    margin:
-                        0
-                        0
+                    font-size:
                         18px;
 
-                    color: #777777;
-
-                    font-size: 12px;
-
-                    line-height: 1.5;
+                    transition:
+                        transform
+                        0.2s ease;
                 }
 
-                .time-modal button {
-                    width: 100%;
 
-                    height: 44px;
+                .continue-button:hover
+                .button-arrow {
 
-                    border: none;
-
-                    border-radius: 9px;
-
-                    background: #f28c28;
-
-                    color: #ffffff;
-
-                    font-weight: 700;
-
-                    cursor: pointer;
+                    transform:
+                        translateX(4px);
                 }
+
 
                 /* =================================================
                    TABLET
                 ================================================= */
 
-                @media (max-width: 768px) {
+                @media (max-width: 800px) {
 
                     .book-trip-page {
+
                         padding:
                             20px
-                            12px
+                            16px
+                            50px;
+                    }
+
+
+                    .book-trip-container {
+
+                        max-width:
+                            720px;
+                    }
+
+
+                    .trip-form {
+
+                        padding:
+                            0
+                            35px
                             40px;
                     }
 
-                    .book-trip-heading {
-                        padding:
-                            25px
-                            22px
-                            10px;
-                    }
 
-                    .trip-form {
-                        padding:
-                            15px
-                            22px
-                            30px;
-                    }
+                    .passenger-fields {
 
-                    .selected-vessel-card {
-                        margin-left: 22px;
-
-                        margin-right: 22px;
-                    }
-
-                    .passenger-details-grid {
                         grid-template-columns:
                             1fr
                             1fr;
                     }
 
-                    .passenger-details-grid
+
+                    .passenger-fields
                     .form-group:first-child {
+
                         grid-column:
                             1 / -1;
                     }
 
                 }
 
+
                 /* =================================================
                    MOBILE
                 ================================================= */
 
-                @media (max-width: 520px) {
+                @media (max-width: 600px) {
 
                     .book-trip-page {
+
                         padding:
-                            0
-                            0
-                            30px;
+                            0;
+
+                        background:
+                            #ffffff;
                     }
+
 
                     .book-trip-container {
-                        border-radius: 0;
 
-                        border-left: none;
+                        min-height:
+                            100vh;
 
-                        border-right: none;
+                        max-width:
+                            none;
+
+                        border:
+                            none;
+
+                        border-radius:
+                            0;
+
+                        box-shadow:
+                            none;
                     }
+
 
                     .book-trip-header {
+
+                        height:
+                            82px;
+
                         padding:
                             0
-                            16px;
+                            18px;
                     }
+
+
+                    .book-trip-logo img {
+
+                        width:
+                            105px;
+
+                        height:
+                            55px;
+                    }
+
+
+                    .header-spacer {
+
+                        width:
+                            40px;
+                    }
+
 
                     .book-trip-heading {
+
                         padding:
-                            22px
-                            16px
-                            8px;
+                            30px
+                            20px
+                            25px;
                     }
+
 
                     .book-trip-heading h1 {
-                        font-size: 25px;
+
+                        font-size:
+                            28px;
                     }
+
+
+                    .book-trip-heading p {
+
+                        font-size:
+                            13px;
+                    }
+
 
                     .trip-form {
+
                         padding:
-                            12px
-                            16px
-                            30px;
+                            0
+                            20px
+                            35px;
                     }
 
-                    .selected-vessel-card {
-                        margin:
-                            16px
-                            16px
-                            5px;
 
-                        align-items:
-                            flex-start;
+                    .form-section {
 
-                        flex-direction:
-                            column;
+                        padding:
+                            23px
+                            0;
                     }
 
-                    .selected-vessel-time {
-                        align-self:
-                            stretch;
-
-                        text-align:
-                            center;
-                    }
 
                     .route-row {
+
                         grid-template-columns:
                             1fr;
+
+                        gap:
+                            0;
                     }
+
 
                     .route-arrow {
-                        width: 100%;
 
-                        height: 25px;
-
-                        transform:
-                            rotate(90deg);
+                        display:
+                            none;
                     }
+
 
                     .date-time-row {
+
+                        grid-template-columns:
+                            1fr;
+
+                        gap:
+                            0;
+                    }
+
+
+                    .passenger-choice {
+
                         grid-template-columns:
                             1fr;
                     }
 
-                    .passenger-details-grid {
+
+                    .passenger-fields {
+
                         grid-template-columns:
                             1fr;
                     }
 
-                    .passenger-details-grid
+
+                    .passenger-fields
                     .form-group:first-child {
+
                         grid-column:
                             auto;
                     }
 
+
                     .section-title {
+
                         margin-bottom:
                             20px;
                     }
 
+
                     .section-title h2 {
+
                         font-size:
                             16px;
                     }
 
+
                     .section-title p {
+
                         font-size:
                             11px;
                     }
+
 
                     .form-group input,
                     .form-group select,
                     .route-field input,
                     .route-field select,
                     .passenger-input {
+
                         height:
                             48px;
                     }
 
+
+                    .passenger-counter button {
+
+                        width:
+                            55px;
+
+                        flex-basis:
+                            55px;
+                    }
+
+
                     .continue-button {
+
                         height:
                             52px;
                     }
 
                 }
+
 
                 /* =================================================
                    SMALL PHONES
@@ -1685,14 +2436,17 @@ const BookTrip = () => {
                 @media (max-width: 380px) {
 
                     .trip-form {
+
                         padding-left:
                             16px;
 
                         padding-right:
                             16px;
                     }
+
 
                     .book-trip-heading {
+
                         padding-left:
                             16px;
 
@@ -1700,17 +2454,23 @@ const BookTrip = () => {
                             16px;
                     }
 
+
                     .book-trip-heading h1 {
+
                         font-size:
                             25px;
                     }
 
+
                     .section-title {
+
                         gap:
                             10px;
                     }
 
+
                     .section-number {
+
                         width:
                             32px;
 
@@ -1721,7 +2481,9 @@ const BookTrip = () => {
                             32px;
                     }
 
+
                     .passenger-counter button {
+
                         width:
                             52px;
 
@@ -1733,82 +2495,46 @@ const BookTrip = () => {
 
             `}</style>
 
-            {/* =====================================================
-                TIME MODAL
-            ===================================================== */}
-
-            {showTimeModal && (
-
-                <div
-                    className="time-modal-overlay"
-                    onClick={() =>
-                        setShowTimeModal(false)
-                    }
-                >
-
-                    <div
-                        className="time-modal"
-                        onClick={(event) =>
-                            event.stopPropagation()
-                        }
-                    >
-
-                        <h2>
-                            Departure Time
-                        </h2>
-
-                        <p>
-                            Your selected departure
-                            time is{" "}
-                            <strong>
-                                {formatTime(time)}
-                            </strong>.
-                        </p>
-
-                        <button
-                            type="button"
-                            onClick={() =>
-                                setShowTimeModal(false)
-                            }
-                        >
-                            Done
-                        </button>
-
-                    </div>
-
-                </div>
-
-            )}
 
             <main className="book-trip-page">
 
                 <div className="book-trip-container">
 
+
                     {/* =================================================
                        HEADER
                     ================================================= */}
 
-                    <header className="book-trip-header">
+                    <header
+                        className="book-trip-header"
+                    >
 
                         <button
                             type="button"
                             className="back-button"
                             onClick={() =>
-                                navigate("/trips")
+                                navigate(
+                                    "/dashboard"
+                                )
                             }
                             aria-label="Back to dashboard"
                         >
                             ←
                         </button>
 
-                        <div className="book-trip-logo">
 
-                            <img
-                                src={"https://scontent.fcgy2-2.fna.fbcdn.net/v/t1.15752-9/775468126_1793367781697550_3767041847597317415_n.png?stp=dst-png&cstp=mx532x469&ctp=s532x469&_nc_cat=103&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeEKTnmoEB20Fs5gE6WYWTxBd_QaoqEL1HV39BqioQvUdc9ZjhsVKyPy19OQYcSyO20Y_14PqMHIf2M01vrRKE4U&_nc_ohc=fK0ygs4SALUQ7kNvwEhUgQl&_nc_oc=Adr97yUKqKQuY-Rb-Lpj__Sjoqm7YY75sVczdULR8n8AbUyhy3oVy9DJ-YO_YUPfnTE&_nc_zt=23&_nc_ht=scontent.fcgy2-2.fna&_nc_ss=7a2a8&oh=03_Q7cD6AFmBhmkMTNembwVy95XQOYfaHONnpCT7udBE1IJnmNvHg&oe=6AB20956"}
-                                alt="GuimarasGo Logo"
-                            />
+                        <div
+                            className="book-trip-logo"
+                        >
+
+                        <img
+                            src="/images/logo.png"
+                            alt="GuimarasGo Logo"
+                            className="logo"
+                        />
 
                         </div>
+
 
                         <div
                             className="header-spacer"
@@ -1817,74 +2543,27 @@ const BookTrip = () => {
 
                     </header>
 
+
                     {/* =================================================
                        PAGE HEADING
                     ================================================= */}
 
-                    <section className="book-trip-heading">
+                    <section
+                        className="book-trip-heading"
+                    >
 
                         <h1>
                             Book Your Trip
                         </h1>
 
                         <p>
-                            Choose your route, schedule,
-                            and passenger details.
+                            Choose your route,
+                            schedule, and
+                            passenger details.
                         </p>
 
                     </section>
 
-                    {/* =================================================
-                       SELECTED FERRY
-                    ================================================= */}
-
-                    {selectedTrip && (
-
-                        <div className="selected-vessel-card">
-
-                            <div>
-
-                                <div className="selected-vessel-label">
-                                    Selected Ferry
-                                </div>
-
-                                <div className="selected-vessel-name">
-
-                                    {selectedTrip.vesselName ||
-                                        selectedTrip.vessel ||
-                                        selectedTrip.name ||
-                                        "Ferry Vessel"}
-
-                                </div>
-
-                                <div className="selected-vessel-route">
-
-                                    {selectedTrip.origin ||
-                                        origin ||
-                                        "Iloilo"}
-
-                                    {" → "}
-
-                                    {selectedTrip.destination ||
-                                        destination ||
-                                        "Guimaras"}
-
-                                </div>
-
-                            </div>
-
-                            <div className="selected-vessel-time">
-
-                                {formatTime(
-                                    selectedTrip.time ||
-                                    time
-                                )}
-
-                            </div>
-
-                        </div>
-
-                    )}
 
                     {/* =================================================
                        FORM
@@ -1892,20 +2571,30 @@ const BookTrip = () => {
 
                     <form
                         className="trip-form"
-                        onSubmit={handleSubmit}
+                        onSubmit={
+                            handleSubmit
+                        }
                     >
+
 
                         {/* =================================================
                            01 - ROUTE
                         ================================================= */}
 
-                        <section className="form-section">
+                        <section
+                            className="form-section"
+                        >
 
-                            <div className="section-title">
+                            <div
+                                className="section-title"
+                            >
 
-                                <span className="section-number">
+                                <span
+                                    className="section-number"
+                                >
                                     01
                                 </span>
+
 
                                 <div>
 
@@ -1922,25 +2611,41 @@ const BookTrip = () => {
 
                             </div>
 
-                            <div className="route-row">
 
-                                <div className="route-field">
+                            <div
+                                className="route-row"
+                            >
 
-                                    <label htmlFor="origin">
+                                {/* ORIGIN */}
+
+                                <div
+                                    className="route-field"
+                                >
+
+                                    <label
+                                        htmlFor="origin"
+                                    >
                                         Origin Port
                                     </label>
+
 
                                     <select
                                         id="origin"
                                         value={origin}
-                                        onChange={(event) =>
+                                        onChange={(
+                                            event
+                                        ) =>
                                             setOrigin(
-                                                event.target.value
+                                                event
+                                                    .target
+                                                    .value
                                             )
                                         }
                                     >
 
-                                        <option value="">
+                                        <option
+                                            value=""
+                                        >
                                             Select origin
                                         </option>
 
@@ -1956,27 +2661,48 @@ const BookTrip = () => {
 
                                 </div>
 
-                                <div className="route-arrow">
+
+                                {/* ARROW */}
+
+                                <div
+                                    className="route-arrow"
+                                >
                                     →
                                 </div>
 
-                                <div className="route-field">
 
-                                    <label htmlFor="destination">
+                                {/* DESTINATION */}
+
+                                <div
+                                    className="route-field"
+                                >
+
+                                    <label
+                                        htmlFor="destination"
+                                    >
                                         Destination Port
                                     </label>
 
+
                                     <select
                                         id="destination"
-                                        value={destination}
-                                        onChange={(event) =>
+                                        value={
+                                            destination
+                                        }
+                                        onChange={(
+                                            event
+                                        ) =>
                                             setDestination(
-                                                event.target.value
+                                                event
+                                                    .target
+                                                    .value
                                             )
                                         }
                                     >
 
-                                        <option value="">
+                                        <option
+                                            value=""
+                                        >
                                             Select destination
                                         </option>
 
@@ -1996,93 +2722,112 @@ const BookTrip = () => {
 
                         </section>
 
+
                         {/* =================================================
                            02 - SCHEDULE
                         ================================================= */}
 
-                        <section className="form-section">
+                        <section
+                            className="form-section"
+                        >
 
-                            <div className="section-title">
+                            <div
+                                className="section-title"
+                            >
 
-                                <span className="section-number">
+                                <span
+                                    className="section-number"
+                                >
                                     02
                                 </span>
+
 
                                 <div>
 
                                     <h2>
-                                        Trip Schedule
+                                        Travel Schedule
                                     </h2>
 
                                     <p>
-                                        Select your travel date
-                                        and departure time.
+                                        Select your travel
+                                        date and departure time.
                                     </p>
 
                                 </div>
 
                             </div>
 
-                            <div className="date-time-row">
 
-                                <div className="form-group">
+                            <div
+                                className="date-time-row"
+                            >
 
-                                    <label htmlFor="date">
+                                {/* DATE */}
+
+                                <div
+                                    className="form-group"
+                                >
+
+                                    <label
+                                        htmlFor="date"
+                                    >
                                         Travel Date
                                     </label>
+
 
                                     <input
                                         id="date"
                                         type="date"
                                         min={today}
                                         value={date}
-                                        onChange={(event) =>
+                                        onChange={(
+                                            event
+                                        ) =>
                                             setDate(
-                                                event.target.value
+                                                event
+                                                    .target
+                                                    .value
                                             )
                                         }
                                     />
 
                                 </div>
 
-                                <div className="form-group">
 
-                                    <label htmlFor="time">
+                                {/* TIME */}
+
+                                <div
+                                    className="form-group"
+                                >
+
+                                    <label
+                                        htmlFor="time"
+                                    >
                                         Departure Time
                                     </label>
 
-                                    <select
+
+                                    <input
                                         id="time"
+                                        type="time"
                                         value={time}
-                                        onChange={
-                                            handleTimeChange
-                                        }
-                                    >
-
-                                        <option value="">
-                                            Select departure time
-                                        </option>
-
-                                        {departureTimes.map(
-                                            (departureTime) => (
-
-                                                <option
-                                                    key={
-                                                        departureTime
-                                                    }
-                                                    value={
-                                                        departureTime
-                                                    }
-                                                >
-                                                    {formatTime(
-                                                        departureTime
-                                                    )}
-                                                </option>
-
+                                        onChange={(
+                                            event
+                                        ) =>
+                                            setTime(
+                                                event
+                                                    .target
+                                                    .value
                                             )
-                                        )}
+                                        }
+                                    />
 
-                                    </select>
+                                    <small
+                                        className="field-help"
+                                    >
+                                        Select your preferred
+                                        departure time.
+                                    </small>
 
                                 </div>
 
@@ -2090,17 +2835,25 @@ const BookTrip = () => {
 
                         </section>
 
+
                         {/* =================================================
                            03 - PASSENGER DETAILS
                         ================================================= */}
 
-                        <section className="form-section">
+                        <section
+                            className="form-section"
+                        >
 
-                            <div className="section-title">
+                            <div
+                                className="section-title"
+                            >
 
-                                <span className="section-number">
+                                <span
+                                    className="section-number"
+                                >
                                     03
                                 </span>
+
 
                                 <div>
 
@@ -2117,229 +2870,440 @@ const BookTrip = () => {
 
                             </div>
 
-                            <div className="passenger-details-grid">
 
-                                <div className="form-group">
+                            {/* =================================================
+                               SOLO / WITH PASSENGER
+                            ================================================= */}
 
-                                    <label htmlFor="passengerName">
-                                        Full Name
-                                    </label>
+                            <div
+                                className="passenger-choice"
+                            >
 
-                                    <input
-                                        id="passengerName"
-                                        name="passengerName"
-                                        type="text"
-                                        className="passenger-input"
-                                        placeholder="Enter passenger full name"
-                                        value={passengerName}
-                                        onChange={(event) =>
-                                            setPassengerName(
-                                                event.target.value
-                                            )
-                                        }
-                                        autoComplete="name"
-                                    />
 
-                                </div>
-
-                                <div className="form-group">
-
-                                    <label htmlFor="passengerAge">
-                                        Age
-                                    </label>
-
-                                    <input
-                                        id="passengerAge"
-                                        type="number"
-                                        min="1"
-                                        max="120"
-                                        className="passenger-input"
-                                        placeholder="Age"
-                                        value={passengerAge}
-                                        onChange={(event) =>
-                                            setPassengerAge(
-                                                event.target.value
-                                            )
-                                        }
-                                    />
-
-                                </div>
-
-                                <div className="form-group">
-
-                                    <label htmlFor="passengerGender">
-                                        Gender
-                                    </label>
-
-                                    <select
-                                        id="passengerGender"
-                                        value={passengerGender}
-                                        onChange={(event) =>
-                                            setPassengerGender(
-                                                event.target.value
-                                            )
-                                        }
-                                    >
-
-                                        <option value="">
-                                            Select gender
-                                        </option>
-
-                                        <option value="Male">
-                                            Male
-                                        </option>
-
-                                        <option value="Female">
-                                            Female
-                                        </option>
-
-                                        <option value="Other">
-                                            Other
-                                        </option>
-
-                                    </select>
-
-                                </div>
-
-                            </div>
-
-                            {/* PASSENGER MODE */}
-
-                            <div className="form-group">
-
-                                <label>
-                                    Passenger Type
-                                </label>
+                                {/* SOLO */}
 
                                 <div
-                                    style={{
-                                        display: "grid",
-                                        gridTemplateColumns:
-                                            "1fr 1fr",
-                                        gap: "10px"
-                                    }}
+                                    className={
+                                        `passenger-choice-card ${
+                                            passengerMode ===
+                                            "solo"
+                                                ? "active"
+                                                : ""
+                                        }`
+                                    }
+                                    onClick={() =>
+                                        handlePassengerModeChange(
+                                            "solo"
+                                        )
+                                    }
                                 >
 
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            handlePassengerModeChange(
-                                                "solo"
-                                            )
-                                        }
-                                        style={{
-                                            padding:
-                                                "13px",
-                                            border:
-                                                passengerMode ===
-                                                "solo"
-                                                    ? "2px solid #f28c28"
-                                                    : "1px solid #dddddd",
-                                            borderRadius:
-                                                "10px",
-                                            background:
-                                                passengerMode ===
-                                                "solo"
-                                                    ? "#fff7f0"
-                                                    : "#ffffff",
-                                            color:
-                                                "#333",
-                                            cursor:
-                                                "pointer",
-                                            fontWeight:
-                                                "600"
-                                        }}
-                                    >
-                                        Solo
-                                    </button>
+                                    <div
+                                        className="choice-radio"
+                                    />
 
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            handlePassengerModeChange(
-                                                "withPassenger"
-                                            )
-                                        }
-                                        style={{
-                                            padding:
-                                                "13px",
-                                            border:
-                                                passengerMode ===
-                                                "withPassenger"
-                                                    ? "2px solid #f28c28"
-                                                    : "1px solid #dddddd",
-                                            borderRadius:
-                                                "10px",
-                                            background:
-                                                passengerMode ===
-                                                "withPassenger"
-                                                    ? "#fff7f0"
-                                                    : "#ffffff",
-                                            color:
-                                                "#333",
-                                            cursor:
-                                                "pointer",
-                                            fontWeight:
-                                                "600"
-                                        }}
+
+                                    <div
+                                        className="choice-icon"
                                     >
-                                        With Passenger
-                                    </button>
+                                        👤
+                                    </div>
+
+
+                                    <div
+                                        className="choice-content"
+                                    >
+
+                                        <strong>
+                                            Solo
+                                        </strong>
+
+                                        <span>
+                                            I am travelling alone.
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+
+                                {/* WITH PASSENGER */}
+
+                                <div
+                                    className={
+                                        `passenger-choice-card ${
+                                            passengerMode ===
+                                            "withPassenger"
+                                                ? "active"
+                                                : ""
+                                        }`
+                                    }
+                                    onClick={() =>
+                                        handlePassengerModeChange(
+                                            "withPassenger"
+                                        )
+                                    }
+                                >
+
+                                    <div
+                                        className="choice-radio"
+                                    />
+
+
+                                    <div
+                                        className="choice-icon"
+                                    >
+                                        👥
+                                    </div>
+
+
+                                    <div
+                                        className="choice-content"
+                                    >
+
+                                        <strong>
+                                            With Passenger
+                                        </strong>
+
+                                        <span>
+                                            I am travelling with someone.
+                                        </span>
+
+                                    </div>
 
                                 </div>
 
                             </div>
 
-                            {/* PASSENGER COUNT */}
 
-                            <div className="form-group">
+                            {/* =================================================
+                               DYNAMIC PASSENGER INFORMATION
+                            ================================================= */}
+
+                            <div
+                                className="passenger-list"
+                            >
+
+                                {passengerDetails.map(
+                                    (
+                                        passenger,
+                                        index
+                                    ) => (
+
+                                        <div
+                                            className="passenger-card"
+                                            key={
+                                                index
+                                            }
+                                        >
+
+                                            {/* CARD HEADER */}
+
+                                            <div
+                                                className="passenger-card-header"
+                                            >
+
+                                                <div
+                                                    className="passenger-card-title"
+                                                >
+
+                                                    <div
+                                                        className="passenger-card-number"
+                                                    >
+                                                        {
+                                                            String(
+                                                                index +
+                                                                1
+                                                            ).padStart(
+                                                                2,
+                                                                "0"
+                                                            )
+                                                        }
+                                                    </div>
+
+
+                                                    <div>
+
+                                                        <strong>
+                                                            Passenger{" "}
+                                                            {
+                                                                index +
+                                                                1
+                                                            }
+                                                        </strong>
+
+                                                        <span>
+                                                            {" "}
+                                                            — Personal Information
+                                                        </span>
+
+                                                    </div>
+
+                                                </div>
+
+                                            </div>
+
+
+                                            {/* PASSENGER FIELDS */}
+
+                                            <div
+                                                className="passenger-fields"
+                                            >
+
+
+                                                {/* FULL NAME */}
+
+                                                <div
+                                                    className="form-group"
+                                                >
+
+                                                    <label
+                                                        htmlFor={
+                                                            `passenger-name-${index}`
+                                                        }
+                                                    >
+                                                        Full Name
+                                                    </label>
+
+
+                                                    <input
+                                                        id={
+                                                            `passenger-name-${index}`
+                                                        }
+                                                        type="text"
+                                                        className="passenger-input"
+                                                        placeholder="Enter passenger full name"
+                                                        value={
+                                                            passenger.name
+                                                        }
+                                                        onChange={(
+                                                            event
+                                                        ) =>
+                                                            updatePassenger(
+                                                                index,
+                                                                "name",
+                                                                event
+                                                                    .target
+                                                                    .value
+                                                            )
+                                                        }
+                                                        autoComplete="name"
+                                                    />
+
+                                                </div>
+
+
+                                                {/* AGE */}
+
+                                                <div
+                                                    className="form-group"
+                                                >
+
+                                                    <label
+                                                        htmlFor={
+                                                            `passenger-age-${index}`
+                                                        }
+                                                    >
+                                                        Age
+                                                    </label>
+
+
+                                                    <input
+                                                        id={
+                                                            `passenger-age-${index}`
+                                                        }
+                                                        type="number"
+                                                        className="passenger-input"
+                                                        placeholder="Age"
+                                                        min="1"
+                                                        max="120"
+                                                        value={
+                                                            passenger.age
+                                                        }
+                                                        onChange={(
+                                                            event
+                                                        ) =>
+                                                            updatePassenger(
+                                                                index,
+                                                                "age",
+                                                                event
+                                                                    .target
+                                                                    .value
+                                                            )
+                                                        }
+                                                    />
+
+                                                </div>
+
+
+                                                {/* GENDER */}
+
+                                                <div
+                                                    className="form-group"
+                                                >
+
+                                                    <label
+                                                        htmlFor={
+                                                            `passenger-gender-${index}`
+                                                        }
+                                                    >
+                                                        Gender
+                                                    </label>
+
+
+                                                    <select
+                                                        id={
+                                                            `passenger-gender-${index}`
+                                                        }
+                                                        className="passenger-input"
+                                                        value={
+                                                            passenger.gender
+                                                        }
+                                                        onChange={(
+                                                            event
+                                                        ) =>
+                                                            updatePassenger(
+                                                                index,
+                                                                "gender",
+                                                                event
+                                                                    .target
+                                                                    .value
+                                                            )
+                                                        }
+                                                    >
+
+                                                        <option
+                                                            value=""
+                                                        >
+                                                            Select gender
+                                                        </option>
+
+                                                        <option
+                                                            value="Male"
+                                                        >
+                                                            Male
+                                                        </option>
+
+                                                        <option
+                                                            value="Female"
+                                                        >
+                                                            Female
+                                                        </option>
+
+                                                        <option
+                                                            value="Prefer not to say"
+                                                        >
+                                                            Prefer not to say
+                                                        </option>
+
+                                                    </select>
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                    )
+                                )}
+
+                            </div>
+
+
+                            {/* =================================================
+                               NUMBER OF PASSENGERS
+                            ================================================= */}
+
+                            <div
+                                className="form-group"
+                            >
 
                                 <label>
                                     Number of Passengers
                                 </label>
 
-                                <div className="passenger-counter">
+
+                                <div
+                                    className="passenger-counter"
+                                >
+
+                                    {/* MINUS */}
 
                                     <button
                                         type="button"
-                                        disabled={
-                                            passengerMode ===
-                                            "solo"
-                                        }
                                         onClick={
                                             handlePassengerDecrease
                                         }
+                                        disabled={
+                                            passengers <=
+                                            MIN_PASSENGERS
+                                        }
+                                        aria-label="Decrease passengers"
                                     >
                                         −
                                     </button>
 
-                                    <div className="passenger-value">
+
+                                    {/* VALUE */}
+
+                                    <div
+                                        className="passenger-value"
+                                    >
 
                                         <strong>
-                                            {passengers}
+                                            {
+                                                passengers
+                                            }
                                         </strong>
 
                                         <span>
-                                            passenger
-                                            {passengers !== 1
-                                                ? "s"
-                                                : ""}
+                                            {
+                                                passengers ===
+                                                1
+                                                    ? "Passenger"
+                                                    : "Passengers"
+                                            }
                                         </span>
 
                                     </div>
 
+
+                                    {/* PLUS */}
+
                                     <button
                                         type="button"
-                                        disabled={
-                                            passengerMode ===
-                                            "solo"
-                                        }
                                         onClick={
                                             handlePassengerIncrease
                                         }
+                                        disabled={
+                                            passengers >=
+                                            MAX_PASSENGERS
+                                        }
+                                        aria-label="Increase passengers"
                                     >
                                         +
                                     </button>
+
+                                </div>
+
+
+                                <div
+                                    className="passenger-limit"
+                                >
+
+                                    <span
+                                        className="passenger-help"
+                                    >
+                                        Add personal details
+                                        for every passenger.
+                                    </span>
+
+
+                                    <span
+                                        className="passenger-limit-text"
+                                    >
+                                        Maximum 5 passengers
+                                    </span>
 
                                 </div>
 
@@ -2347,17 +3311,25 @@ const BookTrip = () => {
 
                         </section>
 
+
                         {/* =================================================
                            04 - VEHICLE
                         ================================================= */}
 
-                        <section className="form-section">
+                        <section
+                            className="form-section"
+                        >
 
-                            <div className="section-title">
+                            <div
+                                className="section-title"
+                            >
 
-                                <span className="section-number">
+                                <span
+                                    className="section-number"
+                                >
                                     04
                                 </span>
+
 
                                 <div>
 
@@ -2366,73 +3338,95 @@ const BookTrip = () => {
                                     </h2>
 
                                     <p>
-                                        Provide the vehicle
-                                        information.
+                                        Enter the motorcycle
+                                        plate number.
                                     </p>
 
                                 </div>
 
                             </div>
 
-                            <div className="date-time-row">
 
-                                <div className="form-group">
+                            {/* VEHICLE TYPE */}
 
-                                    <label htmlFor="vehicleType">
-                                        Vehicle Type
-                                    </label>
+                            <div
+                                className="form-group"
+                            >
 
-                                    <input
-                                        id="vehicleType"
-                                        type="text"
-                                        value={
-                                            vehicleType
-                                        }
-                                        disabled
-                                    />
+                                <label>
+                                    Vehicle Type
+                                </label>
 
-                                </div>
 
-                                <div className="form-group">
+                                <input
+                                    type="text"
+                                    value={
+                                        vehicleType
+                                    }
+                                    disabled
+                                />
 
-                                    <label htmlFor="plateNumber">
-                                        Plate Number
-                                    </label>
+                            </div>
 
-                                    <input
-                                        id="plateNumber"
-                                        type="text"
-                                        placeholder="Enter plate number"
-                                        value={
-                                            plateNumber
-                                        }
-                                        onChange={(event) =>
-                                            setPlateNumber(
-                                                event.target.value
-                                            )
-                                        }
-                                        maxLength={20}
-                                    />
 
-                                    <small className="field-help">
-                                        Example: ABC-1234
-                                    </small>
+                            {/* PLATE NUMBER */}
 
-                                </div>
+                            <div
+                                className="form-group"
+                            >
+
+                                <label
+                                    htmlFor="plateNumber"
+                                >
+                                    Plate Number
+                                </label>
+
+
+                                <input
+                                    id="plateNumber"
+                                    type="text"
+                                    placeholder="Enter plate number"
+                                    value={
+                                        plateNumber
+                                    }
+                                    onChange={(
+                                        event
+                                    ) =>
+                                        setPlateNumber(
+                                            event
+                                                .target
+                                                .value
+                                        )
+                                    }
+                                    maxLength={20}
+                                />
+
+
+                                <small
+                                    className="field-help"
+                                >
+                                    Example: ABC-1234
+                                </small>
 
                             </div>
 
                         </section>
 
+
                         {/* =================================================
                            BOOKING NOTE
                         ================================================= */}
 
-                        <div className="booking-note">
+                        <div
+                            className="booking-note"
+                        >
 
-                            <div className="note-icon">
+                            <div
+                                className="note-icon"
+                            >
                                 !
                             </div>
+
 
                             <div>
 
@@ -2442,14 +3436,15 @@ const BookTrip = () => {
 
                                 <p>
                                     Please make sure that
-                                    your passenger information,
-                                    trip schedule, vessel, and
-                                    plate number are correct.
+                                    all passenger information,
+                                    trip schedule, and plate
+                                    number are correct.
                                 </p>
 
                             </div>
 
                         </div>
+
 
                         {/* =================================================
                            CONTINUE
@@ -2462,19 +3457,25 @@ const BookTrip = () => {
 
                             Continue to Payment
 
-                            <span className="button-arrow">
+                            <span
+                                className="button-arrow"
+                            >
                                 →
                             </span>
 
                         </button>
+
 
                     </form>
 
                 </div>
 
             </main>
+
         </>
+
     );
 };
+
 
 export default BookTrip;

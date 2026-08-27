@@ -6,17 +6,42 @@ const adminAuth =
     require("../middleware/adminAuth");
 
 const {
+
     getAllBookings,
+
     getPendingPayments,
+
+    getVerifiedPayments,
+
     getBookingById,
+
+    getBookingByReference,
+
     verifyPayment,
+
     rejectPayment,
+
     getBookingStatistics
+
 } = require("../controllers/bookingController");
 
 
 // =====================================================
-// DASHBOARD STATISTICS
+// PUBLIC TOURIST BOOKING LOOKUP
+// =====================================================
+//
+// Used by the tourist My Bookings page to retrieve
+// the latest booking status from MongoDB.
+//
+
+router.get(
+    "/reference/:bookingReference",
+    getBookingByReference
+);
+
+
+// =====================================================
+// ADMIN DASHBOARD STATISTICS
 // =====================================================
 
 router.get(
@@ -27,7 +52,7 @@ router.get(
 
 
 // =====================================================
-// PENDING PAYMENTS
+// ADMIN PENDING PAYMENTS
 // =====================================================
 
 router.get(
@@ -38,7 +63,18 @@ router.get(
 
 
 // =====================================================
-// ALL BOOKINGS
+// ADMIN VERIFIED PAYMENTS
+// =====================================================
+
+router.get(
+    "/verified-payments",
+    adminAuth,
+    getVerifiedPayments
+);
+
+
+// =====================================================
+// ADMIN ALL BOOKINGS
 // =====================================================
 
 router.get(
@@ -49,7 +85,7 @@ router.get(
 
 
 // =====================================================
-// SINGLE BOOKING
+// ADMIN SINGLE BOOKING
 // =====================================================
 
 router.get(
@@ -60,7 +96,7 @@ router.get(
 
 
 // =====================================================
-// VERIFY PAYMENT
+// ADMIN VERIFY PAYMENT
 // =====================================================
 
 router.put(
@@ -71,7 +107,7 @@ router.put(
 
 
 // =====================================================
-// REJECT PAYMENT
+// ADMIN REJECT PAYMENT
 // =====================================================
 
 router.put(

@@ -1,554 +1,1518 @@
-import React, { useEffect, useState } from "react";
+import React, {
+    useCallback,
+    useEffect,
+    useState
+} from "react";
+
 import { useNavigate } from "react-router-dom";
 
-const Bookings = () => {
-    const navigate = useNavigate();
+const API_URL =
+    "http://localhost:5000";
 
-    const [bookings, setBookings] = useState([]);
-    const [cancelTarget, setCancelTarget] = useState(null);
-    const [clearCancelledModal, setClearCancelledModal] = useState(false);
-    const [activeFilter, setActiveFilter] = useState("ALL");
+const Bookings = () => {
+
+    const navigate =
+        useNavigate();
+
 
     // =========================================================
-    // LOAD ALL BOOKINGS
+    // STATE
+    // =========================================================
+
+    const [bookings, setBookings] =
+        useState([]);
+
+    const [cancelTarget, setCancelTarget] =
+        useState(null);
+
+    const [clearCancelledModal, setClearCancelledModal] =
+        useState(false);
+
+    const [activeFilter, setActiveFilter] =
+        useState("ALL");
+
+    const [loading, setLoading] =
+        useState(false);
+
+
+    // =========================================================
+    // GET BOOKING STATUS
+    // =========================================================
+
+    const getBookingStatus = (booking) => {
+
+        const status =
+            String(
+                booking?.status ||
+                ""
+            ).toUpperCase();
+
+        const paymentStatus =
+            String(
+                booking?.paymentStatus ||
+                ""
+            ).toUpperCase();
+
+
+        /*
+         * VERIFIED payment means the booking
+         * has been successfully confirmed.
+         */
+
+        if (
+            paymentStatus ===
+            "VERIFIED"
+        ) {
+            return "CONFIRMED";
+        }
+
+
+        if (
+            status ===
+            "CONFIRMED"
+        ) {
+            return "CONFIRMED";
+        }
+
+
+        if (
+            status ===
+            "COMPLETED"
+        ) {
+            return "COMPLETED";
+        }
+
+
+        if (
+            status ===
+            "CANCELLED" ||
+            status ===
+            "CANCELED"
+        ) {
+            return "CANCELLED";
+        }
+
+
+        if (
+            paymentStatus ===
+            "REJECTED"
+        ) {
+            return "CANCELLED";
+        }
+
+
+        return (
+            status ||
+            "PENDING"
+        );
+    };
+
+
+    // =========================================================
+    // GET STATUS LABEL
+    // =========================================================
+
+    const getStatusLabel = (booking) => {
+
+        const status =
+            getBookingStatus(
+                booking
+            );
+
+        const paymentStatus =
+            String(
+                booking?.paymentStatus ||
+                ""
+            ).toUpperCase();
+
+
+        if (
+            paymentStatus ===
+            "VERIFIED" ||
+            status ===
+            "CONFIRMED" ||
+            status ===
+            "COMPLETED"
+        ) {
+            return "Paid";
+        }
+
+
+        if (
+            paymentStatus ===
+            "REJECTED" ||
+            status ===
+            "CANCELLED"
+        ) {
+            return "Cancelled";
+        }
+
+
+        return "Pending";
+    };
+
+
+    // =========================================================
+    // GET STATUS CSS CLASS
+    // =========================================================
+
+    const getStatusClass = (booking) => {
+
+        const status =
+            getBookingStatus(
+                booking
+            );
+
+        const paymentStatus =
+            String(
+                booking?.paymentStatus ||
+                ""
+            ).toUpperCase();
+
+
+        if (
+            paymentStatus ===
+            "VERIFIED" ||
+            status ===
+            "CONFIRMED" ||
+            status ===
+            "COMPLETED"
+        ) {
+            return "status-paid";
+        }
+
+
+        if (
+            paymentStatus ===
+            "REJECTED" ||
+            status ===
+            "CANCELLED"
+        ) {
+            return "status-cancelled";
+        }
+
+
+        return "status-pending";
+    };
+
+
+    // =========================================================
+    // SAVE BOOKING DATA TO SESSION STORAGE
+    // =========================================================
+
+    const saveBookingData =
+        useCallback(
+            (
+                updatedBookings
+            ) => {
+
+                if (
+                    !Array.isArray(
+                        updatedBookings
+                    )
+                ) {
+                    return;
+                }
+
+
+                /*
+                 * SAVE ALL BOOKINGS
+                 */
+
+                sessionStorage.setItem(
+                    "allBookings",
+                    JSON.stringify(
+                        updatedBookings
+                    )
+                );
+
+
+                /*
+                 * SAVE RECENT BOOKINGS
+                 */
+
+                const recentBookings =
+                    [
+                        ...updatedBookings
+                    ]
+                        .reverse()
+                        .slice(
+                            0,
+                            3
+                        );
+
+                sessionStorage.setItem(
+                    "recentBookings",
+                    JSON.stringify(
+                        recentBookings
+                    )
+                );
+
+
+                /*
+                 * UPDATE CURRENT CONFIRMED BOOKING
+                 */
+
+                const confirmed =
+                    sessionStorage.getItem(
+                        "confirmedBooking"
+                    );
+
+
+                if (confirmed) {
+
+                    try {
+
+                        const currentBooking =
+                            JSON.parse(
+                                confirmed
+                            );
+
+
+                        const latest =
+                            updatedBookings.find(
+                                (
+                                    booking
+                                ) =>
+                                    booking.bookingReference ===
+                                    currentBooking.bookingReference
+                            );
+
+
+                        if (latest) {
+
+                            sessionStorage.setItem(
+                                "confirmedBooking",
+                                JSON.stringify(
+                                    latest
+                                )
+                            );
+
+                        }
+
+                    } catch (error) {
+
+                        console.error(
+                            "Unable to update confirmed booking:",
+                            error
+                        );
+
+                    }
+                }
+
+            },
+            []
+        );
+
+
+    // =========================================================
+    // LOAD BOOKINGS
+    // =========================================================
+
+    const loadBookings =
+        useCallback(
+            async () => {
+
+                setLoading(true);
+
+
+                try {
+
+                    /*
+                     * =================================================
+                     * GET LOCAL BOOKINGS FIRST
+                     * =================================================
+                     */
+
+                    const saved =
+                        sessionStorage.getItem(
+                            "allBookings"
+                        );
+
+
+                    let localBookings =
+                        [];
+
+
+                    if (saved) {
+
+                        try {
+
+                            const parsed =
+                                JSON.parse(
+                                    saved
+                                );
+
+
+                            if (
+                                Array.isArray(
+                                    parsed
+                                )
+                            ) {
+
+                                localBookings =
+                                    parsed;
+
+                            }
+
+                        } catch (error) {
+
+                            console.error(
+                                "Error parsing local bookings:",
+                                error
+                            );
+
+                        }
+                    }
+
+
+                    /*
+                     * If there are no local bookings,
+                     * there is nothing to synchronize.
+                     */
+
+                    if (
+                        localBookings.length ===
+                        0
+                    ) {
+
+                        setBookings([]);
+
+                        setLoading(false);
+
+                        return;
+
+                    }
+
+
+                    // =================================================
+                    // REFRESH EACH BOOKING FROM MONGODB
+                    // =================================================
+
+                    const updatedBookings =
+                        await Promise.all(
+
+                            localBookings.map(
+                                async (
+                                    localBooking
+                                ) => {
+
+                                    /*
+                                     * -------------------------------------------------
+                                     * We need the MongoDB _id.
+                                     * -------------------------------------------------
+                                     */
+
+                                    const bookingReference =
+                                                localBooking?.bookingReference;
+
+                                            if (!bookingReference) {
+                                                return localBooking;
+                                            }
+
+                                            try {
+                                                const response =
+                                                    await fetch(
+                                                        `${API_URL}/api/payment/booking/${encodeURIComponent(
+                                                            bookingReference
+                                                        )}`
+                                                    );
+                                        if (
+                                            !response.ok
+                                        ) {
+
+                                            console.warn(
+                                                `Unable to refresh booking ${localBooking.bookingReference}. HTTP ${response.status}`
+                                            );
+
+                                            return localBooking;
+
+                                        }
+
+
+                                        const data =
+                                            await response.json();
+
+
+                                        if (
+                                            data.success &&
+                                            data.booking
+                                        ) {
+
+                                            /*
+                                             * MongoDB is the latest source.
+                                             */
+
+                                            return {
+
+                                                ...localBooking,
+
+                                                ...data.booking
+
+                                            };
+
+                                        }
+
+
+                                        return localBooking;
+
+                                    } catch (error) {
+
+                                        console.error(
+                                            `Unable to refresh booking ${localBooking.bookingReference}:`,
+                                            error
+                                        );
+
+                                        return localBooking;
+
+                                    }
+
+                                }
+                            )
+
+                        );
+
+
+                    /*
+                     * =================================================
+                     * SAVE UPDATED BOOKINGS
+                     * =================================================
+                     */
+
+                    saveBookingData(
+                        updatedBookings
+                    );
+
+
+                    /*
+                     * =================================================
+                     * UPDATE REACT STATE
+                     * =================================================
+                     */
+
+                    setBookings(
+                        [
+                            ...updatedBookings
+                        ].reverse()
+                    );
+
+
+                } catch (error) {
+
+                    console.error(
+                        "Error loading bookings:",
+                        error
+                    );
+
+
+                    /*
+                     * Fall back to sessionStorage
+                     */
+
+                    try {
+
+                        const saved =
+                            sessionStorage.getItem(
+                                "allBookings"
+                            );
+
+
+                        if (saved) {
+
+                            const parsed =
+                                JSON.parse(
+                                    saved
+                                );
+
+
+                            if (
+                                Array.isArray(
+                                    parsed
+                                )
+                            ) {
+
+                                setBookings(
+                                    [
+                                        ...parsed
+                                    ].reverse()
+                                );
+
+                            } else {
+
+                                setBookings([]);
+
+                            }
+
+                        } else {
+
+                            setBookings([]);
+
+                        }
+
+                    } catch (fallbackError) {
+
+                        console.error(
+                            "Booking fallback error:",
+                            fallbackError
+                        );
+
+                        setBookings([]);
+
+                    }
+
+                } finally {
+
+                    setLoading(false);
+
+                }
+
+            },
+            [
+                saveBookingData
+            ]
+        );
+
+
+    // =========================================================
+    // INITIAL LOAD
     // =========================================================
 
     useEffect(() => {
+
         loadBookings();
-    }, []);
 
-    const loadBookings = () => {
-        try {
-            const saved = sessionStorage.getItem("allBookings");
+    }, [
+        loadBookings
+    ]);
 
-            if (!saved) {
-                setBookings([]);
-                return;
-            }
 
-            const parsed = JSON.parse(saved);
+    // =========================================================
+    // REFRESH WHEN USER RETURNS TO THIS PAGE
+    // =========================================================
 
-            if (Array.isArray(parsed)) {
-                setBookings([...parsed].reverse());
-            } else {
-                setBookings([]);
-            }
+    useEffect(() => {
 
-        } catch (error) {
-            console.error("Error loading bookings:", error);
-            setBookings([]);
-        }
-    };
+        const handleVisibility =
+            () => {
+
+                if (
+                    document.visibilityState ===
+                    "visible"
+                ) {
+
+                    loadBookings();
+
+                }
+
+            };
+
+
+        document.addEventListener(
+            "visibilitychange",
+            handleVisibility
+        );
+
+
+        return () => {
+
+            document.removeEventListener(
+                "visibilitychange",
+                handleVisibility
+            );
+
+        };
+
+    }, [
+        loadBookings
+    ]);
+
 
     // =========================================================
     // VIEW BOOKING
     // =========================================================
 
-    const viewBooking = (booking) => {
-        sessionStorage.setItem(
-            "confirmedBooking",
-            JSON.stringify(booking)
-        );
+    const viewBooking =
+        (booking) => {
 
-        navigate("/confirmation");
-    };
+            /*
+             * Always save the newest booking
+             * before navigating.
+             */
+
+            sessionStorage.setItem(
+                "confirmedBooking",
+                JSON.stringify(
+                    booking
+                )
+            );
+
+
+            navigate(
+                "/confirmation"
+            );
+
+        };
+
 
     // =========================================================
     // OPEN CANCEL MODAL
     // =========================================================
 
-    const askCancel = (booking) => {
-        setCancelTarget(booking);
-    };
+    const askCancel =
+        (booking) => {
+
+            setCancelTarget(
+                booking
+            );
+
+        };
+
 
     // =========================================================
     // CLOSE CANCEL MODAL
     // =========================================================
 
-    const closeCancelModal = () => {
-        setCancelTarget(null);
-    };
+    const closeCancelModal =
+        () => {
 
-    // =========================================================
-    // CONFIRM CANCELLATION
-    // =========================================================
-
-    const confirmCancellation = () => {
-        if (!cancelTarget) {
-            return;
-        }
-
-        const bookingReference =
-            cancelTarget.bookingReference;
-
-        try {
-            // -------------------------------------------------
-            // GET ALL BOOKINGS
-            // -------------------------------------------------
-
-            const saved =
-                sessionStorage.getItem("allBookings");
-
-            let allBookings = [];
-
-            if (saved) {
-                const parsed = JSON.parse(saved);
-
-                if (Array.isArray(parsed)) {
-                    allBookings = parsed;
-                }
-            }
-
-            // -------------------------------------------------
-            // CHANGE STATUS ONLY
-            // DO NOT DELETE THE BOOKING
-            // -------------------------------------------------
-
-            const updatedBookings =
-                allBookings.map((booking) => {
-
-                    if (
-                        booking.bookingReference ===
-                        bookingReference
-                    ) {
-                        return {
-                            ...booking,
-                            status: "CANCELLED"
-                        };
-                    }
-
-                    return booking;
-                });
-
-            // -------------------------------------------------
-            // SAVE BACK TO ALL BOOKINGS
-            // -------------------------------------------------
-
-            sessionStorage.setItem(
-                "allBookings",
-                JSON.stringify(updatedBookings)
+            setCancelTarget(
+                null
             );
 
-            // -------------------------------------------------
-            // UPDATE RECENT BOOKINGS
-            // -------------------------------------------------
+        };
 
-            const savedRecent =
-                sessionStorage.getItem("recentBookings");
 
-            if (savedRecent) {
-                try {
-                    const recentBookings =
-                        JSON.parse(savedRecent);
+    // =========================================================
+    // CANCEL BOOKING
+    // =========================================================
 
-                    if (Array.isArray(recentBookings)) {
+    const confirmCancellation =
+        () => {
 
-                        const updatedRecent =
-                            recentBookings.map((booking) => {
-
-                                if (
-                                    booking.bookingReference ===
-                                    bookingReference
-                                ) {
-                                    return {
-                                        ...booking,
-                                        status: "CANCELLED"
-                                    };
-                                }
-
-                                return booking;
-                            });
-
-                        sessionStorage.setItem(
-                            "recentBookings",
-                            JSON.stringify(updatedRecent)
-                        );
-                    }
-
-                } catch (recentError) {
-                    console.error(
-                        "Error updating recent bookings:",
-                        recentError
-                    );
-                }
+            if (
+                !cancelTarget
+            ) {
+                return;
             }
 
-            // -------------------------------------------------
-            // UPDATE CONFIRMED BOOKING
-            // -------------------------------------------------
 
-            const confirmed =
-                sessionStorage.getItem(
-                    "confirmedBooking"
+            const bookingReference =
+                cancelTarget.bookingReference;
+
+
+            try {
+
+                /*
+                 * Get existing bookings
+                 */
+
+                const saved =
+                    sessionStorage.getItem(
+                        "allBookings"
+                    );
+
+
+                let allBookings =
+                    [];
+
+
+                if (saved) {
+
+                    const parsed =
+                        JSON.parse(
+                            saved
+                        );
+
+
+                    if (
+                        Array.isArray(
+                            parsed
+                        )
+                    ) {
+
+                        allBookings =
+                            parsed;
+
+                    }
+
+                }
+
+
+                /*
+                 * Change booking status.
+                 *
+                 * We do NOT delete it.
+                 */
+
+                const updatedBookings =
+                    allBookings.map(
+                        (
+                            booking
+                        ) => {
+
+                            if (
+                                booking.bookingReference ===
+                                bookingReference
+                            ) {
+
+                                return {
+
+                                    ...booking,
+
+                                    status:
+                                        "CANCELLED",
+
+                                    paymentStatus:
+                                        "REJECTED",
+
+                                    totalPaid:
+                                        null
+
+                                };
+
+                            }
+
+
+                            return booking;
+
+                        }
+                    );
+
+
+                /*
+                 * Save all bookings
+                 */
+
+                sessionStorage.setItem(
+                    "allBookings",
+                    JSON.stringify(
+                        updatedBookings
+                    )
                 );
 
-            if (confirmed) {
 
-                try {
-                    const currentBooking =
-                        JSON.parse(confirmed);
+                /*
+                 * Update recent bookings
+                 */
 
-                    if (
-                        currentBooking.bookingReference ===
-                        bookingReference
+                const savedRecent =
+                    sessionStorage.getItem(
+                        "recentBookings"
+                    );
+
+
+                if (savedRecent) {
+
+                    try {
+
+                        const recentBookings =
+                            JSON.parse(
+                                savedRecent
+                            );
+
+
+                        if (
+                            Array.isArray(
+                                recentBookings
+                            )
+                        ) {
+
+                            const updatedRecent =
+                                recentBookings.map(
+                                    (
+                                        booking
+                                    ) => {
+
+                                        if (
+                                            booking.bookingReference ===
+                                            bookingReference
+                                        ) {
+
+                                            return {
+
+                                                ...booking,
+
+                                                status:
+                                                    "CANCELLED",
+
+                                                paymentStatus:
+                                                    "REJECTED",
+
+                                                totalPaid:
+                                                    null
+
+                                            };
+
+                                        }
+
+
+                                        return booking;
+
+                                    }
+                                );
+
+
+                            sessionStorage.setItem(
+                                "recentBookings",
+                                JSON.stringify(
+                                    updatedRecent
+                                )
+                            );
+
+                        }
+
+                    } catch (
+                        recentError
                     ) {
 
-                        sessionStorage.setItem(
-                            "confirmedBooking",
-                            JSON.stringify({
-                                ...currentBooking,
-                                status: "CANCELLED"
-                            })
+                        console.error(
+                            "Error updating recent bookings:",
+                            recentError
                         );
+
                     }
 
-                } catch (confirmedError) {
-                    console.error(
-                        "Error updating confirmed booking:",
-                        confirmedError
-                    );
                 }
+
+
+                /*
+                 * Update confirmed booking
+                 */
+
+                const confirmed =
+                    sessionStorage.getItem(
+                        "confirmedBooking"
+                    );
+
+
+                if (confirmed) {
+
+                    try {
+
+                        const currentBooking =
+                            JSON.parse(
+                                confirmed
+                            );
+
+
+                        if (
+                            currentBooking.bookingReference ===
+                            bookingReference
+                        ) {
+
+                            sessionStorage.setItem(
+                                "confirmedBooking",
+                                JSON.stringify({
+
+                                    ...currentBooking,
+
+                                    status:
+                                        "CANCELLED",
+
+                                    paymentStatus:
+                                        "REJECTED",
+
+                                    totalPaid:
+                                        null
+
+                                })
+                            );
+
+                        }
+
+                    } catch (
+                        confirmedError
+                    ) {
+
+                        console.error(
+                            "Error updating confirmed booking:",
+                            confirmedError
+                        );
+
+                    }
+
+                }
+
+
+                /*
+                 * Update UI
+                 */
+
+                setBookings(
+                    [
+                        ...updatedBookings
+                    ].reverse()
+                );
+
+
+                setCancelTarget(
+                    null
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Error cancelling booking:",
+                    error
+                );
+
             }
 
-            // -------------------------------------------------
-            // UPDATE UI
-            // -------------------------------------------------
+        };
 
-            setBookings(
-                [...updatedBookings].reverse()
-            );
-
-            setCancelTarget(null);
-
-        } catch (error) {
-
-            console.error(
-                "Error cancelling booking:",
-                error
-            );
-        }
-    };
 
     // =========================================================
     // OPEN DELETE ALL CANCELLED MODAL
     // =========================================================
 
-    const askClearCancelled = () => {
-        const cancelledCount =
-            bookings.filter((booking) => {
+    const askClearCancelled =
+        () => {
 
-                const status =
+            const cancelledCount =
+                bookings.filter(
                     (
-                        booking.status ||
-                        "PENDING"
-                    ).toUpperCase();
+                        booking
+                    ) => {
 
-                return status === "CANCELLED";
+                        return (
+                            getBookingStatus(
+                                booking
+                            ) ===
+                            "CANCELLED"
+                        );
 
-            }).length;
+                    }
+                ).length;
 
-        if (cancelledCount === 0) {
-            return;
-        }
 
-        setClearCancelledModal(true);
-    };
+            if (
+                cancelledCount ===
+                0
+            ) {
+
+                return;
+
+            }
+
+
+            setClearCancelledModal(
+                true
+            );
+
+        };
+
 
     // =========================================================
     // CLOSE DELETE ALL CANCELLED MODAL
     // =========================================================
 
-    const closeClearCancelledModal = () => {
-        setClearCancelledModal(false);
-    };
+    const closeClearCancelledModal =
+        () => {
 
-    // =========================================================
-    // CONFIRM DELETE ALL CANCELLED
-    // =========================================================
-
-    const confirmClearCancelled = () => {
-
-        try {
-
-            // -------------------------------------------------
-            // GET ALL BOOKINGS
-            // -------------------------------------------------
-
-            const saved =
-                sessionStorage.getItem("allBookings");
-
-            let allBookings = [];
-
-            if (saved) {
-
-                try {
-
-                    const parsed =
-                        JSON.parse(saved);
-
-                    if (Array.isArray(parsed)) {
-                        allBookings = parsed;
-                    }
-
-                } catch (error) {
-
-                    console.error(
-                        "Error parsing allBookings:",
-                        error
-                    );
-
-                }
-            }
-
-            // -------------------------------------------------
-            // KEEP ONLY NON-CANCELLED BOOKINGS
-            // -------------------------------------------------
-
-            const remainingBookings =
-                allBookings.filter((booking) => {
-
-                    const status =
-                        (
-                            booking.status ||
-                            "PENDING"
-                        ).toUpperCase();
-
-                    return status !== "CANCELLED";
-
-                });
-
-            // -------------------------------------------------
-            // SAVE UPDATED ALL BOOKINGS
-            // -------------------------------------------------
-
-            sessionStorage.setItem(
-                "allBookings",
-                JSON.stringify(remainingBookings)
+            setClearCancelledModal(
+                false
             );
 
-            // -------------------------------------------------
-            // REMOVE CANCELLED BOOKINGS FROM RECENT BOOKINGS
-            // -------------------------------------------------
+        };
 
-            const savedRecent =
-                sessionStorage.getItem("recentBookings");
 
-            if (savedRecent) {
+    // =========================================================
+    // DELETE ALL CANCELLED
+    // =========================================================
 
-                try {
+    const confirmClearCancelled =
+        () => {
 
-                    const recentBookings =
-                        JSON.parse(savedRecent);
+            try {
 
-                    if (Array.isArray(recentBookings)) {
+                const saved =
+                    sessionStorage.getItem(
+                        "allBookings"
+                    );
 
-                        const remainingRecent =
-                            recentBookings.filter(
-                                (booking) => {
 
-                                    const status =
-                                        (
-                                            booking.status ||
-                                            "PENDING"
-                                        ).toUpperCase();
+                let allBookings =
+                    [];
 
-                                    return status !==
-                                        "CANCELLED";
-                                }
+
+                if (saved) {
+
+                    try {
+
+                        const parsed =
+                            JSON.parse(
+                                saved
                             );
 
-                        sessionStorage.setItem(
-                            "recentBookings",
-                            JSON.stringify(
-                                remainingRecent
+
+                        if (
+                            Array.isArray(
+                                parsed
                             )
+                        ) {
+
+                            allBookings =
+                                parsed;
+
+                        }
+
+                    } catch (
+                        error
+                    ) {
+
+                        console.error(
+                            "Error parsing allBookings:",
+                            error
                         );
+
                     }
 
-                } catch (recentError) {
+                }
 
-                    console.error(
-                        "Error clearing cancelled recent bookings:",
-                        recentError
+
+                /*
+                 * Keep only non-cancelled bookings
+                 */
+
+                const remainingBookings =
+                    allBookings.filter(
+                        (
+                            booking
+                        ) => {
+
+                            return (
+                                getBookingStatus(
+                                    booking
+                                ) !==
+                                "CANCELLED"
+                            );
+
+                        }
                     );
 
-                }
-            }
 
-            // -------------------------------------------------
-            // REMOVE CONFIRMED BOOKING IF IT IS CANCELLED
-            // -------------------------------------------------
+                /*
+                 * Save all bookings
+                 */
 
-            const confirmed =
-                sessionStorage.getItem(
-                    "confirmedBooking"
+                sessionStorage.setItem(
+                    "allBookings",
+                    JSON.stringify(
+                        remainingBookings
+                    )
                 );
 
-            if (confirmed) {
 
-                try {
+                /*
+                 * Remove cancelled from recent
+                 */
 
-                    const currentBooking =
-                        JSON.parse(confirmed);
-
-                    const confirmedStatus =
-                        (
-                            currentBooking.status ||
-                            "PENDING"
-                        ).toUpperCase();
-
-                    if (
-                        confirmedStatus ===
-                        "CANCELLED"
-                    ) {
-                        sessionStorage.removeItem(
-                            "confirmedBooking"
-                        );
-                    }
-
-                } catch (confirmedError) {
-
-                    console.error(
-                        "Error clearing confirmed booking:",
-                        confirmedError
+                const savedRecent =
+                    sessionStorage.getItem(
+                        "recentBookings"
                     );
 
+
+                if (savedRecent) {
+
+                    try {
+
+                        const recentBookings =
+                            JSON.parse(
+                                savedRecent
+                            );
+
+
+                        if (
+                            Array.isArray(
+                                recentBookings
+                            )
+                        ) {
+
+                            const remainingRecent =
+                                recentBookings.filter(
+                                    (
+                                        booking
+                                    ) => {
+
+                                        return (
+                                            getBookingStatus(
+                                                booking
+                                            ) !==
+                                            "CANCELLED"
+                                        );
+
+                                    }
+                                );
+
+
+                            sessionStorage.setItem(
+                                "recentBookings",
+                                JSON.stringify(
+                                    remainingRecent
+                                )
+                            );
+
+                        }
+
+                    } catch (
+                        recentError
+                    ) {
+
+                        console.error(
+                            "Error clearing recent bookings:",
+                            recentError
+                        );
+
+                    }
+
                 }
+
+
+                /*
+                 * Check confirmed booking
+                 */
+
+                const confirmed =
+                    sessionStorage.getItem(
+                        "confirmedBooking"
+                    );
+
+
+                if (confirmed) {
+
+                    try {
+
+                        const currentBooking =
+                            JSON.parse(
+                                confirmed
+                            );
+
+
+                        if (
+                            getBookingStatus(
+                                currentBooking
+                            ) ===
+                            "CANCELLED"
+                        ) {
+
+                            sessionStorage.removeItem(
+                                "confirmedBooking"
+                            );
+
+                        }
+
+                    } catch (
+                        confirmedError
+                    ) {
+
+                        console.error(
+                            "Error clearing confirmed booking:",
+                            confirmedError
+                        );
+
+                    }
+
+                }
+
+
+                /*
+                 * Update UI
+                 */
+
+                setBookings(
+                    [
+                        ...remainingBookings
+                    ].reverse()
+                );
+
+
+                setClearCancelledModal(
+                    false
+                );
+
+
+                setActiveFilter(
+                    "CANCELLED"
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Error clearing cancelled bookings:",
+                    error
+                );
+
             }
 
-            // -------------------------------------------------
-            // UPDATE UI
-            // -------------------------------------------------
+        };
 
-            setBookings(
-                [...remainingBookings].reverse()
-            );
-
-            // -------------------------------------------------
-            // CLOSE MODAL
-            // -------------------------------------------------
-
-            setClearCancelledModal(false);
-
-            // -------------------------------------------------
-            // RETURN TO CANCELLED FILTER
-            // -------------------------------------------------
-
-            setActiveFilter("CANCELLED");
-
-        } catch (error) {
-
-            console.error(
-                "Error clearing cancelled bookings:",
-                error
-            );
-
-        }
-    };
 
     // =========================================================
     // FILTER BOOKINGS
     // =========================================================
 
     const filteredBookings =
-        bookings.filter((booking) => {
+        bookings.filter(
+            (
+                booking
+            ) => {
 
-            const status =
-                (
-                    booking.status ||
+                const status =
+                    getBookingStatus(
+                        booking
+                    );
+
+
+                /*
+                 * ALL
+                 */
+
+                if (
+                    activeFilter ===
+                    "ALL"
+                ) {
+
+                    return true;
+
+                }
+
+
+                /*
+                 * PAID
+                 *
+                 * VERIFIED / CONFIRMED /
+                 * COMPLETED bookings.
+                 */
+
+                if (
+                    activeFilter ===
+                    "PAID"
+                ) {
+
+                    return (
+                        status ===
+                        "CONFIRMED" ||
+                        status ===
+                        "COMPLETED"
+                    );
+
+                }
+
+
+                /*
+                 * PENDING
+                 */
+
+                if (
+                    activeFilter ===
                     "PENDING"
-                ).toUpperCase();
+                ) {
 
-            // ALL
-            if (activeFilter === "ALL") {
+                    return (
+                        status ===
+                        "PENDING" ||
+                        status ===
+                        "PENDING PAYMENT VERIFICATION"
+                    );
+
+                }
+
+
+                /*
+                 * CANCELLED
+                 */
+
+                if (
+                    activeFilter ===
+                    "CANCELLED"
+                ) {
+
+                    return (
+                        status ===
+                        "CANCELLED"
+                    );
+
+                }
+
+
                 return true;
-            }
 
-            // PAID
-            if (activeFilter === "PAID") {
-                return status === "PAID";
             }
+        );
 
-            // PENDING
-            if (activeFilter === "PENDING") {
-                return (
-                    status === "PENDING" ||
-                    status === "CONFIRMED"
-                );
-            }
-
-            // CANCELLED
-            if (activeFilter === "CANCELLED") {
-                return status === "CANCELLED";
-            }
-
-            return true;
-        });
 
     // =========================================================
     // SECTION TITLE
     // =========================================================
 
-    const getSectionTitle = () => {
+    const getSectionTitle =
+        () => {
 
-        if (activeFilter === "PAID") {
-            return "Paid Bookings";
-        }
+            if (
+                activeFilter ===
+                "PAID"
+            ) {
 
-        if (activeFilter === "PENDING") {
-            return "Pending Bookings";
-        }
+                return "Paid Bookings";
 
-        if (activeFilter === "CANCELLED") {
-            return "Cancelled Bookings";
-        }
+            }
 
-        return "All Bookings";
-    };
+
+            if (
+                activeFilter ===
+                "PENDING"
+            ) {
+
+                return "Pending Bookings";
+
+            }
+
+
+            if (
+                activeFilter ===
+                "CANCELLED"
+            ) {
+
+                return "Cancelled Bookings";
+
+            }
+
+
+            return "All Bookings";
+
+        };
+
 
     // =========================================================
-    // STATUS CLASS
+    // FORMAT DATE
     // =========================================================
 
-    const getStatusClass = (status) => {
+    const formatDate =
+        (date) => {
 
-        if (status === "PAID") {
-            return "status-paid";
-        }
+            if (!date) {
+                return "N/A";
+            }
 
-        if (status === "COMPLETED") {
-            return "status-completed";
-        }
 
-        if (status === "CANCELLED") {
-            return "status-cancelled";
-        }
+            try {
 
-        if (status === "CONFIRMED") {
-            return "status-confirmed";
-        }
+                const parsedDate =
+                    new Date(
+                        date
+                    );
 
-        return "status-pending";
-    };
+
+                if (
+                    Number.isNaN(
+                        parsedDate.getTime()
+                    )
+                ) {
+
+                    return date;
+
+                }
+
+
+                return parsedDate.toLocaleDateString(
+                    "en-US",
+                    {
+                        year:
+                            "numeric",
+
+                        month:
+                            "2-digit",
+
+                        day:
+                            "2-digit"
+                    }
+                );
+
+            } catch (
+                error
+            ) {
+
+                return date;
+
+            }
+
+        };
+
+
+    // =========================================================
+    // FORMAT MONEY
+    // =========================================================
+
+    const formatMoney =
+        (amount) => {
+
+            const value =
+                Number(
+                    amount
+                );
+
+
+            if (
+                !Number.isFinite(
+                    value
+                )
+            ) {
+
+                return "₱0.00";
+
+            }
+
+
+            return (
+                "₱" +
+                value.toLocaleString(
+                    "en-PH",
+                    {
+                        minimumFractionDigits:
+                            2,
+
+                        maximumFractionDigits:
+                            2
+                    }
+                )
+            );
+
+        };
+
+
+    // =========================================================
+    // PAGE
+    // =========================================================
 
     return (
+
         <>
+
             <style>{`
 
                 * {
                     box-sizing: border-box;
                 }
 
+
                 html,
                 body,
                 #root {
+
                     margin: 0;
                     padding: 0;
+
                     width: 100%;
                     min-height: 100%;
+
                 }
 
+
                 body {
+
                     font-family:
                         "Poppins",
                         -apple-system,
@@ -557,17 +1521,34 @@ const Bookings = () => {
                         Arial,
                         sans-serif;
 
-                    background: #f7f8fa;
-                    color: #222;
+                    background:
+                        #f7f8fa;
+
+                    color:
+                        #222;
+
                 }
+
 
                 button {
-                    font-family: inherit;
+
+                    font-family:
+                        inherit;
+
                 }
 
+
+                /* =================================================
+                   PAGE
+                ================================================= */
+
                 .bookings-page {
-                    min-height: 100vh;
-                    min-height: 100dvh;
+
+                    min-height:
+                        100vh;
+
+                    min-height:
+                        100dvh;
 
                     background:
                         linear-gradient(
@@ -576,580 +1557,1053 @@ const Bookings = () => {
                             #f7f8fa
                         );
 
-                    padding-bottom: 40px;
+                    padding-bottom:
+                        40px;
+
                 }
 
+
                 .bookings-container {
-                    width: 100%;
-                    max-width: 900px;
 
-                    margin: 0 auto;
+                    width:
+                        100%;
 
-                    min-height: 100vh;
+                    max-width:
+                        900px;
 
-                    background: #ffffff;
+                    margin:
+                        0 auto;
+
+                    min-height:
+                        100vh;
+
+                    background:
+                        #ffffff;
 
                     padding:
                         25px
                         30px
                         50px;
+
                 }
 
-                /* HEADER */
+
+                /* =================================================
+                   HEADER
+                ================================================= */
 
                 .bookings-header {
-                    display: flex;
-                    align-items: center;
 
-                    gap: 15px;
+                    display:
+                        flex;
 
-                    margin-bottom: 28px;
+                    align-items:
+                        center;
+
+                    gap:
+                        15px;
+
+                    margin-bottom:
+                        28px;
+
                 }
+
 
                 .back-button {
-                    width: 42px;
-                    height: 42px;
 
-                    border: 1px solid #eeeeee;
+                    width:
+                        42px;
 
-                    border-radius: 12px;
+                    height:
+                        42px;
 
-                    background: #ffffff;
+                    border:
+                        1px solid
+                        #eeeeee;
 
-                    font-size: 20px;
+                    border-radius:
+                        12px;
 
-                    cursor: pointer;
+                    background:
+                        #ffffff;
 
-                    transition: 0.2s ease;
+                    font-size:
+                        20px;
+
+                    cursor:
+                        pointer;
+
+                    transition:
+                        0.2s ease;
+
                 }
+
 
                 .back-button:hover {
-                    background: #fff3eb;
-                    color: #ff7818;
-                    border-color: #ffd5bd;
+
+                    background:
+                        #fff3eb;
+
+                    color:
+                        #ff7818;
+
+                    border-color:
+                        #ffd5bd;
+
                 }
+
 
                 .bookings-title h1 {
-                    margin: 0;
 
-                    font-size: 27px;
+                    margin:
+                        0;
 
-                    font-weight: 800;
+                    color:
+                        #111111;
+
+                    font-size:
+                        27px;
+
+                    font-weight:
+                        800;
+
                 }
+
 
                 .bookings-title p {
-                    margin: 4px 0 0;
 
-                    color: #888;
+                    margin:
+                        4px 0 0;
 
-                    font-size: 13px;
+                    color:
+                        #888888;
+
+                    font-size:
+                        12px;
+
                 }
 
-                /* FILTERS */
+
+                /* =================================================
+                   FILTERS
+                ================================================= */
 
                 .booking-filters {
-                    width: 100%;
-                    max-width: 430px;
 
-                    display: grid;
+                    width:
+                        100%;
+
+                    max-width:
+                        430px;
+
+                    display:
+                        grid;
 
                     grid-template-columns:
-                        repeat(4, 1fr);
+                        repeat(
+                            4,
+                            1fr
+                        );
 
-                    gap: 4px;
+                    gap:
+                        4px;
 
-                    padding: 4px;
+                    padding:
+                        4px;
 
-                    margin-bottom: 28px;
+                    margin-bottom:
+                        30px;
 
-                    background: #f5f5f5;
+                    background:
+                        #f5f5f5;
 
-                    border: 1px solid #e8e8e8;
+                    border:
+                        1px solid
+                        #e7e7e7;
 
-                    border-radius: 11px;
+                    border-radius:
+                        12px;
+
                 }
+
 
                 .filter-button {
-                    height: 38px;
 
-                    border: none;
+                    border:
+                        none;
 
-                    border-radius: 8px;
+                    background:
+                        transparent;
 
-                    background: transparent;
+                    padding:
+                        11px
+                        8px;
 
-                    color: #666;
+                    border-radius:
+                        9px;
 
-                    font-size: 11px;
+                    color:
+                        #555555;
 
-                    font-weight: 500;
+                    font-size:
+                        11px;
 
-                    cursor: pointer;
+                    font-weight:
+                        500;
 
-                    transition: 0.2s ease;
+                    cursor:
+                        pointer;
+
+                    transition:
+                        0.2s ease;
+
                 }
+
 
                 .filter-button:hover {
-                    color: #ff7818;
+
+                    color:
+                        #ff7818;
+
                 }
 
+
                 .filter-button.active {
-                    background: #ff7818;
 
-                    color: #ffffff;
+                    background:
+                        #ff7818;
 
-                    font-weight: 700;
+                    color:
+                        #ffffff;
+
+                    font-weight:
+                        700;
 
                     box-shadow:
-                        0 3px 8px
+                        0
+                        3px
+                        10px
                         rgba(
                             255,
                             120,
                             24,
-                            0.20
+                            0.18
                         );
+
                 }
 
-                /* SECTION */
+
+                /* =================================================
+                   SECTION TITLE
+                ================================================= */
 
                 .booking-section-title {
-                    display: flex;
 
-                    align-items: center;
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
 
                     justify-content:
                         space-between;
 
-                    margin-bottom: 18px;
+                    gap:
+                        15px;
+
+                    margin-bottom:
+                        18px;
+
                 }
+
 
                 .booking-section-left {
-                    display: flex;
 
-                    align-items: center;
+                    display:
+                        flex;
 
-                    gap: 10px;
+                    align-items:
+                        center;
+
+                    gap:
+                        10px;
+
                 }
+
 
                 .booking-section-title h2 {
-                    margin: 0;
 
-                    font-size: 16px;
+                    margin:
+                        0;
 
-                    font-weight: 600;
+                    font-size:
+                        16px;
 
-                    color: #222;
+                    color:
+                        #111111;
+
                 }
+
 
                 .booking-count {
-                    min-width: 27px;
-                    height: 27px;
 
-                    display: flex;
+                    display:
+                        inline-flex;
 
-                    align-items: center;
+                    align-items:
+                        center;
 
-                    justify-content: center;
+                    justify-content:
+                        center;
 
-                    border-radius: 50%;
+                    min-width:
+                        28px;
 
-                    background: #fff1e8;
+                    height:
+                        28px;
 
-                    color: #ff7818;
+                    padding:
+                        0 8px;
 
-                    font-size: 10px;
+                    border-radius:
+                        50%;
 
-                    font-weight: 700;
+                    background:
+                        #fff1e7;
+
+                    color:
+                        #ff7818;
+
+                    font-size:
+                        10px;
+
+                    font-weight:
+                        700;
+
                 }
 
-                /* DELETE ALL BUTTON */
 
                 .clear-cancelled-button {
-                    border: 1px solid #ffd2d2;
 
-                    background: #fff4f4;
+                    border:
+                        none;
 
-                    color: #d9534f;
+                    background:
+                        #fff1f1;
+
+                    color:
+                        #d9534f;
+
+                    border-radius:
+                        8px;
+
+                    padding:
+                        9px
+                        12px;
+
+                    font-size:
+                        10px;
+
+                    font-weight:
+                        700;
+
+                    cursor:
+                        pointer;
+
+                    transition:
+                        0.2s ease;
+
+                }
+
+
+                .clear-cancelled-button:hover {
+
+                    background:
+                        #ffe0e0;
+
+                }
+
+
+                /* =================================================
+                   LOADING
+                ================================================= */
+
+                .loading-bookings {
+
+                    min-height:
+                        220px;
+
+                    display:
+                        flex;
+
+                    flex-direction:
+                        column;
+
+                    align-items:
+                        center;
+
+                    justify-content:
+                        center;
+
+                    text-align:
+                        center;
+
+                    color:
+                        #888888;
+
+                }
+
+
+                .loading-spinner {
+
+                    width:
+                        32px;
+
+                    height:
+                        32px;
+
+                    margin-bottom:
+                        12px;
+
+                    border:
+                        3px solid
+                        #eeeeee;
+
+                    border-top-color:
+                        #ff7818;
+
+                    border-radius:
+                        50%;
+
+                    animation:
+                        spin
+                        0.8s
+                        linear
+                        infinite;
+
+                }
+
+
+                @keyframes spin {
+
+                    to {
+
+                        transform:
+                            rotate(
+                                360deg
+                            );
+
+                    }
+
+                }
+
+
+                /* =================================================
+                   HISTORY LIST
+                ================================================= */
+
+                .history-list {
+
+                    display:
+                        flex;
+
+                    flex-direction:
+                        column;
+
+                    gap:
+                        15px;
+
+                }
+
+
+                .history-card {
+
+                    width:
+                        100%;
+
+                    background:
+                        #ffffff;
+
+                    border:
+                        1px solid
+                        #e6e6e6;
+
+                    border-radius:
+                        15px;
+
+                    padding:
+                        20px;
+
+                    box-shadow:
+                        0
+                        5px
+                        18px
+                        rgba(
+                            0,
+                            0,
+                            0,
+                            0.04
+                        );
+
+                }
+
+
+                /* =================================================
+                   HISTORY TOP
+                ================================================= */
+
+                .history-top {
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    justify-content:
+                        space-between;
+
+                    gap:
+                        15px;
+
+                    padding-bottom:
+                        15px;
+
+                    border-bottom:
+                        1px solid
+                        #eeeeee;
+
+                }
+
+
+                .history-route {
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    gap:
+                        12px;
+
+                    min-width:
+                        0;
+
+                }
+
+
+                .route-icon-large {
+
+                    width:
+                        45px;
+
+                    height:
+                        45px;
+
+                    flex:
+                        0 0 45px;
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    justify-content:
+                        center;
+
+                    border-radius:
+                        13px;
+
+                    background:
+                        #fff1e7;
+
+                    font-size:
+                        21px;
+
+                }
+
+
+                .history-route strong {
+
+                    display:
+                        block;
+
+                    color:
+                        #111111;
+
+                    font-size:
+                        15px;
+
+                    font-weight:
+                        700;
+
+                }
+
+
+                .history-reference {
+
+                    display:
+                        block;
+
+                    margin-top:
+                        5px;
+
+                    color:
+                        #999999;
+
+                    font-size:
+                        10px;
+
+                }
+
+
+                /* =================================================
+                   STATUS
+                ================================================= */
+
+                .status {
+
+                    flex:
+                        0 0 auto;
+
+                    padding:
+                        6px
+                        10px;
+
+                    border-radius:
+                        20px;
+
+                    font-size:
+                        9px;
+
+                    font-weight:
+                        700;
+
+                    white-space:
+                        nowrap;
+
+                }
+
+
+                .status-paid {
+
+                    background:
+                        #e9f8ef;
+
+                    color:
+                        #168b45;
+
+                }
+
+
+                .status-pending {
+
+                    background:
+                        #fff1e5;
+
+                    color:
+                        #f07b18;
+
+                }
+
+
+                .status-cancelled {
+
+                    background:
+                        #fff0f0;
+
+                    color:
+                        #d9534f;
+
+                }
+
+
+                /* =================================================
+                   DETAILS
+                ================================================= */
+
+                .history-details {
+
+                    display:
+                        grid;
+
+                    grid-template-columns:
+                        repeat(
+                            4,
+                            1fr
+                        );
+
+                    gap:
+                        15px;
+
+                    padding:
+                        17px 0;
+
+                }
+
+
+                .history-detail {
+
+                    min-width:
+                        0;
+
+                }
+
+
+                .history-detail small {
+
+                    display:
+                        block;
+
+                    margin-bottom:
+                        5px;
+
+                    color:
+                        #999999;
+
+                    font-size:
+                        9px;
+
+                }
+
+
+                .history-detail strong {
+
+                    display:
+                        block;
+
+                    color:
+                        #222222;
+
+                    font-size:
+                        12px;
+
+                    overflow:
+                        hidden;
+
+                    text-overflow:
+                        ellipsis;
+
+                    white-space:
+                        nowrap;
+
+                }
+
+
+                /* =================================================
+                   BOTTOM
+                ================================================= */
+
+                .history-bottom {
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    justify-content:
+                        space-between;
+
+                    gap:
+                        15px;
+
+                    padding-top:
+                        15px;
+
+                    border-top:
+                        1px solid
+                        #eeeeee;
+
+                }
+
+
+                .history-total small {
+
+                    display:
+                        block;
+
+                    margin-bottom:
+                        4px;
+
+                    color:
+                        #999999;
+
+                    font-size:
+                        9px;
+
+                }
+
+
+                .history-total strong {
+
+                    display:
+                        block;
+
+                    color:
+                        #111111;
+
+                    font-size:
+                        16px;
+
+                    font-weight:
+                        800;
+
+                }
+
+
+                .history-actions {
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    gap:
+                        8px;
+
+                }
+
+
+                .view-button {
+
+                    border:
+                        none;
+
+                    background:
+                        #ff7818;
+
+                    color:
+                        #ffffff;
+
+                    border-radius:
+                        8px;
+
+                    padding:
+                        10px
+                        15px;
+
+                    font-size:
+                        10px;
+
+                    font-weight:
+                        700;
+
+                    cursor:
+                        pointer;
+
+                    transition:
+                        0.2s ease;
+
+                }
+
+
+                .view-button:hover {
+
+                    background:
+                        #e9660b;
+
+                }
+
+
+                .cancel-button {
+
+                    border:
+                        1px solid
+                        #ffd0d0;
+
+                    background:
+                        #fff7f7;
+
+                    color:
+                        #d9534f;
+
+                    border-radius:
+                        8px;
 
                     padding:
                         9px
                         13px;
 
-                    border-radius: 9px;
+                    font-size:
+                        10px;
 
-                    font-size: 10px;
+                    font-weight:
+                        600;
 
-                    font-weight: 700;
+                    cursor:
+                        pointer;
 
-                    cursor: pointer;
+                    transition:
+                        0.2s ease;
 
-                    transition: 0.2s ease;
-
-                    white-space: nowrap;
                 }
 
-                .clear-cancelled-button:hover {
-                    background: #ffe3e3;
 
-                    border-color: #ffbcbc;
+                .cancel-button:hover {
 
-                    transform:
-                        translateY(-1px);
+                    background:
+                        #fff0f0;
+
                 }
 
-                /* CARDS */
 
-                .history-list {
-                    display: flex;
+                /* =================================================
+                   EMPTY
+                ================================================= */
 
-                    flex-direction: column;
+                .empty-history {
 
-                    gap: 16px;
-                }
+                    min-height:
+                        300px;
 
-                .history-card {
-                    background: #ffffff;
+                    display:
+                        flex;
 
-                    border: 1px solid #e8e8e8;
+                    flex-direction:
+                        column;
 
-                    border-radius: 17px;
-
-                    padding: 20px;
-
-                    box-shadow:
-                        0 5px 20px
-                        rgba(
-                            0,
-                            0,
-                            0,
-                            0.045
-                        );
-
-                    transition: 0.2s ease;
-                }
-
-                .history-card:hover {
-                    border-color: #ffd8c1;
-
-                    box-shadow:
-                        0 10px 30px
-                        rgba(
-                            255,
-                            120,
-                            24,
-                            0.08
-                        );
-                }
-
-                .history-top {
-                    display: flex;
-
-                    align-items: flex-start;
+                    align-items:
+                        center;
 
                     justify-content:
-                        space-between;
+                        center;
 
-                    gap: 15px;
+                    text-align:
+                        center;
 
-                    padding-bottom: 15px;
+                    border:
+                        1px dashed
+                        #dddddd;
 
-                    border-bottom:
-                        1px solid #eeeeee;
+                    border-radius:
+                        16px;
+
+                    padding:
+                        30px;
+
                 }
 
-                .history-route {
-                    display: flex;
 
-                    align-items: center;
+                .empty-history-icon {
 
-                    gap: 10px;
-                }
+                    width:
+                        58px;
 
-                .route-icon-large {
-                    width: 45px;
-                    height: 45px;
+                    height:
+                        58px;
 
-                    display: flex;
+                    display:
+                        flex;
 
-                    align-items: center;
-
-                    justify-content: center;
-
-                    border-radius: 13px;
-
-                    background: #fff0e5;
-
-                    font-size: 21px;
-                }
-
-                .history-route strong {
-                    display: block;
-
-                    font-size: 16px;
-
-                    font-weight: 700;
-                }
-
-                .history-reference {
-                    display: block;
-
-                    margin-top: 4px;
-
-                    color: #999;
-
-                    font-size: 11px;
-                }
-
-                /* STATUS */
-
-                .status {
-                    padding: 6px 10px;
-
-                    border-radius: 20px;
-
-                    font-size: 9px;
-
-                    font-weight: 700;
-
-                    white-space: nowrap;
-                }
-
-                .status-confirmed,
-                .status-pending {
-                    background: #fff1e5;
-
-                    color: #ff7818;
-                }
-
-                .status-paid {
-                    background: #e9f8ef;
-
-                    color: #168b45;
-                }
-
-                .status-completed {
-                    background: #eef2ff;
-
-                    color: #5267b7;
-                }
-
-                .status-cancelled {
-                    background: #fff0f0;
-
-                    color: #d9534f;
-                }
-
-                /* DETAILS */
-
-                .history-details {
-                    display: grid;
-
-                    grid-template-columns:
-                        repeat(4, 1fr);
-
-                    gap: 15px;
-
-                    padding: 17px 0;
-                }
-
-                .detail-item small {
-                    display: block;
-
-                    color: #999;
-
-                    font-size: 10px;
-
-                    margin-bottom: 5px;
-                }
-
-                .detail-item strong {
-                    display: block;
-
-                    color: #222;
-
-                    font-size: 12px;
-
-                    font-weight: 500;
-                }
-
-                /* BOTTOM */
-
-                .history-bottom {
-                    display: flex;
-
-                    align-items: center;
+                    align-items:
+                        center;
 
                     justify-content:
-                        space-between;
+                        center;
 
-                    padding-top: 15px;
+                    margin-bottom:
+                        12px;
 
-                    border-top:
-                        1px solid #eeeeee;
+                    border-radius:
+                        17px;
+
+                    background:
+                        #fff1e7;
+
+                    font-size:
+                        25px;
+
                 }
 
-                .history-fare small {
-                    display: block;
 
-                    color: #999;
+                .empty-history h2 {
 
-                    font-size: 10px;
+                    margin:
+                        0 0 7px;
 
-                    margin-bottom: 3px;
+                    color:
+                        #222222;
+
+                    font-size:
+                        17px;
+
                 }
 
-                .history-fare strong {
-                    font-size: 18px;
 
-                    font-weight: 700;
+                .empty-history p {
+
+                    margin:
+                        0 0 18px;
+
+                    color:
+                        #999999;
+
+                    font-size:
+                        11px;
+
                 }
 
-                .history-actions {
-                    display: flex;
 
-                    gap: 8px;
-                }
+                .book-now-button {
 
-                .view-button,
-                .cancel-button {
-                    border: none;
+                    border:
+                        none;
 
-                    border-radius: 9px;
+                    background:
+                        #ff7818;
+
+                    color:
+                        #ffffff;
+
+                    border-radius:
+                        8px;
 
                     padding:
                         10px
-                        14px;
+                        18px;
 
-                    font-size: 11px;
+                    font-size:
+                        10px;
 
-                    font-weight: 700;
+                    font-weight:
+                        700;
 
-                    cursor: pointer;
+                    cursor:
+                        pointer;
 
-                    transition: 0.2s ease;
                 }
 
-                .view-button {
-                    background: #ff7818;
 
-                    color: #ffffff;
-                }
-
-                .view-button:hover {
-                    background: #e9660b;
-
-                    transform:
-                        translateY(-1px);
-                }
-
-                .cancel-button {
-                    background: #fff0f0;
-
-                    color: #d9534f;
-
-                    border:
-                        1px solid #ffd5d5;
-                }
-
-                .cancel-button:hover {
-                    background: #ffe0e0;
-                }
-
-                /* EMPTY */
-
-                .empty-history {
-                    min-height: 350px;
-
-                    display: flex;
-
-                    flex-direction: column;
-
-                    align-items: center;
-
-                    justify-content: center;
-
-                    text-align: center;
-
-                    border:
-                        1px dashed #dddddd;
-
-                    border-radius: 18px;
-
-                    background: #fcfcfc;
-
-                    padding: 30px;
-                }
-
-                .empty-history-icon {
-                    width: 70px;
-                    height: 70px;
-
-                    display: flex;
-
-                    align-items: center;
-
-                    justify-content: center;
-
-                    background: #fff3eb;
-
-                    border-radius: 20px;
-
-                    font-size: 30px;
-
-                    margin-bottom: 16px;
-                }
-
-                .empty-history h2 {
-                    margin: 0 0 7px;
-
-                    font-size: 20px;
-                }
-
-                .empty-history p {
-                    margin: 0 0 20px;
-
-                    color: #999;
-
-                    font-size: 13px;
-                }
-
-                .book-now-button {
-                    border: none;
-
-                    background:
-                        linear-gradient(
-                            135deg,
-                            #ff7818,
-                            #ff951f
-                        );
-
-                    color: white;
-
-                    padding: 12px 22px;
-
-                    border-radius: 9px;
-
-                    font-weight: 700;
-
-                    cursor: pointer;
-                }
-
-                /* MODAL */
+                /* =================================================
+                   MODAL
+                ================================================= */
 
                 .modal-overlay {
-                    position: fixed;
 
-                    inset: 0;
+                    position:
+                        fixed;
 
-                    z-index: 500;
+                    inset:
+                        0;
 
-                    display: flex;
+                    z-index:
+                        1000;
 
-                    align-items: center;
+                    display:
+                        flex;
 
-                    justify-content: center;
+                    align-items:
+                        center;
 
-                    padding: 20px;
+                    justify-content:
+                        center;
+
+                    padding:
+                        20px;
 
                     background:
                         rgba(
@@ -1160,24 +2614,38 @@ const Bookings = () => {
                         );
 
                     backdrop-filter:
-                        blur(4px);
+                        blur(
+                            3px
+                        );
+
                 }
 
-                .cancel-modal {
-                    width: 100%;
 
-                    max-width: 420px;
+                .cancel-modal,
+                .clear-modal {
 
-                    background: #ffffff;
+                    width:
+                        100%;
 
-                    border-radius: 20px;
+                    max-width:
+                        440px;
 
-                    padding: 28px;
+                    background:
+                        #ffffff;
 
-                    text-align: center;
+                    border-radius:
+                        20px;
+
+                    padding:
+                        30px;
+
+                    text-align:
+                        center;
 
                     box-shadow:
-                        0 25px 70px
+                        0
+                        25px
+                        70px
                         rgba(
                             0,
                             0,
@@ -1187,359 +2655,479 @@ const Bookings = () => {
 
                     animation:
                         modalIn
-                        0.2s ease;
+                        0.2s
+                        ease;
+
                 }
+
 
                 @keyframes modalIn {
 
                     from {
-                        opacity: 0;
+
+                        opacity:
+                            0;
 
                         transform:
-                            translateY(10px)
-                            scale(0.97);
+                            translateY(
+                                10px
+                            )
+                            scale(
+                                0.98
+                            );
+
                     }
 
                     to {
-                        opacity: 1;
+
+                        opacity:
+                            1;
 
                         transform:
-                            translateY(0)
-                            scale(1);
+                            translateY(
+                                0
+                            )
+                            scale(
+                                1
+                            );
+
                     }
+
                 }
 
-                .cancel-icon {
-                    width: 60px;
-                    height: 60px;
 
-                    display: flex;
+                .cancel-icon,
+                .clear-icon {
 
-                    align-items: center;
+                    width:
+                        64px;
 
-                    justify-content: center;
+                    height:
+                        64px;
 
-                    margin: 0 auto 16px;
+                    display:
+                        flex;
 
-                    border-radius: 18px;
+                    align-items:
+                        center;
 
-                    background: #fff3eb;
+                    justify-content:
+                        center;
 
-                    color: #ff7818;
+                    margin:
+                        0 auto 16px;
 
-                    font-size: 27px;
+                    border-radius:
+                        18px;
 
-                    font-weight: 800;
+                    background:
+                        #fff0f0;
+
+                    color:
+                        #d9534f;
+
+                    font-size:
+                        28px;
+
+                    font-weight:
+                        800;
+
                 }
 
-                .cancel-modal h2 {
-                    margin: 0 0 8px;
 
-                    font-size: 20px;
+                .cancel-modal h2,
+                .clear-modal h2 {
 
-                    font-weight: 700;
+                    margin:
+                        0 0 9px;
+
+                    font-size:
+                        21px;
+
+                    font-weight:
+                        700;
+
+                    color:
+                        #222222;
+
                 }
 
-                .cancel-modal p {
-                    margin: 0 0 8px;
 
-                    color: #777;
+                .cancel-modal p,
+                .clear-modal p {
 
-                    font-size: 13px;
+                    margin:
+                        0 auto 15px;
 
-                    line-height: 1.5;
+                    max-width:
+                        340px;
+
+                    color:
+                        #777777;
+
+                    font-size:
+                        13px;
+
+                    line-height:
+                        1.6;
+
                 }
+
 
                 .cancel-reference {
-                    display: inline-block;
 
-                    margin: 8px 0 22px;
+                    display:
+                        inline-block;
 
-                    padding: 7px 10px;
+                    margin:
+                        5px 0 20px;
 
-                    border-radius: 7px;
+                    padding:
+                        8px 12px;
 
-                    background: #f7f7f7;
+                    background:
+                        #f7f7f7;
 
-                    color: #555;
+                    border-radius:
+                        8px;
 
-                    font-size: 11px;
+                    color:
+                        #333333;
 
-                    font-weight: 700;
+                    font-size:
+                        12px;
+
+                    font-weight:
+                        700;
+
                 }
 
-                .modal-actions {
-                    display: grid;
-
-                    grid-template-columns:
-                        1fr 1fr;
-
-                    gap: 10px;
-                }
-
-                .close-cancel,
-                .confirm-cancel {
-                    border: none;
-
-                    padding: 12px;
-
-                    border-radius: 9px;
-
-                    font-weight: 700;
-
-                    cursor: pointer;
-                }
-
-                .close-cancel {
-                    background: #f1f1f1;
-
-                    color: #555;
-                }
-
-                .close-cancel:hover {
-                    background: #e7e7e7;
-                }
-
-                .confirm-cancel {
-                    background: #d9534f;
-
-                    color: #ffffff;
-                }
-
-                .confirm-cancel:hover {
-                    background: #c43f3b;
-                }
-
-                /* DELETE ALL MODAL */
-
-                .clear-modal {
-                    width: 100%;
-
-                    max-width: 440px;
-
-                    background: #ffffff;
-
-                    border-radius: 20px;
-
-                    padding: 30px;
-
-                    text-align: center;
-
-                    box-shadow:
-                        0 25px 70px
-                        rgba(
-                            0,
-                            0,
-                            0,
-                            0.20
-                        );
-
-                    animation:
-                        modalIn
-                        0.2s ease;
-                }
-
-                .clear-icon {
-                    width: 64px;
-                    height: 64px;
-
-                    display: flex;
-
-                    align-items: center;
-
-                    justify-content: center;
-
-                    margin: 0 auto 16px;
-
-                    border-radius: 18px;
-
-                    background: #fff0f0;
-
-                    color: #d9534f;
-
-                    font-size: 28px;
-
-                    font-weight: 800;
-                }
-
-                .clear-modal h2 {
-                    margin: 0 0 9px;
-
-                    font-size: 21px;
-
-                    font-weight: 700;
-
-                    color: #222;
-                }
-
-                .clear-modal p {
-                    margin: 0 auto 22px;
-
-                    max-width: 340px;
-
-                    color: #777;
-
-                    font-size: 13px;
-
-                    line-height: 1.6;
-                }
 
                 .clear-count {
-                    color: #d9534f;
 
-                    font-weight: 700;
+                    color:
+                        #d9534f;
+
+                    font-weight:
+                        700;
+
                 }
 
+
+                .modal-actions {
+
+                    display:
+                        flex;
+
+                    justify-content:
+                        center;
+
+                    gap:
+                        10px;
+
+                }
+
+
+                .close-cancel {
+
+                    border:
+                        1px solid
+                        #dddddd;
+
+                    background:
+                        #ffffff;
+
+                    color:
+                        #555555;
+
+                    padding:
+                        11px
+                        16px;
+
+                    border-radius:
+                        9px;
+
+                    font-size:
+                        10px;
+
+                    font-weight:
+                        600;
+
+                    cursor:
+                        pointer;
+
+                }
+
+
+                .confirm-cancel,
                 .delete-all-button {
-                    border: none;
 
-                    padding: 12px;
+                    border:
+                        none;
 
-                    border-radius: 9px;
+                    padding:
+                        11px
+                        16px;
 
-                    font-weight: 700;
+                    border-radius:
+                        9px;
 
-                    cursor: pointer;
+                    background:
+                        #d9534f;
 
-                    background: #d9534f;
+                    color:
+                        #ffffff;
 
-                    color: #ffffff;
+                    font-size:
+                        10px;
+
+                    font-weight:
+                        700;
+
+                    cursor:
+                        pointer;
+
                 }
 
+
+                .confirm-cancel:hover,
                 .delete-all-button:hover {
-                    background: #c43f3b;
+
+                    background:
+                        #c43f3b;
+
                 }
 
-                /* MOBILE */
 
-                @media (max-width: 650px) {
+                /* =================================================
+                   MOBILE
+                ================================================= */
+
+                @media (
+                    max-width:
+                    650px
+                ) {
 
                     .bookings-container {
+
                         padding:
                             18px
                             16px
                             40px;
+
                     }
+
 
                     .bookings-title h1 {
-                        font-size: 23px;
+
+                        font-size:
+                            23px;
+
                     }
+
 
                     .booking-filters {
-                        max-width: 100%;
+
+                        max-width:
+                            100%;
+
                     }
+
 
                     .filter-button {
-                        font-size: 10px;
+
+                        font-size:
+                            10px;
+
                     }
+
 
                     .history-card {
-                        padding: 16px;
+
+                        padding:
+                            16px;
+
                     }
+
 
                     .history-details {
-                        grid-template-columns:
-                            repeat(2, 1fr);
 
-                        gap: 14px;
+                        grid-template-columns:
+                            repeat(
+                                2,
+                                1fr
+                            );
+
+                        gap:
+                            14px;
+
                     }
 
+
                     .history-bottom {
+
                         align-items:
                             flex-start;
 
-                        gap: 15px;
+                        gap:
+                            15px;
 
                         flex-direction:
                             column;
+
                     }
 
+
                     .history-actions {
-                        width: 100%;
+
+                        width:
+                            100%;
+
                     }
+
 
                     .view-button,
                     .cancel-button {
-                        flex: 1;
+
+                        flex:
+                            1;
+
                     }
 
+
                     .booking-section-title {
+
                         align-items:
                             flex-start;
 
-                        gap: 10px;
+                        gap:
+                            10px;
+
                     }
+
 
                     .booking-section-left {
-                        flex-wrap: wrap;
+
+                        flex-wrap:
+                            wrap;
+
                     }
 
+
                     .clear-cancelled-button {
+
                         padding:
                             8px
                             10px;
 
-                        font-size: 9px;
+                        font-size:
+                            9px;
+
                     }
+
                 }
 
-                @media (max-width: 420px) {
+
+                @media (
+                    max-width:
+                    420px
+                ) {
 
                     .booking-filters {
+
                         grid-template-columns:
-                            repeat(2, 1fr);
+                            repeat(
+                                2,
+                                1fr
+                            );
+
                     }
+
 
                     .history-top {
-                        gap: 10px;
+
+                        gap:
+                            10px;
+
                     }
+
 
                     .history-route strong {
-                        font-size: 14px;
+
+                        font-size:
+                            14px;
+
                     }
 
+
                     .status {
-                        font-size: 8px;
+
+                        font-size:
+                            8px;
 
                         padding:
                             5px
                             8px;
+
                     }
 
+
                     .booking-section-title {
+
                         flex-direction:
                             column;
 
                         align-items:
                             stretch;
+
                     }
 
+
                     .clear-cancelled-button {
-                        width: 100%;
+
+                        width:
+                            100%;
+
                     }
+
                 }
 
             `}</style>
 
-            <main className="bookings-page">
 
-                <div className="bookings-container">
+            <main
+                className="bookings-page"
+            >
 
-                    {/* HEADER */}
+                <div
+                    className="bookings-container"
+                >
 
-                    <header className="bookings-header">
+                    {/* =================================================
+                        HEADER
+                    ================================================= */}
+
+                    <header
+                        className="bookings-header"
+                    >
 
                         <button
                             type="button"
                             className="back-button"
                             onClick={() =>
-                                navigate("/dashboard")
+                                navigate(
+                                    "/dashboard"
+                                )
                             }
+                            aria-label="Back to dashboard"
                         >
                             ←
                         </button>
 
-                        <div className="bookings-title">
+
+                        <div
+                            className="bookings-title"
+                        >
 
                             <h1>
                                 My Bookings
@@ -1553,61 +3141,81 @@ const Bookings = () => {
 
                     </header>
 
-                    {/* FILTERS */}
 
-                    <div className="booking-filters">
+                    {/* =================================================
+                        FILTERS
+                    ================================================= */}
+
+                    <div
+                        className="booking-filters"
+                    >
 
                         <button
                             type="button"
                             className={`filter-button ${
-                                activeFilter === "ALL"
+                                activeFilter ===
+                                "ALL"
                                     ? "active"
                                     : ""
                             }`}
                             onClick={() =>
-                                setActiveFilter("ALL")
+                                setActiveFilter(
+                                    "ALL"
+                                )
                             }
                         >
                             All
                         </button>
 
+
                         <button
                             type="button"
                             className={`filter-button ${
-                                activeFilter === "PAID"
+                                activeFilter ===
+                                "PAID"
                                     ? "active"
                                     : ""
                             }`}
                             onClick={() =>
-                                setActiveFilter("PAID")
+                                setActiveFilter(
+                                    "PAID"
+                                )
                             }
                         >
                             Paid
                         </button>
 
+
                         <button
                             type="button"
                             className={`filter-button ${
-                                activeFilter === "PENDING"
+                                activeFilter ===
+                                "PENDING"
                                     ? "active"
                                     : ""
                             }`}
                             onClick={() =>
-                                setActiveFilter("PENDING")
+                                setActiveFilter(
+                                    "PENDING"
+                                )
                             }
                         >
                             Pending
                         </button>
 
+
                         <button
                             type="button"
                             className={`filter-button ${
-                                activeFilter === "CANCELLED"
+                                activeFilter ===
+                                "CANCELLED"
                                     ? "active"
                                     : ""
                             }`}
                             onClick={() =>
-                                setActiveFilter("CANCELLED")
+                                setActiveFilter(
+                                    "CANCELLED"
+                                )
                             }
                         >
                             Cancelled
@@ -1615,29 +3223,38 @@ const Bookings = () => {
 
                     </div>
 
-                    {/* SECTION TITLE */}
 
-                    <div className="booking-section-title">
+                    {/* =================================================
+                        SECTION TITLE
+                    ================================================= */}
 
-                        <div className="booking-section-left">
+                    <div
+                        className="booking-section-title"
+                    >
+
+                        <div
+                            className="booking-section-left"
+                        >
 
                             <h2>
                                 {getSectionTitle()}
                             </h2>
 
-                            <span className="booking-count">
-                                {filteredBookings.length}
+                            <span
+                                className="booking-count"
+                            >
+                                {
+                                    filteredBookings.length
+                                }
                             </span>
 
                         </div>
 
-                        {/* =================================================
-                            DELETE ALL CANCELLED BUTTON
-                            ONLY SHOWS IN CANCELLED FILTER
-                           ================================================= */}
 
-                        {activeFilter === "CANCELLED" &&
-                            filteredBookings.length > 0 && (
+                        {activeFilter ===
+                            "CANCELLED" &&
+                            filteredBookings.length >
+                                0 && (
 
                             <button
                                 type="button"
@@ -1653,31 +3270,74 @@ const Bookings = () => {
 
                     </div>
 
-                    {/* BOOKINGS */}
 
-                    {filteredBookings.length === 0 ? (
+                    {/* =================================================
+                        LOADING
+                    ================================================= */}
 
-                        <div className="empty-history">
+                    {loading && (
 
-                            <div className="empty-history-icon">
+                        <div
+                            className="loading-bookings"
+                        >
+
+                            <div
+                                className="loading-spinner"
+                            />
+
+                            <p>
+                                Checking latest booking status...
+                            </p>
+
+                        </div>
+
+                    )}
+
+
+                    {/* =================================================
+                        BOOKINGS
+                    ================================================= */}
+
+                    {!loading &&
+                        filteredBookings.length ===
+                            0 && (
+
+                        <div
+                            className="empty-history"
+                        >
+
+                            <div
+                                className="empty-history-icon"
+                            >
                                 🎫
                             </div>
 
+
                             <h2>
-                                No {activeFilter.toLowerCase()} bookings
+                                No{" "}
+                                {
+                                    activeFilter
+                                        .toLowerCase()
+                                }{" "}
+                                bookings
                             </h2>
+
 
                             <p>
                                 There are no bookings in this category.
                             </p>
 
-                            {activeFilter === "ALL" && (
+
+                            {activeFilter ===
+                                "ALL" && (
 
                                 <button
                                     type="button"
                                     className="book-now-button"
                                     onClick={() =>
-                                        navigate("/trips")
+                                        navigate(
+                                            "/trips"
+                                        )
                                     }
                                 >
                                     Book a Trip
@@ -1687,150 +3347,235 @@ const Bookings = () => {
 
                         </div>
 
-                    ) : (
+                    )}
 
-                        <div className="history-list">
+
+                    {!loading &&
+                        filteredBookings.length >
+                            0 && (
+
+                        <div
+                            className="history-list"
+                        >
 
                             {filteredBookings.map(
-                                (booking, index) => {
+                                (
+                                    booking,
+                                    index
+                                ) => {
 
                                     const status =
-                                        (
-                                            booking.status ||
-                                            "PENDING"
-                                        ).toUpperCase();
+                                        getBookingStatus(
+                                            booking
+                                        );
+
+
+                                    const statusLabel =
+                                        getStatusLabel(
+                                            booking
+                                        );
+
+
+                                    const statusClass =
+                                        getStatusClass(
+                                            booking
+                                        );
+
+
+                                    const amount =
+                                        booking.totalPaid !==
+                                            null &&
+                                        booking.totalPaid !==
+                                            undefined
+                                            ? booking.totalPaid
+                                            : booking.requiredAmount;
+
 
                                     return (
 
                                         <div
                                             className="history-card"
                                             key={
+                                                booking._id ||
                                                 booking.bookingReference ||
                                                 index
                                             }
                                         >
 
-                                            {/* TOP */}
+                                            {/* =================================================
+                                                TOP
+                                            ================================================= */}
 
-                                            <div className="history-top">
+                                            <div
+                                                className="history-top"
+                                            >
 
-                                                <div className="history-route">
+                                                <div
+                                                    className="history-route"
+                                                >
 
-                                                    <div className="route-icon-large">
+                                                    <div
+                                                        className="route-icon-large"
+                                                    >
                                                         ⛴️
                                                     </div>
+
 
                                                     <div>
 
                                                         <strong>
-                                                            {booking.origin ||
-                                                                "Iloilo"}
+                                                            {
+                                                                booking.origin ||
+                                                                "Iloilo"
+                                                            }
+
                                                             {" → "}
-                                                            {booking.destination ||
-                                                                "Guimaras"}
+
+                                                            {
+                                                                booking.destination ||
+                                                                "Guimaras"
+                                                            }
                                                         </strong>
 
-                                                        <span className="history-reference">
-                                                            {booking.bookingReference ||
-                                                                "Booking Reference"}
+
+                                                        <span
+                                                            className="history-reference"
+                                                        >
+                                                            {
+                                                                booking.bookingReference ||
+                                                                "Booking Reference"
+                                                            }
                                                         </span>
 
                                                     </div>
 
                                                 </div>
 
+
                                                 <span
-                                                    className={`status ${getStatusClass(
-                                                        status
-                                                    )}`}
+                                                    className={`status ${statusClass}`}
                                                 >
-                                                    {status}
+                                                    {
+                                                        statusLabel
+                                                    }
                                                 </span>
 
                                             </div>
 
-                                            {/* DETAILS */}
 
-                                            <div className="history-details">
+                                            {/* =================================================
+                                                DETAILS
+                                            ================================================= */}
 
-                                                <div className="detail-item">
+                                            <div
+                                                className="history-details"
+                                            >
+
+                                                <div
+                                                    className="history-detail"
+                                                >
 
                                                     <small>
                                                         Date
                                                     </small>
 
                                                     <strong>
-                                                        {booking.date ||
-                                                            "N/A"}
+                                                        {
+                                                            formatDate(
+                                                                booking.date
+                                                            )
+                                                        }
                                                     </strong>
 
                                                 </div>
 
-                                                <div className="detail-item">
+
+                                                <div
+                                                    className="history-detail"
+                                                >
 
                                                     <small>
                                                         Departure
                                                     </small>
 
                                                     <strong>
-                                                        {booking.time ||
-                                                            "N/A"}
+                                                        {
+                                                            booking.time ||
+                                                            "N/A"
+                                                        }
                                                     </strong>
 
                                                 </div>
 
-                                                <div className="detail-item">
+
+                                                <div
+                                                    className="history-detail"
+                                                >
 
                                                     <small>
                                                         Passengers
                                                     </small>
 
                                                     <strong>
-                                                        {booking.passengers ||
-                                                            booking.numberOfPassengers ||
-                                                            "N/A"}
+                                                        {
+                                                            booking.passengers ||
+                                                            1
+                                                        }
                                                     </strong>
 
                                                 </div>
 
-                                                <div className="detail-item">
+
+                                                <div
+                                                    className="history-detail"
+                                                >
 
                                                     <small>
-                                                        Vessel
+                                                        Payment
                                                     </small>
 
                                                     <strong>
-                                                        {booking.vesselName ||
-                                                            booking.vessel ||
-                                                            booking.ferryName ||
-                                                            "Ferry"}
+                                                        {
+                                                            booking.paymentMethod ||
+                                                            "Maya / QRPh"
+                                                        }
                                                     </strong>
 
                                                 </div>
 
                                             </div>
 
-                                            {/* BOTTOM */}
 
-                                            <div className="history-bottom">
+                                            {/* =================================================
+                                                BOTTOM
+                                            ================================================= */}
 
-                                                <div className="history-fare">
+                                            <div
+                                                className="history-bottom"
+                                            >
+
+                                                <div
+                                                    className="history-total"
+                                                >
 
                                                     <small>
                                                         Total Paid
                                                     </small>
 
                                                     <strong>
-                                                        ₱
-                                                        {Number(
-                                                            booking.totalFare ||
-                                                            0
-                                                        ).toFixed(2)}
+                                                        {
+                                                            formatMoney(
+                                                                amount
+                                                            )
+                                                        }
                                                     </strong>
 
                                                 </div>
 
-                                                <div className="history-actions">
+
+                                                <div
+                                                    className="history-actions"
+                                                >
 
                                                     <button
                                                         type="button"
@@ -1844,8 +3589,13 @@ const Bookings = () => {
                                                         View Booking
                                                     </button>
 
+
                                                     {status !==
-                                                        "CANCELLED" && (
+                                                        "CANCELLED" &&
+                                                        status !==
+                                                            "CONFIRMED" &&
+                                                        status !==
+                                                            "COMPLETED" && (
 
                                                         <button
                                                             type="button"
@@ -1866,26 +3616,32 @@ const Bookings = () => {
                                             </div>
 
                                         </div>
+
                                     );
+
                                 }
                             )}
 
                         </div>
+
                     )}
 
                 </div>
 
             </main>
 
+
             {/* =========================================================
-                INDIVIDUAL CANCEL MODAL
-               ========================================================= */}
+                CANCEL MODAL
+            ========================================================= */}
 
             {cancelTarget && (
 
                 <div
                     className="modal-overlay"
-                    onClick={closeCancelModal}
+                    onClick={
+                        closeCancelModal
+                    }
                 >
 
                     <div
@@ -1895,33 +3651,48 @@ const Bookings = () => {
                         }
                     >
 
-                        <div className="cancel-icon">
+                        <div
+                            className="cancel-icon"
+                        >
                             !
                         </div>
+
 
                         <h2>
                             Cancel Booking?
                         </h2>
+
 
                         <p>
                             Are you sure you want to
                             cancel this booking?
                         </p>
 
-                        <span className="cancel-reference">
-                            {cancelTarget.bookingReference ||
-                                "Booking"}
+
+                        <span
+                            className="cancel-reference"
+                        >
+                            {
+                                cancelTarget.bookingReference ||
+                                "Booking"
+                            }
                         </span>
 
-                        <div className="modal-actions">
+
+                        <div
+                            className="modal-actions"
+                        >
 
                             <button
                                 type="button"
                                 className="close-cancel"
-                                onClick={closeCancelModal}
+                                onClick={
+                                    closeCancelModal
+                                }
                             >
                                 Keep Booking
                             </button>
+
 
                             <button
                                 type="button"
@@ -1941,9 +3712,10 @@ const Bookings = () => {
 
             )}
 
+
             {/* =========================================================
                 DELETE ALL CANCELLED MODAL
-               ========================================================= */}
+            ========================================================= */}
 
             {clearCancelledModal && (
 
@@ -1961,17 +3733,24 @@ const Bookings = () => {
                         }
                     >
 
-                        <div className="clear-icon">
+                        <div
+                            className="clear-icon"
+                        >
                             🗑
                         </div>
+
 
                         <h2>
                             Delete All Cancelled?
                         </h2>
 
+
                         <p>
-                            Are you sure you want to remove
-                            <span className="clear-count">
+                            Are you sure you want to
+                            remove
+                            <span
+                                className="clear-count"
+                            >
                                 {" "}
                                 all cancelled bookings
                             </span>
@@ -1980,7 +3759,10 @@ const Bookings = () => {
                             history.
                         </p>
 
-                        <div className="modal-actions">
+
+                        <div
+                            className="modal-actions"
+                        >
 
                             <button
                                 type="button"
@@ -1991,6 +3773,7 @@ const Bookings = () => {
                             >
                                 Keep Bookings
                             </button>
+
 
                             <button
                                 type="button"
@@ -2011,7 +3794,10 @@ const Bookings = () => {
             )}
 
         </>
+
     );
+
 };
+
 
 export default Bookings;

@@ -67,6 +67,40 @@ const getPendingPayments = async (req, res) => {
 
 
 // =========================================================
+// GET VERIFIED PAYMENTS
+// =========================================================
+
+const getVerifiedPayments = async (req, res) => {
+    try {
+
+        const bookings = await Booking.find({
+            paymentStatus: "VERIFIED"
+        }).sort({
+            updatedAt: -1
+        });
+
+        return res.status(200).json({
+            success: true,
+            bookings
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Get verified payments error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message:
+                "Unable to retrieve verified payments."
+        });
+    }
+};
+
+
+// =========================================================
 // GET BOOKING BY ID
 // =========================================================
 
@@ -96,6 +130,53 @@ const getBookingById = async (req, res) => {
 
         console.error(
             "Get booking error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message:
+                "Unable to retrieve booking."
+        });
+    }
+};
+
+
+// =========================================================
+// GET BOOKING BY REFERENCE
+// =========================================================
+//
+// This endpoint is used by the tourist Bookings page
+// to retrieve the latest status from MongoDB.
+//
+
+const getBookingByReference = async (req, res) => {
+    try {
+
+        const booking =
+            await Booking.findOne({
+                bookingReference:
+                    req.params.bookingReference
+            });
+
+        if (!booking) {
+
+            return res.status(404).json({
+                success: false,
+                message:
+                    "Booking not found."
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            booking
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Get booking by reference error:",
             error
         );
 
@@ -352,7 +433,11 @@ module.exports = {
 
     getPendingPayments,
 
+    getVerifiedPayments,
+
     getBookingById,
+
+    getBookingByReference,
 
     verifyPayment,
 
