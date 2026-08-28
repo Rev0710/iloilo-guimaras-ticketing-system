@@ -579,11 +579,27 @@ const Bookings = () => {
 
     useEffect(() => {
 
-        loadBookings();
+    loadBookings();
 
-    }, [
-        loadBookings
-    ]);
+    const refreshBookings = () => {
+        loadBookings();
+    };
+
+    window.addEventListener(
+        "bookingUpdated",
+        refreshBookings
+    );
+
+    return () => {
+
+        window.removeEventListener(
+            "bookingUpdated",
+            refreshBookings
+        );
+
+    };
+
+}, []);
 
 
     // =========================================================

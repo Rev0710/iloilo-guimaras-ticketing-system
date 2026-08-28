@@ -407,7 +407,8 @@ router.post(
 );
 // =========================================================
 // GET BOOKING BY BOOKING REFERENCE
-// Used by tourist Bookings page to get latest status
+// Used by the Tourist Bookings page to get the
+// latest booking/payment status from MongoDB.
 // =========================================================
 
 router.get(
@@ -425,14 +426,18 @@ router.get(
             if (!booking) {
 
                 return res.status(404).json({
+
                     success: false,
+
                     message:
                         "Booking not found."
                 });
             }
 
             return res.status(200).json({
+
                 success: true,
+
                 booking
             });
 
@@ -444,7 +449,9 @@ router.get(
             );
 
             return res.status(500).json({
+
                 success: false,
+
                 message:
                     "Unable to retrieve booking."
             });

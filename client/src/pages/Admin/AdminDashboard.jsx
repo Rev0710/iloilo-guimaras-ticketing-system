@@ -44,6 +44,9 @@ const AdminDashboard = () => {
     const [pendingPayments, setPendingPayments] =
         useState([]);
 
+    const [verifiedPayments, setVerifiedPayments] =
+        useState([]);
+
     const [rejectedPayments, setRejectedPayments] =
         useState([]);
 
@@ -290,15 +293,15 @@ const AdminDashboard = () => {
         try {
 
             const response = await fetch(
-                    `${API_URL}/bookings/pending-payments`,
-                    {
-                        method: "GET",
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            Accept: "application/json"
-                        }
-                    }
-                );
+    `${API_URL}/bookings/pending-payments`,
+    {
+        method: "GET",
+        headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json"
+        }
+    }
+);
 
             const data =
                 await response.json();
@@ -335,6 +338,105 @@ const AdminDashboard = () => {
     };
 
     // =========================================================
+    // LOAD VERIFIED PAYMENTS
+    // =========================================================
+
+    const loadVerifiedPayments = async () => {
+        const token = localStorage.getItem("adminToken");
+        if (!token) return;
+
+        try {
+            const response = await fetch(
+                `${API_URL}/bookings/verified-payments`,
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json"
+                    }
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.message ||
+                    "Unable to load verified payments."
+                );
+            }
+
+            setVerifiedPayments(data.bookings || []);
+        } catch (error) {
+            console.error(
+                "Verified payment loading error:",
+                error
+            );
+        }
+    };
+
+    // =========================================================
+    // LOAD REJECTED PAYMENTS
+    // =========================================================
+
+    const loadRejectedPayments = async () => {
+        const token = localStorage.getItem("adminToken");
+        if (!token) return;
+
+        try {
+            const response = await fetch(
+                `${API_URL}/bookings`,
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json"
+                    }
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.message ||
+                    "Unable to load rejected payments."
+                );
+            }
+
+            setRejectedPayments(
+                (data.bookings || []).filter(
+                    payment =>
+                        payment.paymentStatus === "REJECTED"
+                )
+            );
+        } catch (error) {
+            console.error(
+                "Rejected payment loading error:",
+                error
+            );
+        }
+    };
+
+    // =========================================================
+    // LOAD ALL PAYMENT LISTS
+    // =========================================================
+
+    const loadAllPaymentLists = async () => {
+        setPaymentLoading(true);
+
+        try {
+            await Promise.all([
+                loadPendingPayments(),
+                loadVerifiedPayments(),
+                loadRejectedPayments()
+            ]);
+        } finally {
+            setPaymentLoading(false);
+        }
+    };
+
+    // =========================================================
     // INITIAL STATISTICS
     // =========================================================
 
@@ -345,6 +447,16 @@ const AdminDashboard = () => {
         }
 
     }, [loading]);
+
+    // =========================================================
+    // OPEN PAYMENT TAB FROM DASHBOARD
+    // =========================================================
+
+    const handlePaymentTab = (tab) => {
+        setActiveView("payments");
+        setActivePaymentTab(tab);
+        loadAllPaymentLists();
+    };
 
     // =========================================================
     // CHANGE VIEW
@@ -358,7 +470,7 @@ const AdminDashboard = () => {
 
             setActivePaymentTab("pending");
 
-            loadPendingPayments();
+            loadAllPaymentLists();
         }
     };
 
@@ -447,7 +559,7 @@ const AdminDashboard = () => {
 
             const response =
                 await fetch(
-                    `${API_URL}/admin/bookings/${bookingId}/verify`,
+                    `${API_URL}/bookings/${bookingId}/verify`,
                     {
                         method: "PUT",
 
@@ -490,7 +602,7 @@ const AdminDashboard = () => {
                 "success"
             );
 
-            await loadPendingPayments();
+            await loadAllPaymentLists();
 
             await loadStatistics();
 
@@ -535,7 +647,7 @@ const AdminDashboard = () => {
 
             const response =
                 await fetch(
-                    `${API_URL}/admin/bookings/${bookingId}/reject`,
+                    `${API_URL}/bookings/${bookingId}/reject`,
                     {
                         method: "PUT",
 
@@ -561,75 +673,7 @@ const AdminDashboard = () => {
 
             }
 
-            /*
-             * Find the payment before removing it.
-             */
-            const rejectedPayment =
-                pendingPayments.find(
-                    payment =>
-                        payment._id === bookingId
-                );
-
-            /*
-             * Move the payment into the
-             * Rejected tab.
-             */
-            if (rejectedPayment) {
-
-                const updatedRejectedPayment = {
-                    ...rejectedPayment,
-
-                    ...(data.booking || {}),
-
-                    paymentStatus:
-                        "REJECTED",
-
-                    status:
-                        "CANCELLED"
-                };
-
-                setRejectedPayments(
-                    previous => {
-
-                        const alreadyExists =
-                            previous.some(
-                                payment =>
-                                    payment._id ===
-                                    bookingId
-                            );
-
-                        if (alreadyExists) {
-
-                            return previous.map(
-                                payment =>
-                                    payment._id ===
-                                    bookingId
-                                        ? updatedRejectedPayment
-                                        : payment
-                            );
-
-                        }
-
-                        return [
-                            updatedRejectedPayment,
-                            ...previous
-                        ];
-
-                    }
-                );
-
-            }
-
-            /*
-             * Remove the payment from Pending.
-             */
-            setPendingPayments(
-                previous =>
-                    previous.filter(
-                        payment =>
-                            payment._id !== bookingId
-                    )
-            );
+            await loadAllPaymentLists();
 
             showNotification(
                 "Payment rejected successfully.",
@@ -862,7 +906,9 @@ const AdminDashboard = () => {
     const displayedPayments =
         activePaymentTab === "pending"
             ? pendingPayments
-            : rejectedPayments;
+            : activePaymentTab === "verified"
+                ? verifiedPayments
+                : rejectedPayments;
 
     // =========================================================
     // MAIN UI
@@ -1071,8 +1117,13 @@ const AdminDashboard = () => {
                                 </div>
 
 
-                                <div className="stat-card">
-
+                                <button
+                                    type="button"
+                                    className="stat-card stat-card-button"
+                                    onClick={() =>
+                                        handlePaymentTab("pending")
+                                    }
+                                >
                                     <div className="stat-icon yellow">
                                         ₱
                                     </div>
@@ -1095,11 +1146,16 @@ const AdminDashboard = () => {
 
                                     </div>
 
-                                </div>
+                                </button>
 
 
-                                <div className="stat-card">
-
+                                <button
+                                    type="button"
+                                    className="stat-card stat-card-button"
+                                    onClick={() =>
+                                        handlePaymentTab("verified")
+                                    }
+                                >
                                     <div className="stat-icon green">
                                         ✓
                                     </div>
@@ -1122,11 +1178,16 @@ const AdminDashboard = () => {
 
                                     </div>
 
-                                </div>
+                                </button>
 
 
-                                <div className="stat-card">
-
+                                <button
+                                    type="button"
+                                    className="stat-card stat-card-button"
+                                    onClick={() =>
+                                        handlePaymentTab("rejected")
+                                    }
+                                >
                                     <div className="stat-icon red">
                                         !
                                     </div>
@@ -1150,7 +1211,7 @@ const AdminDashboard = () => {
 
                                     </div>
 
-                                </div>
+                                </button>
 
                             </div>
 
@@ -1322,7 +1383,9 @@ const AdminDashboard = () => {
                                             activePaymentTab ===
                                             "pending"
                                                 ? pendingPayments.length
-                                                : rejectedPayments.length
+                                                : activePaymentTab === "verified"
+                                                    ? verifiedPayments.length
+                                                    : rejectedPayments.length
                                         }
                                     </div>
 
@@ -1331,7 +1394,9 @@ const AdminDashboard = () => {
                                             activePaymentTab ===
                                             "pending"
                                                 ? "Pending"
-                                                : "Rejected"
+                                                : activePaymentTab === "verified"
+                                                    ? "Verified"
+                                                    : "Rejected"
                                         }
                                     </div>
 
@@ -1350,7 +1415,7 @@ const AdminDashboard = () => {
                                     type="button"
                                     className="refresh-button"
                                     onClick={
-                                        loadPendingPayments
+                                        loadAllPaymentLists
                                     }
                                     disabled={
                                         paymentLoading
@@ -1397,6 +1462,31 @@ const AdminDashboard = () => {
                                         }
                                     </span>
 
+                                </button>
+
+
+                                <button
+                                    type="button"
+                                    className={
+                                        `payment-tab ${
+                                            activePaymentTab ===
+                                            "verified"
+                                                ? "active verified-active"
+                                                : ""
+                                        }`
+                                    }
+                                    onClick={() =>
+                                        setActivePaymentTab(
+                                            "verified"
+                                        )
+                                    }
+                                >
+                                    <span>
+                                        Verified
+                                    </span>
+                                    <span className="tab-count verified-count">
+                                        {verifiedPayments.length}
+                                    </span>
                                 </button>
 
 
@@ -1481,7 +1571,7 @@ const AdminDashboard = () => {
                                     <button
                                         className="secondary-button"
                                         onClick={
-                                            loadPendingPayments
+                                            loadAllPaymentLists
                                         }
                                     >
                                         ↻ Refresh
@@ -1489,6 +1579,35 @@ const AdminDashboard = () => {
 
                                 </div>
 
+                            )}
+
+
+                            {/* =================================================
+                                EMPTY VERIFIED
+                            ================================================= */}
+
+                            {!paymentLoading &&
+                                activePaymentTab ===
+                                    "verified" &&
+                                verifiedPayments.length ===
+                                    0 && (
+                                <div className="empty-payment-card verified-empty">
+                                    <div className="empty-icon verified-empty-icon">
+                                        ✓
+                                    </div>
+                                    <h3>
+                                        No Verified Payments
+                                    </h3>
+                                    <p>
+                                        Payments that you verify will appear here.
+                                    </p>
+                                    <button
+                                        className="secondary-button"
+                                        onClick={loadAllPaymentLists}
+                                    >
+                                        ↻ Refresh
+                                    </button>
+                                </div>
                             )}
 
 
@@ -1551,6 +1670,10 @@ const AdminDashboard = () => {
                                                 activePaymentTab ===
                                                 "rejected";
 
+                                            const isVerified =
+                                                activePaymentTab ===
+                                                "verified";
+
                                             const proofUrl =
                                                 getPaymentProofUrl(
                                                     payment
@@ -1604,13 +1727,17 @@ const AdminDashboard = () => {
                                                                 `status-badge ${
                                                                     isRejected
                                                                         ? "rejected-status"
-                                                                        : "pending-status"
+                                                                        : isVerified
+                                                                            ? "verified-status"
+                                                                            : "pending-status"
                                                                 }`
                                                             }
                                                         >
                                                             {isRejected
                                                                 ? "REJECTED"
-                                                                : "PENDING VERIFICATION"}
+                                                                : isVerified
+                                                                    ? "VERIFIED"
+                                                                    : "PENDING VERIFICATION"}
                                                         </span>
 
                                                     </div>
@@ -1845,7 +1972,8 @@ const AdminDashboard = () => {
                                                         ACTIONS
                                                     ========================================= */}
 
-                                                    {!isRejected && (
+                                                    {!isRejected &&
+                                                        !isVerified && (
 
                                                         <div className="payment-actions">
 
@@ -2639,6 +2767,18 @@ const AdminDashboard = () => {
                 }
 
 
+                .stat-card-button {
+                    font-family: inherit;
+                    text-align: left;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                }
+
+                .stat-card-button:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+                }
+
                 .stat-icon {
                     width:
                         37px;
@@ -3214,7 +3354,7 @@ const AdminDashboard = () => {
                         grid;
 
                     grid-template-columns:
-                        1fr 1fr;
+                        repeat(3, 1fr);
 
                     gap:
                         6px;
@@ -3296,6 +3436,18 @@ const AdminDashboard = () => {
                         rgba(0,0,0,0.07);
                 }
 
+
+                .payment-tab.verified-active {
+                    color:
+                        #16804a;
+                }
+
+                .verified-count {
+                    background:
+                        #e9f8ef;
+                    color:
+                        #16804a;
+                }
 
                 .payment-tab.rejected-active {
                     color:
@@ -3472,6 +3624,13 @@ const AdminDashboard = () => {
                         #f28c28;
                 }
 
+
+                .verified-status {
+                    background:
+                        #e9f8ef;
+                    color:
+                        #16804a;
+                }
 
                 .rejected-status {
                     background:
@@ -4014,6 +4173,13 @@ const AdminDashboard = () => {
                         800;
                 }
 
+
+                .verified-empty-icon {
+                    background:
+                        #e9f8ef;
+                    color:
+                        #16804a;
+                }
 
                 .rejected-empty-icon {
                     background:
