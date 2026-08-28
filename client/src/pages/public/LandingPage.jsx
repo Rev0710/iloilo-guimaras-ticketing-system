@@ -1,5 +1,5 @@
-import { useNavigate } from "react-router-dom";
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 const LandingPage = () => {
     const navigate = useNavigate();
@@ -7,7 +7,6 @@ const LandingPage = () => {
     return (
         <>
             <style>{`
-
                 * {
                     box-sizing: border-box;
                 }
@@ -23,8 +22,6 @@ const LandingPage = () => {
                 body {
                     font-family: Arial, Helvetica, sans-serif;
                 }
-
-
 
                 /* =========================================
                    FULL LANDING PAGE
@@ -55,8 +52,6 @@ const LandingPage = () => {
                     padding: 40px;
                 }
 
-
-
                 /* =========================================
                    CENTER GLASS FRAME
                 ========================================= */
@@ -86,9 +81,9 @@ const LandingPage = () => {
 
                     backdrop-filter: blur(3px);
                     -webkit-backdrop-filter: blur(3px);
+
+                    border-radius: 16px;
                 }
-
-
 
                 /* =========================================
                    LOGO
@@ -114,8 +109,6 @@ const LandingPage = () => {
                     display: block;
                 }
 
-
-
                 /* =========================================
                    CONTENT
                 ========================================= */
@@ -130,8 +123,6 @@ const LandingPage = () => {
                     text-align: center;
                 }
 
-
-
                 .welcome-text {
                     margin: 0;
 
@@ -142,8 +133,6 @@ const LandingPage = () => {
 
                     line-height: 1.2;
                 }
-
-
 
                 .landing-content h1 {
                     margin: 3px 0 0;
@@ -159,8 +148,6 @@ const LandingPage = () => {
                     letter-spacing: -2px;
                 }
 
-
-
                 .landing-content p {
                     margin: 10px 0 20px;
 
@@ -172,8 +159,6 @@ const LandingPage = () => {
                     line-height: 1.4;
                 }
 
-
-
                 /* =========================================
                    LOGIN BUTTONS
                 ========================================= */
@@ -183,13 +168,18 @@ const LandingPage = () => {
                     align-items: center;
                     justify-content: center;
 
-                    gap: 15px;
+                    gap: 12px;
 
                     width: 100%;
 
                     margin-top: 5px;
+
+                    flex-wrap: wrap;
                 }
 
+                /* =========================================
+                   TOURIST BUTTON
+                ========================================= */
 
                 .primary-button {
                     width: 180px;
@@ -213,7 +203,6 @@ const LandingPage = () => {
                         box-shadow 0.2s ease;
                 }
 
-
                 .primary-button:hover {
                     background: #f5660b;
 
@@ -223,12 +212,48 @@ const LandingPage = () => {
                         0 6px 15px rgba(255, 116, 23, 0.30);
                 }
 
-
                 .primary-button:active {
                     transform: translateY(0);
                 }
 
+                /* =========================================
+                   STAFF BUTTON
+                ========================================= */
 
+                .staff-button {
+                    width: 180px;
+                    height: 44px;
+
+                    border: none;
+                    border-radius: 5px;
+
+                    background: #266eff;
+
+                    color: white;
+
+                    font-size: 14px;
+                    font-weight: 600;
+
+                    cursor: pointer;
+
+                    transition:
+                        transform 0.2s ease,
+                        background 0.2s ease,
+                        box-shadow 0.2s ease;
+                }
+
+                .staff-button:hover {
+                    background: #1559df;
+
+                    transform: translateY(-2px);
+
+                    box-shadow:
+                        0 6px 15px rgba(38, 110, 255, 0.30);
+                }
+
+                .staff-button:active {
+                    transform: translateY(0);
+                }
 
                 /* =========================================
                    ADMIN BUTTON
@@ -256,7 +281,6 @@ const LandingPage = () => {
                         box-shadow 0.2s ease;
                 }
 
-
                 .admin-button:hover {
                     background: #222222;
 
@@ -266,12 +290,9 @@ const LandingPage = () => {
                         0 6px 15px rgba(0, 0, 0, 0.25);
                 }
 
-
                 .admin-button:active {
                     transform: translateY(0);
                 }
-
-
 
                 /* =========================================
                    TABLET
@@ -312,22 +333,22 @@ const LandingPage = () => {
 
                     .landing-content p {
                         font-size: 14px;
+
                         margin-top: 8px;
                         margin-bottom: 18px;
                     }
 
                     .login-buttons {
-                        gap: 12px;
+                        gap: 10px;
                     }
 
                     .primary-button,
+                    .staff-button,
                     .admin-button {
-                        width: 170px;
+                        width: 165px;
                         height: 42px;
                     }
                 }
-
-
 
                 /* =========================================
                    MOBILE
@@ -384,15 +405,14 @@ const LandingPage = () => {
                     }
 
                     .primary-button,
+                    .staff-button,
                     .admin-button {
-                        width: 155px;
+                        width: 180px;
                         height: 40px;
 
                         font-size: 13px;
                     }
                 }
-
-
 
                 /* =========================================
                    VERY SMALL PHONES
@@ -433,21 +453,20 @@ const LandingPage = () => {
                     }
 
                     .primary-button,
+                    .staff-button,
                     .admin-button {
-                        width: 145px;
+                        width: 170px;
                         height: 38px;
                     }
                 }
-
             `}</style>
-
-
 
             <main className="landing-page">
 
                 <div className="landing-container">
 
                     {/* LOGO */}
+
                     <div className="landing-logo">
 
                         <img
@@ -457,9 +476,8 @@ const LandingPage = () => {
 
                     </div>
 
-
-
                     {/* CONTENT */}
+
                     <div className="landing-content">
 
                         <div className="welcome-text">
@@ -474,11 +492,12 @@ const LandingPage = () => {
                             Travel Smarter Across Guimaras.
                         </p>
 
-
                         {/* LOGIN BUTTONS */}
+
                         <div className="login-buttons">
 
-                            {/* STUDENT LOGIN */}
+                            {/* TOURIST LOGIN */}
+
                             <button
                                 type="button"
                                 className="primary-button"
@@ -487,8 +506,18 @@ const LandingPage = () => {
                                 Log In as Tourist
                             </button>
 
+                            {/* STAFF LOGIN */}
+
+                            <button
+                                type="button"
+                                className="staff-button"
+                                onClick={() => navigate("/staff/login")}
+                            >
+                                Log In as Staff
+                            </button>
 
                             {/* ADMIN LOGIN */}
+
                             <button
                                 type="button"
                                 className="admin-button"

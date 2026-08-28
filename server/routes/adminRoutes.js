@@ -4,6 +4,15 @@ const jwt = require("jsonwebtoken");
 
 const Admin = require("../models/Admin");
 const adminAuth = require("../middleware/adminAuth");
+const {
+    createStaff,
+    getAllStaff,
+    getStaffById,
+    updateStaff,
+    deactivateStaff,
+    activateStaff,
+    deleteStaff
+} = require("../controllers/adminController");
 
 const router = express.Router();
 
@@ -376,6 +385,87 @@ router.get(
         }
     }
 );
+// =========================================================
+// STAFF MANAGEMENT
+// =========================================================
+// Only authenticated administrators can manage staff.
+// =========================================================
 
+
+// =========================================================
+// CREATE STAFF ACCOUNT
+// =========================================================
+
+router.post(
+    "/staff",
+    adminAuth,
+    createStaff
+);
+
+
+// =========================================================
+// GET ALL STAFF
+// =========================================================
+
+router.get(
+    "/staff",
+    adminAuth,
+    getAllStaff
+);
+
+
+// =========================================================
+// GET STAFF BY ID
+// =========================================================
+
+router.get(
+    "/staff/:id",
+    adminAuth,
+    getStaffById
+);
+
+
+// =========================================================
+// UPDATE STAFF
+// =========================================================
+
+router.put(
+    "/staff/:id",
+    adminAuth,
+    updateStaff
+);
+
+
+// =========================================================
+// DEACTIVATE STAFF
+// =========================================================
+
+router.put(
+    "/staff/:id/deactivate",
+    adminAuth,
+    deactivateStaff
+);
+
+
+// =========================================================
+// ACTIVATE STAFF
+// =========================================================
+
+router.put(
+    "/staff/:id/activate",
+    adminAuth,
+    activateStaff
+);
+
+
+// =========================================================
+// DELETE STAFF
+// =========================================================
+
+router.delete(
+    "/staff/:id",
+    adminAuth,
+    deleteStaff
+);
 
 module.exports = router;

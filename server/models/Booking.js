@@ -145,39 +145,58 @@ const bookingSchema = new mongoose.Schema(
             default: null
         },
 
-        // =========================
-        // PAYMENT
-        // =========================
+       // =========================
+// PAYMENT
+// =========================
 
-        paymentMethod: {
-            type: String,
-            required: true,
-            default: "Maya / QRPh"
-        },
+paymentMethod: {
+    type: String,
+    required: true,
+    default: "Maya / QRPh"
+},
 
-        paymentStatus: {
-            type: String,
-            enum: [
-                "PENDING VERIFICATION",
-                "VERIFIED",
-                "REJECTED"
-            ],
-            default: "PENDING VERIFICATION"
-        },
+paymentStatus: {
+    type: String,
+    enum: [
+        "PENDING VERIFICATION",
+        "VERIFIED",
+        "REJECTED"
+    ],
+    default: "PENDING VERIFICATION"
+},
 
-        // =========================
-        // BOOKING STATUS
-        // =========================
+// =========================
+// BOARDING
+// =========================
 
-        status: {
-            type: String,
-            enum: [
-                "PENDING PAYMENT VERIFICATION",
-                "CONFIRMED",
-                "CANCELLED"
-            ],
-            default: "PENDING PAYMENT VERIFICATION"
-        },
+boardingStatus: {
+    type: String,
+    enum: [
+        "NOT BOARDED",
+        "ON BOARD",
+        "REJECTED"
+    ],
+    default: "NOT BOARDED"
+},
+
+boardedAt: {
+    type: Date,
+    default: null
+},
+
+// =========================
+// BOOKING STATUS
+// =========================
+
+status: {
+    type: String,
+    enum: [
+        "PENDING PAYMENT VERIFICATION",
+        "CONFIRMED",
+        "CANCELLED"
+    ],
+    default: "PENDING PAYMENT VERIFICATION"
+},
 
         // =========================
         // PAYMENT PROOF
@@ -188,6 +207,7 @@ const bookingSchema = new mongoose.Schema(
             required: true
         }
     },
+    
 
     {
         timestamps: true

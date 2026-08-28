@@ -3,8 +3,9 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const path = require("path");
 
-const connectDB =
-    require("./config/database");
+const connectDB = require("./config/database");
+const staffAuthRoutes = require("./routes/staffAuthRoutes");
+const adminStaffRoutes = require("./routes/adminStaffRoutes");
 
 dotenv.config();
 
@@ -76,6 +77,11 @@ app.use(
     authRoutes
 );
 
+app.use(
+    "/api/staff-auth",
+    staffAuthRoutes
+);
+
 
 // ===============================
 // ADMIN
@@ -89,6 +95,16 @@ app.use(
     adminRoutes
 );
 
+app.use(
+    "/api/admin/staff",
+    adminStaffRoutes
+);
+
+
+// ===============================
+// PAYMENT
+// ===============================
+
 const paymentRoutes =
     require("./routes/paymentRoutes");
 
@@ -97,9 +113,14 @@ app.use(
     paymentRoutes
 );
 
+
 // ===============================
-// BOOKING / ADMIN PAYMENT VERIFICATION
+// BOOKING
 // ===============================
+//
+// Passenger booking operations and
+// admin payment verification.
+//
 
 const bookingRoutes =
     require("./routes/bookingRoutes");
@@ -108,6 +129,26 @@ app.use(
     "/api/bookings",
     bookingRoutes
 );
+
+
+// ===============================
+// STAFF
+// ===============================
+//
+// Staff QR scanning and boarding
+// verification.
+//
+
+const staffRoutes =
+    require("./routes/staffRoutes");
+
+app.use(
+    "/api/staff",
+    staffRoutes
+);
+
+
+
 
 // ===============================
 // SERVER

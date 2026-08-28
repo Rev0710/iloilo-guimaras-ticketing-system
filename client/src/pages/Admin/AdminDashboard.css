@@ -1,6 +1,6 @@
 /* =========================================================
-   GUIMARASGO ADMIN SYSTEM
-   ADMIN DASHBOARD + PAYMENT VERIFICATION
+   GUIMARASGO - ADMINISTRATOR DASHBOARD
+   CSS ONLY
    ========================================================= */
 
 
@@ -17,6 +17,7 @@ body,
 #root {
     margin: 0;
     padding: 0;
+    width: 100%;
     min-height: 100%;
 }
 
@@ -27,14 +28,7 @@ body {
         sans-serif;
 
     background: #f5f7fa;
-    color: #222;
-}
-
-button,
-input,
-select,
-textarea {
-    font-family: inherit;
+    color: #111827;
 }
 
 
@@ -42,7 +36,9 @@ textarea {
    MAIN ADMIN LAYOUT
    ========================================================= */
 
-.admin-dashboard {
+.admin-dashboard,
+.admin-layout {
+    width: 100%;
     min-height: 100vh;
 
     display: flex;
@@ -55,82 +51,152 @@ textarea {
    SIDEBAR
    ========================================================= */
 
-.sidebar {
-    width: 210px;
+.sidebar,
+.admin-sidebar {
+    width: 198px;
+    min-width: 198px;
 
-    min-height: 100vh;
+    height: 100vh;
+
+    position: fixed;
+    left: 0;
+    top: 0;
 
     display: flex;
     flex-direction: column;
 
-    padding: 25px 14px;
-
     background: #ffffff;
 
-    border-right: 1px solid #e5e5e5;
+    border-right: 1px solid #e5e7eb;
 
-    position: relative;
-
-    z-index: 20;
-
-    flex-shrink: 0;
+    z-index: 100;
 }
 
 
-/* LOGO */
+/* =========================================================
+   SIDEBAR BRAND
+   ========================================================= */
 
-.sidebar-title {
-    padding: 0 10px;
-
-    color: #f28c28;
-
-    font-size: 20px;
-
-    font-weight: 900;
-
-    margin-bottom: 4px;
-
-    white-space: nowrap;
-}
-
-
-/* ADMIN LABEL */
-
-.admin-label {
-    padding: 0 10px;
-
-    margin-bottom: 25px;
-
-    color: #999;
-
-    font-size: 9px;
-
-    font-weight: 700;
-
-    letter-spacing: 1px;
-}
-
-
-/* SIDEBAR BUTTON */
-
-.side-item {
+.sidebar-header,
+.sidebar-brand,
+.brand {
     width: 100%;
 
-    padding: 12px 12px;
+    padding: 31px 20px 26px;
 
-    margin-bottom: 6px;
+    display: flex;
+    flex-direction: column;
+
+    align-items: flex-start;
+}
+
+.sidebar-header h1,
+.sidebar-brand h1,
+.brand h1 {
+    margin: 0;
+
+    font-size: 21px;
+    font-weight: 800;
+
+    color: #f58220;
+
+    line-height: 1.1;
+}
+
+.sidebar-header p,
+.sidebar-brand p,
+.brand p {
+    margin: 7px 0 0;
+
+    font-size: 7px;
+    font-weight: 700;
+
+    letter-spacing: 2px;
+
+    color: #6b7280;
+
+    text-transform: uppercase;
+}
+
+
+/* =========================================================
+   SIDEBAR NAVIGATION
+   IMPORTANT:
+   Forces all navigation buttons vertically.
+   ========================================================= */
+
+.sidebar-navigation,
+.sidebar-nav,
+.sidebar-menu,
+.nav-links {
+    width: 100%;
+
+    display: flex !important;
+    flex-direction: column !important;
+
+    align-items: stretch !important;
+
+    justify-content: flex-start !important;
+
+    gap: 5px !important;
+
+    padding: 10px 10px 0;
+
+    margin: 0;
+
+    flex-wrap: nowrap !important;
+}
+
+
+/* =========================================================
+   SIDEBAR NAV ITEMS
+   ========================================================= */
+
+.side-item,
+.nav-item,
+.nav-link,
+.sidebar-navigation a,
+.sidebar-nav a,
+.sidebar-menu a {
+    width: 100% !important;
+
+    min-width: 100% !important;
+
+    max-width: 100% !important;
+
+    min-height: 42px;
+
+    padding: 12px 13px;
+
+    margin: 0 !important;
+
+    display: flex !important;
+
+    flex-direction: row !important;
+
+    align-items: center !important;
+
+    justify-content: flex-start !important;
+
+    gap: 10px;
+
+    border-radius: 9px;
 
     border: none;
 
-    border-radius: 8px;
-
     background: transparent;
 
-    color: #555;
+    color: #273142;
 
-    text-align: left;
+    text-decoration: none;
 
-    font-size: 13px;
+    font-size: 12px;
+
+    font-weight: 500;
+
+    line-height: 1.2;
+
+    white-space: normal;
 
     cursor: pointer;
 
@@ -139,57 +205,102 @@ textarea {
         color 0.2s ease;
 }
 
-.side-item:hover {
-    background: #f7f7f7;
-}
 
-.side-item.active {
-    background: #fff2e6;
+/* =========================================================
+   SIDEBAR ACTIVE ITEM
+   ========================================================= */
 
-    color: #f28c28;
+.side-item.active,
+.nav-item.active,
+.nav-link.active,
+.sidebar-navigation a.active,
+.sidebar-nav a.active,
+.sidebar-menu a.active {
+    background: #fff0df !important;
 
-    font-weight: 700;
-}
+    color: #f58220 !important;
 
-
-/* PAYMENT COUNT */
-
-.payment-count {
-    float: right;
-
-    min-width: 18px;
-    height: 18px;
-
-    display: inline-flex;
-
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 50%;
-
-    background: #f28c28;
-
-    color: #fff;
-
-    font-size: 10px;
-
-    font-weight: 700;
+    font-weight: 600;
 }
 
 
-/* SPACE */
+/* =========================================================
+   SIDEBAR HOVER
+   ========================================================= */
 
-.sidebar-spacer {
-    flex: 1;
+.side-item:hover,
+.nav-item:hover,
+.nav-link:hover,
+.sidebar-navigation a:hover,
+.sidebar-nav a:hover,
+.sidebar-menu a:hover {
+    background: #fff6ed;
+
+    color: #f58220;
 }
 
 
-/* LOGOUT */
+/* =========================================================
+   IMPORTANT FIX FOR TEXT INSIDE SIDEBAR
+   Prevents "Payment Verification" and
+   "Staff Management" from sitting side-by-side.
+   ========================================================= */
 
-.logout-button {
+.side-item span,
+.nav-item span,
+.nav-link span {
+    display: block;
+
     width: 100%;
 
-    padding: 11px;
+    text-align: left;
+
+    white-space: normal;
+
+    line-height: 1.25;
+}
+
+
+/* =========================================================
+   SIDEBAR ICON
+   ========================================================= */
+
+.side-item svg,
+.nav-item svg,
+.nav-link svg {
+    flex-shrink: 0;
+
+    width: 16px;
+    height: 16px;
+}
+
+
+/* =========================================================
+   LOGOUT AREA
+   ========================================================= */
+
+.sidebar-footer,
+.sidebar-bottom,
+.logout-container {
+    width: 100%;
+
+    margin-top: auto;
+
+    padding: 12px 10px 20px;
+}
+
+
+/* =========================================================
+   LOGOUT BUTTON
+   ========================================================= */
+
+.logout-button,
+.logout-btn,
+.sidebar-footer button,
+.sidebar-bottom button {
+    width: 100%;
+
+    min-height: 37px;
 
     border: none;
 
@@ -197,374 +308,7 @@ textarea {
 
     background: #fff0f0;
 
-    color: #d32f2f;
-
-    font-size: 13px;
-
-    font-weight: 700;
-
-    cursor: pointer;
-
-    transition: 0.2s ease;
-}
-
-.logout-button:hover {
-    background: #ffe1e1;
-}
-
-
-/* =========================================================
-   CONTENT AREA
-   ========================================================= */
-
-.dashboard-content {
-    flex: 1;
-
-    min-width: 0;
-
-    min-height: 100vh;
-
-    display: flex;
-
-    flex-direction: column;
-}
-
-
-/* =========================================================
-   HEADER
-   ========================================================= */
-
-.dashboard-header {
-    min-height: 70px;
-
-    padding: 0 32px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    background: #fff;
-
-    border-bottom: 1px solid #e5e5e5;
-
-    position: relative;
-
-    z-index: 10;
-}
-
-.dashboard-header h1 {
-    margin: 0 0 4px;
-
-    color: #222;
-
-    font-size: 21px;
-}
-
-.dashboard-header p {
-    margin: 0;
-
-    color: #888;
-
-    font-size: 12px;
-}
-
-.admin-badge {
-    padding: 8px 13px;
-
-    border-radius: 20px;
-
-    background: #fff2e6;
-
-    color: #f28c28;
-
-    font-size: 10px;
-
-    font-weight: 800;
-}
-
-
-/* =========================================================
-   DASHBOARD BODY
-   ========================================================= */
-
-.dashboard-body {
-    width: 100%;
-
-    max-width: 1100px;
-
-    margin: 0 auto;
-
-    padding: 32px;
-}
-
-.dashboard-body h2 {
-    margin: 0 0 5px;
-
-    color: #222;
-
-    font-size: 23px;
-}
-
-.dashboard-description {
-    margin: 0 0 24px;
-
-    color: #888;
-
-    font-size: 12px;
-}
-
-
-/* =========================================================
-   STAT CARDS
-   ========================================================= */
-
-.cards {
-    display: grid;
-
-    grid-template-columns:
-        repeat(3, 1fr);
-
-    gap: 16px;
-
-    margin-bottom: 24px;
-}
-
-.stat-card {
-    padding: 20px;
-
-    background: #fff;
-
-    border: 1px solid #e8e8e8;
-
-    border-radius: 12px;
-
-    box-shadow:
-        0 3px 12px
-        rgba(0, 0, 0, 0.03);
-}
-
-.stat-card span {
-    display: block;
-
-    color: #777;
-
-    font-size: 11px;
-
-    margin-bottom: 10px;
-}
-
-.stat-card strong {
-    display: block;
-
-    color: #222;
-
-    font-size: 27px;
-
-    margin-bottom: 5px;
-}
-
-.stat-card small {
-    color: #999;
-
-    font-size: 9px;
-}
-
-
-/* =========================================================
-   PAYMENT VERIFICATION SUMMARY CARD
-   ========================================================= */
-
-.welcome-card {
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 20px;
-
-    padding: 23px;
-
-    margin-bottom: 20px;
-
-    background: #fff;
-
-    border: 1px solid #e8e8e8;
-
-    border-radius: 12px;
-}
-
-.welcome-card h3,
-.system-card h3 {
-    margin: 0 0 7px;
-
-    color: #222;
-
-    font-size: 16px;
-}
-
-.welcome-card p {
-    margin: 0;
-
-    max-width: 650px;
-
-    color: #777;
-
-    font-size: 11px;
-
-    line-height: 1.6;
-}
-
-
-/* =========================================================
-   PRIMARY BUTTON
-   ========================================================= */
-
-.primary-button {
-    flex-shrink: 0;
-
-    padding: 10px 17px;
-
-    border: none;
-
-    border-radius: 8px;
-
-    background: #333;
-
-    color: #fff;
-
-    font-size: 11px;
-
-    font-weight: 700;
-
-    cursor: pointer;
-
-    transition: 0.2s ease;
-}
-
-.primary-button:hover {
-    background: #222;
-}
-
-
-/* =========================================================
-   ADMIN ACCOUNT
-   ========================================================= */
-
-.system-card {
-    padding: 23px;
-
-    background: #fff;
-
-    border: 1px solid #e8e8e8;
-
-    border-radius: 12px;
-}
-
-.account-row {
-    display: flex;
-
-    justify-content: space-between;
-
-    padding: 11px 0;
-
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.account-row:last-child {
-    border-bottom: none;
-}
-
-.account-row span {
-    color: #888;
-
-    font-size: 11px;
-}
-
-.account-row strong {
-    color: #333;
-
-    font-size: 11px;
-}
-
-
-/* =========================================================
-   PAYMENT VERIFICATION PAGE
-   ========================================================= */
-
-.payment-page {
-    width: 100%;
-
-    min-height: 100vh;
-
-    background: #f5f7fa;
-
-    padding: 30px 35px;
-}
-
-.payment-container {
-    width: 100%;
-
-    max-width: 1000px;
-
-    margin: 0 auto;
-}
-
-
-/* PAGE HEADER */
-
-.payment-header {
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    margin-bottom: 25px;
-}
-
-.payment-header h2 {
-    margin: 0 0 5px;
-
-    color: #222;
-
-    font-size: 24px;
-}
-
-.payment-header p {
-    margin: 0;
-
-    color: #888;
-
-    font-size: 12px;
-}
-
-
-/* =========================================================
-   IMPORTANT:
-   BACK BUTTON FIX
-   ========================================================= */
-
-.payment-back-button {
-    display: inline-flex;
-
-    align-items: center;
-
-    gap: 6px;
-
-    margin-bottom: 18px;
-
-    padding: 8px 12px;
-
-    border: 1px solid #e5e5e5;
-
-    border-radius: 7px;
-
-    background: #fff;
-
-    color: #555;
+    color: #dc2626;
 
     font-size: 11px;
 
@@ -572,780 +316,495 @@ textarea {
 
     cursor: pointer;
 
-    position: relative;
-
-    z-index: 2;
+    transition:
+        background 0.2s ease,
+        color 0.2s ease;
 }
 
-.payment-back-button:hover {
-    background: #f7f7f7;
+.logout-button:hover,
+.logout-btn:hover,
+.sidebar-footer button:hover,
+.sidebar-bottom button:hover {
+    background: #ffe2e2;
 
-    color: #222;
+    color: #b91c1c;
 }
 
 
 /* =========================================================
-   PAYMENT CARD
+   MAIN CONTENT
    ========================================================= */
 
-.payment-card {
-    width: 100%;
+.main-content,
+.admin-main {
+    width: calc(100% - 198px);
 
-    padding: 22px;
+    min-height: 100vh;
 
-    margin-bottom: 18px;
+    margin-left: 198px;
 
-    background: #fff;
+    display: flex;
+    flex-direction: column;
 
-    border: 1px solid #e6e6e6;
-
-    border-radius: 12px;
-
-    box-shadow:
-        0 3px 12px
-        rgba(0, 0, 0, 0.03);
+    background: #f5f7fa;
 }
 
 
-/* PAYMENT TOP */
+/* =========================================================
+   TOP HEADER
+   ========================================================= */
 
-.payment-card-header {
+.admin-header,
+.dashboard-header,
+.topbar {
+    width: 100%;
+
+    min-height: 62px;
+
+    padding: 0 28px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    background: #ffffff;
+
+    border-bottom: 1px solid #e5e7eb;
+}
+
+
+/* =========================================================
+   HEADER TITLE
+   ========================================================= */
+
+.admin-header h1,
+.dashboard-header h1,
+.topbar h1 {
+    margin: 0;
+
+    font-size: 21px;
+
+    font-weight: 800;
+
+    color: #111827;
+
+    line-height: 1.1;
+}
+
+.admin-header p,
+.dashboard-header p,
+.topbar p {
+    margin: 5px 0 0;
+
+    font-size: 10px;
+
+    color: #6b7280;
+}
+
+
+/* =========================================================
+   ADMIN BADGE
+   ========================================================= */
+
+.admin-badge,
+.role-badge {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    min-width: 58px;
+    height: 29px;
+
+    padding: 0 14px;
+
+    border-radius: 20px;
+
+    background: #fff0df;
+
+    color: #f58220;
+
+    font-size: 9px;
+
+    font-weight: 800;
+
+    letter-spacing: 0.8px;
+
+    text-transform: uppercase;
+}
+
+
+/* =========================================================
+   DASHBOARD CONTENT
+   ========================================================= */
+
+.dashboard-content,
+.content-area,
+.admin-content {
+    width: 100%;
+
+    max-width: 1060px;
+
+    margin: 0 auto;
+
+    padding: 38px 30px 55px;
+}
+
+
+/* =========================================================
+   PAGE TITLE
+   ========================================================= */
+
+.dashboard-content h2,
+.content-area h2,
+.admin-content h2 {
+    margin: 0;
+
+    color: #111827;
+
+    font-size: 25px;
+
+    font-weight: 800;
+
+    line-height: 1.2;
+}
+
+.dashboard-content > p,
+.content-area > p,
+.admin-content > p {
+    margin: 7px 0 22px;
+
+    color: #64748b;
+
+    font-size: 10px;
+}
+
+
+/* =========================================================
+   STATISTICS GRID
+   ========================================================= */
+
+.stats-grid,
+.dashboard-stats,
+.stat-grid {
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 13px;
+
+    margin-top: 20px;
+}
+
+
+/* =========================================================
+   STAT CARD
+   ========================================================= */
+
+.stat-card,
+.dashboard-card {
+    min-height: 132px;
+
+    padding: 18px;
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 13px;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 11px;
+
+    box-shadow:
+        0 2px 6px rgba(15, 23, 42, 0.03);
+}
+
+
+/* =========================================================
+   STAT ICON
+   ========================================================= */
+
+.stat-icon,
+.card-icon {
+    width: 36px;
+    height: 36px;
+
+    min-width: 36px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 9px;
+
+    background: #fff0df;
+
+    color: #f58220;
+
+    font-size: 16px;
+
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   STAT TEXT
+   ========================================================= */
+
+.stat-card h3,
+.dashboard-card h3 {
+    margin: 0;
+
+    font-size: 10px;
+
+    font-weight: 500;
+
+    color: #64748b;
+}
+
+.stat-card strong,
+.stat-card .value,
+.dashboard-card strong,
+.dashboard-card .value {
+    display: block;
+
+    margin-top: 5px;
+
+    color: #111827;
+
+    font-size: 25px;
+
+    font-weight: 800;
+}
+
+.stat-card p,
+.dashboard-card p {
+    margin: 7px 0 0;
+
+    color: #9ca3af;
+
+    font-size: 9px;
+}
+
+
+/* =========================================================
+   PAYMENT VERIFICATION CARD
+   ========================================================= */
+
+.verification-card,
+.payment-verification-card,
+.payment-card {
+    width: 100%;
+
+    min-height: 97px;
+
+    margin-top: 20px;
+
+    padding: 18px 20px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 18px;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 11px;
+}
+
+
+/* =========================================================
+   PAYMENT CARD CONTENT
+   ========================================================= */
+
+.verification-card-content,
+.payment-card-content {
+    flex: 0 0 255px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 13px;
+}
+
+.verification-card h3,
+.payment-verification-card h3,
+.payment-card h3 {
+    margin: 0 0 5px;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    color: #111827;
+}
+
+.verification-card p,
+.payment-verification-card p,
+.payment-card p {
+    margin: 0;
+
+    font-size: 9px;
+
+    line-height: 1.45;
+
+    color: #64748b;
+}
+
+
+/* =========================================================
+   VIEW PAYMENTS BUTTON
+   ========================================================= */
+
+.view-payments,
+.payment-button,
+.view-payments-button {
+    flex: 1;
+
+    width: 100%;
+
+    height: 44px;
+
+    border: none;
+
+    border-radius: 7px;
+
+    background: #303030;
+
+    color: #ffffff;
+
+    font-size: 10px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.15s ease;
+}
+
+.view-payments:hover,
+.payment-button:hover,
+.view-payments-button:hover {
+    background: #202020;
+}
+
+.view-payments:active,
+.payment-button:active,
+.view-payments-button:active {
+    transform: scale(0.99);
+}
+
+
+/* =========================================================
+   ACCOUNT CARD
+   ========================================================= */
+
+.account-card,
+.admin-account-card {
+    width: 100%;
+
+    margin-top: 20px;
+
+    padding: 18px 20px;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 11px;
+
+    box-shadow:
+        0 2px 6px rgba(15, 23, 42, 0.02);
+}
+
+
+/* =========================================================
+   ACCOUNT HEADER
+   ========================================================= */
+
+.account-header {
     display: flex;
 
     align-items: flex-start;
 
     justify-content: space-between;
-
-    padding-bottom: 17px;
-
-    border-bottom: 1px solid #eeeeee;
 }
 
-.booking-reference-label {
-    display: block;
+.account-label {
+    margin: 0 0 5px;
 
-    margin-bottom: 4px;
-
-    color: #999;
-
-    font-size: 9px;
-
-    font-weight: 700;
-
-    letter-spacing: 1px;
-}
-
-.booking-reference {
-    margin: 0;
-
-    color: #222;
-
-    font-size: 17px;
+    font-size: 8px;
 
     font-weight: 800;
+
+    letter-spacing: 1.4px;
+
+    color: #94a3b8;
+
+    text-transform: uppercase;
+}
+
+.account-header h3 {
+    margin: 0;
+
+    font-size: 14px;
+
+    color: #111827;
+
+    font-weight: 700;
 }
 
 
 /* =========================================================
-   STATUS
+   ACTIVE BADGE
    ========================================================= */
 
-.payment-status {
-    padding: 7px 11px;
+.active-badge,
+.status-active {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    height: 23px;
+
+    padding: 0 11px;
 
     border-radius: 20px;
 
-    background: #fff2df;
+    background: #e8f8ef;
 
-    color: #f28c28;
+    color: #087f4e;
 
-    font-size: 9px;
+    font-size: 8px;
 
     font-weight: 800;
 
-    white-space: nowrap;
-}
-
-.payment-status.verified {
-    background: #e9f8ef;
-
-    color: #18864b;
-}
-
-.payment-status.rejected {
-    background: #fff0f0;
-
-    color: #d32f2f;
+    text-transform: uppercase;
 }
 
 
 /* =========================================================
-   BOOKING INFORMATION
+   ACCOUNT ROW
    ========================================================= */
 
-.booking-details {
-    display: grid;
-
-    grid-template-columns:
-        repeat(3, 1fr);
-
-    gap: 20px;
-
-    padding: 18px 0;
-
-    border-bottom: 1px solid #eeeeee;
-}
-
-.booking-detail span {
-    display: block;
-
-    margin-bottom: 5px;
-
-    color: #999;
-
-    font-size: 9px;
-}
-
-.booking-detail strong {
-    color: #222;
-
-    font-size: 11px;
-}
-
-
-/* =========================================================
-   PAYMENT PROOF
-   ========================================================= */
-
-.payment-proof-section {
-    padding-top: 18px;
-}
-
-.payment-proof-section h3 {
-    margin: 0 0 12px;
-
-    color: #333;
-
-    font-size: 13px;
-}
-
-.payment-proof {
-    width: 160px;
-
-    max-height: 250px;
-
-    object-fit: contain;
-
-    display: block;
-
-    border: 1px solid #ddd;
-
-    border-radius: 7px;
-
-    background: #fafafa;
-
-    cursor: pointer;
-
-    transition: 0.2s ease;
-}
-
-.payment-proof:hover {
-    transform: scale(1.02);
-
-    box-shadow:
-        0 5px 15px
-        rgba(0, 0, 0, 0.08);
-}
-
-
-/* =========================================================
-   PAYMENT ACTIONS
-   ========================================================= */
-
-.payment-actions {
-    display: flex;
-
-    justify-content: flex-end;
-
-    gap: 10px;
-
-    margin-top: 20px;
-}
-
-.reject-button,
-.verify-button {
-    padding: 10px 16px;
-
-    border-radius: 8px;
-
-    font-size: 10px;
-
-    font-weight: 700;
-
-    cursor: pointer;
-
-    transition: 0.2s ease;
-}
-
-.reject-button {
-    border: 1px solid #ffd7d7;
-
-    background: #fff0f0;
-
-    color: #d32f2f;
-}
-
-.reject-button:hover {
-    background: #ffe1e1;
-}
-
-.verify-button {
-    border: 1px solid #d4efdf;
-
-    background: #eaf8ef;
-
-    color: #18864b;
-}
-
-.verify-button:hover {
-    background: #d9f3e4;
-}
-
-
-/* =========================================================
-   MODAL OVERLAY
-   ========================================================= */
-
-.modal-overlay {
-    position: fixed;
-
-    inset: 0;
-
-    z-index: 9999;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    padding: 20px;
-
-    background:
-        rgba(0, 0, 0, 0.35);
-
-    backdrop-filter: blur(2px);
-}
-
-
-/* =========================================================
-   MODAL
-   ========================================================= */
-
-.confirm-modal {
-    width: 100%;
-
-    max-width: 420px;
-
-    padding: 25px;
-
-    background: #fff;
-
-    border-radius: 14px;
-
-    box-shadow:
-        0 15px 45px
-        rgba(0, 0, 0, 0.18);
-
-    animation:
-        modalAppear 0.18s ease-out;
-}
-
-@keyframes modalAppear {
-
-    from {
-        opacity: 0;
-
-        transform:
-            translateY(8px)
-            scale(0.98);
-    }
-
-    to {
-        opacity: 1;
-
-        transform:
-            translateY(0)
-            scale(1);
-    }
-}
-
-.confirm-modal h3 {
-    margin: 0 0 8px;
-
-    color: #222;
-
-    font-size: 17px;
-}
-
-.confirm-modal p {
-    margin: 0;
-
-    color: #777;
-
-    font-size: 12px;
-
-    line-height: 1.6;
-}
-
-.confirm-modal-actions {
-    display: flex;
-
-    justify-content: flex-end;
-
-    gap: 10px;
-
-    margin-top: 22px;
-}
-
-.modal-cancel {
-    padding: 10px 17px;
-
-    border: 1px solid #ddd;
-
-    border-radius: 8px;
-
-    background: #fff;
-
-    color: #555;
-
-    font-size: 11px;
-
-    font-weight: 700;
-
-    cursor: pointer;
-}
-
-.modal-cancel:hover {
-    background: #f7f7f7;
-}
-
-.modal-confirm {
-    padding: 10px 17px;
-
-    border: none;
-
-    border-radius: 8px;
-
-    background: #333;
-
-    color: #fff;
-
-    font-size: 11px;
-
-    font-weight: 700;
-
-    cursor: pointer;
-}
-
-.modal-confirm:hover {
-    background: #222;
-}
-
-.modal-confirm.danger {
-    background: #d32f2f;
-}
-
-.modal-confirm.danger:hover {
-    background: #b71c1c;
-}
-
-.modal-confirm.success {
-    background: #18864b;
-}
-
-.modal-confirm.success:hover {
-    background: #126c3b;
-}
-
-
-/* =========================================================
-   IMAGE PREVIEW MODAL
-   ========================================================= */
-
-.image-modal {
-    position: fixed;
-
-    inset: 0;
-
-    z-index: 10000;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    padding: 30px;
-
-    background:
-        rgba(0, 0, 0, 0.75);
-}
-
-.image-modal img {
-    max-width: 90vw;
-
-    max-height: 85vh;
-
-    object-fit: contain;
-
-    border-radius: 8px;
-}
-
-.image-modal-close {
-    position: absolute;
-
-    top: 20px;
-
-    right: 25px;
-
-    width: 38px;
-
-    height: 38px;
-
-    border: none;
-
-    border-radius: 50%;
-
-    background: #fff;
-
-    color: #222;
-
-    font-size: 20px;
-
-    cursor: pointer;
-}
-
-
-/* =========================================================
-   EMPTY STATE
-   ========================================================= */
-
-.empty-payments {
-    padding: 60px 20px;
-
-    text-align: center;
-
-    background: #fff;
-
-    border: 1px solid #e6e6e6;
-
-    border-radius: 12px;
-}
-
-.empty-payments h3 {
-    margin: 0 0 7px;
-
-    color: #333;
-
-    font-size: 16px;
-}
-
-.empty-payments p {
-    margin: 0;
-
-    color: #999;
-
-    font-size: 11px;
-}
-
-
-/* =========================================================
-   LOADING
-   ========================================================= */
-
-.dashboard-loading {
-    min-height: 100vh;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    background: #f5f7fa;
-
-    color: #777;
-
-    font-size: 13px;
-}
-
-
-/* =========================================================
-   FOOTER
-   ========================================================= */
-
-.dashboard-footer {
-    margin-top: auto;
-
-    padding: 17px 32px;
-
-    display: flex;
-
-    justify-content: space-between;
-
-    color: #999;
-
-    font-size: 10px;
-
-    background: #fff;
-
-    border-top: 1px solid #e5e5e5;
-}
-
-
-/* =========================================================
-   RESPONSIVE
-   ========================================================= */
-
-@media (max-width: 900px) {
-
-    .sidebar {
-        width: 190px;
-    }
-
-    .dashboard-body {
-        padding: 25px 20px;
-    }
-
-    .dashboard-header {
-        padding: 0 20px;
-    }
-
-    .cards {
-        grid-template-columns: 1fr;
-    }
-
-    .booking-details {
-        grid-template-columns:
-            repeat(2, 1fr);
-    }
-}
-
-
-@media (max-width: 650px) {
-
-    .admin-dashboard {
-        flex-direction: column;
-    }
-
-    .sidebar {
-        width: 100%;
-
-        min-height: auto;
-
-        padding: 12px;
-
-        flex-direction: row;
-
-        align-items: center;
-
-        gap: 5px;
-
-        overflow-x: auto;
-    }
-
-    .sidebar-title,
-    .admin-label {
-        display: none;
-    }
-
-    .side-item {
-        width: auto;
-
-        white-space: nowrap;
-
-        margin: 0;
-    }
-
-    .sidebar-spacer {
-        display: none;
-    }
-
-    .logout-button {
-        width: auto;
-
-        white-space: nowrap;
-
-        margin-left: auto;
-    }
-
-    .dashboard-header {
-        min-height: 80px;
-
-        padding: 0 15px;
-    }
-
-    .dashboard-header h1 {
-        font-size: 18px;
-    }
-
-    .admin-badge {
-        display: none;
-    }
-
-    .dashboard-body {
-        padding: 20px 15px;
-    }
-
-    .welcome-card {
-        flex-direction: column;
-
-        align-items: flex-start;
-    }
-
-    .primary-button {
-        width: 100%;
-    }
-
-    .booking-details {
-        grid-template-columns: 1fr;
-    }
-
-    .payment-page {
-        padding: 20px 15px;
-    }
-
-    .payment-card {
-        padding: 17px;
-    }
-
-    .payment-card-header {
-        flex-direction: column;
-
-        gap: 10px;
-    }
-
-    .payment-actions {
-        flex-direction: column;
-    }
-
-    .reject-button,
-    .verify-button {
-        width: 100%;
-    }
-
-    .dashboard-footer {
-        padding: 15px;
-
-        flex-direction: column;
-
-        gap: 5px;
-    }
-}
-
-/* =========================================================
-   RESET
-========================================================= */
-
-* {
-    box-sizing: border-box;
-}
-
-html,
-body,
-#root {
-    margin: 0;
-    min-height: 100%;
-}
-
-body {
-    font-family:
-        Arial,
-        Helvetica,
-        sans-serif;
-
-    background: #f5f7fa;
-    color: #222;
-}
-
-
-/* =========================================================
-   MAIN LAYOUT
-========================================================= */
-
-.admin-dashboard {
-    width: 100%;
-    min-height: 100vh;
-
-    display: flex;
-
-    background: #f5f7fa;
-}
-
-
-/* =========================================================
-   SIDEBAR
-========================================================= */
-
-.sidebar {
-    width: 205px;
-    min-height: 100vh;
-
-    display: flex;
-    flex-direction: column;
-
-    padding: 27px 12px 14px;
-
-    background: #fff;
-
-    border-right:
-        1px solid #e5e5e5;
-
-    flex-shrink: 0;
-}
-
-.brand-section {
-    padding:
-        0 10px 25px;
-}
-
-.sidebar-title {
-    color: #f28c28;
-
-    font-size: 20px;
-
-    font-weight: 900;
-
-    margin-bottom: 5px;
-}
-
-.admin-label {
-    color: #999;
-
-    font-size: 9px;
-
-    font-weight: 700;
-
-    letter-spacing: 1.2px;
-}
-
-
-/* =========================================================
-   SIDEBAR NAVIGATION
-========================================================= */
-
-.sidebar-navigation {
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 4px;
-}
-
-.side-item {
-    width: 100%;
-
+.account-row {
     min-height: 38px;
 
     display: flex;
@@ -1354,1124 +813,44 @@ body {
 
     justify-content: space-between;
 
-    padding:
-        0 12px;
-
-    border: none;
-
-    border-radius: 8px;
-
-    background: transparent;
-
-    color: #444;
-
-    text-align: left;
-
-    font-size: 12px;
-
-    cursor: pointer;
-
-    transition:
-        background 0.2s ease,
-        color 0.2s ease;
-}
-
-.side-item:hover {
-    background: #f8f8f8;
-}
-
-.side-item.active {
-    background: #fff1e5;
-
-    color: #f28c28;
-
-    font-weight: 700;
-}
-
-
-/* =========================================================
-   PENDING BADGE
-========================================================= */
-
-.pending-badge {
-    min-width: 20px;
-    height: 20px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    padding: 0 5px;
-
-    border-radius: 50%;
-
-    background: #f28c28;
-
-    color: #fff;
-
-    font-size: 9px;
-
-    font-weight: 800;
-}
-
-
-/* =========================================================
-   SIDEBAR SPACER
-========================================================= */
-
-.sidebar-spacer {
-    flex: 1;
-}
-
-
-/* =========================================================
-   LOGOUT
-========================================================= */
-
-.logout-button {
-    width: 100%;
-
-    height: 37px;
-
-    border: none;
-
-    border-radius: 8px;
-
-    background: #fff0f0;
-
-    color: #d32f2f;
-
-    font-size: 12px;
-
-    font-weight: 700;
-
-    cursor: pointer;
-
-    transition:
-        background 0.2s ease;
-}
-
-.logout-button:hover {
-    background: #ffe4e4;
-}
-
-
-/* =========================================================
-   CONTENT
-========================================================= */
-
-.dashboard-content {
-    min-width: 0;
-
-    flex: 1;
-
-    min-height: 100vh;
-
-    display: flex;
-
-    flex-direction: column;
-}
-
-
-/* =========================================================
-   HEADER
-========================================================= */
-
-.dashboard-header {
-    height: 76px;
-
-    padding:
-        0 32px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    background: #fff;
-
-    border-bottom:
-        1px solid #e5e5e5;
-}
-
-.dashboard-header h1 {
-    margin:
-        0 0 4px;
-
-    color: #222;
-
-    font-size: 21px;
-
-    font-weight: 700;
-}
-
-.dashboard-header p {
-    margin: 0;
-
-    color: #888;
-
-    font-size: 11px;
-}
-
-.dashboard-header strong {
-    color: #333;
-}
-
-.admin-badge {
-    padding:
-        7px 13px;
-
-    border-radius: 20px;
-
-    background: #fff1e5;
-
-    color: #f28c28;
-
-    font-size: 10px;
-
-    font-weight: 800;
-}
-
-
-/* =========================================================
-   MAIN CONTENT
-========================================================= */
-
-.dashboard-main {
-    width: 100%;
-
-    max-width: 1030px;
-
-    margin:
-        0 auto;
-
-    padding:
-        31px 32px 40px;
-}
-
-.page-heading {
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    margin-bottom: 22px;
-}
-
-.page-heading h2 {
-    margin:
-        0 0 5px;
-
-    color: #222;
-
-    font-size: 23px;
-}
-
-.page-heading p {
-    margin: 0;
-
-    color: #888;
-
-    font-size: 11px;
-}
-
-
-/* =========================================================
-   STATISTICS
-========================================================= */
-
-.cards {
-    display: grid;
-
-    grid-template-columns:
-        repeat(3, 1fr);
-
-    gap: 16px;
-
-    margin-bottom: 24px;
-}
-
-.stat-card {
-    min-height: 112px;
-
-    padding: 18px;
-
-    background: #fff;
-
-    border:
-        1px solid #e7e7e7;
-
-    border-radius: 11px;
-
-    box-shadow:
-        0 3px 12px
-        rgba(0, 0, 0, 0.025);
-}
-
-.stat-card span {
-    display: block;
-
-    margin-bottom: 11px;
-
-    color: #777;
-
-    font-size: 11px;
-}
-
-.stat-card strong {
-    display: block;
-
-    margin-bottom: 5px;
-
-    color: #111;
-
-    font-size: 27px;
-
-    line-height: 1;
-}
-
-.stat-card small {
-    color: #999;
-
-    font-size: 9px;
-}
-
-
-/* =========================================================
-   PAYMENT SUMMARY
-========================================================= */
-
-.payment-summary-card {
-    min-height: 92px;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 14px;
-
-    padding:
-        14px 20px;
-
-    margin-bottom: 18px;
-
-    background: #fff;
-
-    border:
-        1px solid #e7e7e7;
-
-    border-radius: 11px;
-}
-
-.summary-icon {
-    width: 38px;
-    height: 38px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    flex-shrink: 0;
-
-    border-radius: 10px;
-
-    background: #fff1e5;
-
-    color: #f28c28;
-
-    font-size: 17px;
-
-    font-weight: 800;
-}
-
-.summary-content {
-    flex: 1;
-
-    min-width: 0;
-}
-
-.summary-content h3 {
-    margin:
-        0 0 4px;
-
-    font-size: 15px;
-}
-
-.summary-content p {
-    max-width: 470px;
-
-    margin: 0;
-
-    color: #777;
-
-    font-size: 10px;
-
-    line-height: 1.5;
-}
-
-.view-payment-button {
-    min-width: 130px;
-
-    height: 38px;
-
-    padding:
-        0 18px;
-
-    border: none;
-
-    border-radius: 8px;
-
-    background: #333;
-
-    color: #fff;
-
-    font-size: 10px;
-
-    font-weight: 700;
-
-    cursor: pointer;
-
-    transition:
-        background 0.2s ease,
-        transform 0.2s ease;
-}
-
-.view-payment-button:hover {
-    background: #222;
-
-    transform: translateY(-1px);
-}
-
-
-/* =========================================================
-   ADMIN ACCOUNT
-========================================================= */
-
-.system-card {
-    padding:
-        20px;
-
-    background: #fff;
-
-    border:
-        1px solid #e7e7e7;
-
-    border-radius: 11px;
-}
-
-.system-card h3 {
-    margin:
-        0 0 14px;
-
-    font-size: 15px;
-}
-
-.account-row {
-    min-height: 37px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    border-bottom:
-        1px solid #f0f0f0;
+    border-bottom: 1px solid #edf0f3;
 }
 
 .account-row:last-child {
     border-bottom: none;
 }
 
-.account-row span {
-    color: #888;
+.account-row span:first-child {
+    color: #64748b;
 
-    font-size: 10px;
+    font-size: 9px;
 }
 
-.account-row strong {
-    color: #333;
-
-    font-size: 10px;
-}
-
-
-/* =========================================================
-   PAYMENT COUNT
-========================================================= */
-
-.payment-count {
-    min-width: 72px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    gap: 5px;
-
-    padding:
-        7px 11px;
-
-    border-radius: 20px;
-
-    background: #fff1e5;
-
-    color: #f28c28;
+.account-row span:last-child {
+    color: #111827;
 
     font-size: 9px;
 
-    font-weight: 700;
-}
+    font-weight: 600;
 
-.payment-count strong {
-    font-size: 11px;
-}
-
-
-/* =========================================================
-   PAYMENT LOADING
-========================================================= */
-
-.payment-loading {
-    min-height: 230px;
-
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-
-    justify-content: center;
-
-    background: #fff;
-
-    border:
-        1px solid #e7e7e7;
-
-    border-radius: 11px;
-
-    color: #777;
-
-    font-size: 11px;
-}
-
-.loading-spinner {
-    width: 25px;
-    height: 25px;
-
-    margin-bottom: 12px;
-
-    border:
-        3px solid #eee;
-
-    border-top-color:
-        #f28c28;
-
-    border-radius: 50%;
-
-    animation:
-        spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-
-/* =========================================================
-   EMPTY PAYMENT
-========================================================= */
-
-.empty-payment-card {
-    min-height: 260px;
-
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-
-    justify-content: center;
-
-    text-align: center;
-
-    padding: 30px;
-
-    background: #fff;
-
-    border:
-        1px solid #e7e7e7;
-
-    border-radius: 11px;
-}
-
-.empty-icon {
-    width: 48px;
-    height: 48px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    margin-bottom: 13px;
-
-    border-radius: 50%;
-
-    background: #e8f8ef;
-
-    color: #16804a;
-
-    font-size: 22px;
-
-    font-weight: 800;
-}
-
-.empty-payment-card h3 {
-    margin:
-        0 0 7px;
-
-    font-size: 16px;
-}
-
-.empty-payment-card p {
-    max-width: 400px;
-
-    margin:
-        0 0 20px;
-
-    color: #888;
-
-    font-size: 10px;
-
-    line-height: 1.6;
-}
-
-.secondary-button {
-    min-width: 120px;
-
-    height: 36px;
-
-    border:
-        1px solid #ddd;
-
-    border-radius: 7px;
-
-    background: #fff;
-
-    color: #444;
-
-    font-size: 10px;
-
-    font-weight: 700;
-
-    cursor: pointer;
-}
-
-.secondary-button:hover {
-    background: #f8f8f8;
-}
-
-
-/* =========================================================
-   PAYMENT LIST
-========================================================= */
-
-.payment-list {
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 18px;
-}
-
-
-/* =========================================================
-   PAYMENT CARD
-========================================================= */
-
-.payment-card {
-    padding: 20px;
-
-    background: #fff;
-
-    border:
-        1px solid #e4e4e4;
-
-    border-radius: 11px;
-
-    box-shadow:
-        0 3px 12px
-        rgba(0, 0, 0, 0.025);
-}
-
-.payment-card-header {
-    display: flex;
-
-    align-items: flex-start;
-
-    justify-content: space-between;
-
-    gap: 15px;
-
-    padding-bottom: 15px;
-
-    border-bottom:
-        1px solid #eee;
-}
-
-.booking-label {
-    display: block;
-
-    margin-bottom: 5px;
-
-    color: #999;
-
-    font-size: 8px;
-
-    letter-spacing: 0.7px;
-}
-
-.payment-card-header h3 {
-    margin: 0;
-
-    font-size: 17px;
-}
-
-.status-badge {
-    padding:
-        6px 10px;
-
-    border-radius: 20px;
-
-    background: #fff1e5;
-
-    color: #f28c28;
-
-    font-size: 8px;
-
-    font-weight: 800;
-
-    white-space: nowrap;
-}
-
-
-/* =========================================================
-   PAYMENT DETAILS
-========================================================= */
-
-.payment-details {
-    display: grid;
-
-    grid-template-columns:
-        repeat(3, 1fr);
-
-    gap:
-        18px 25px;
-
-    padding:
-        18px 0;
-
-    border-bottom:
-        1px solid #eee;
-}
-
-.payment-detail {
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 5px;
-}
-
-.payment-detail span {
-    color: #999;
-
-    font-size: 9px;
-}
-
-.payment-detail strong {
-    color: #333;
-
-    font-size: 10px;
-}
-
-
-/* =========================================================
-   PAYMENT PROOF
-========================================================= */
-
-.payment-proof-section {
-    padding-top: 17px;
-}
-
-.payment-proof-section h4 {
-    margin:
-        0 0 10px;
-
-    font-size: 12px;
-}
-
-.payment-proof-image {
-    width: 160px;
-    max-height: 230px;
-
-    object-fit: contain;
-
-    display: block;
-
-    border:
-        1px solid #ddd;
-
-    border-radius: 7px;
-
-    cursor: pointer;
-}
-
-.no-proof {
-    width: 180px;
-
-    padding: 25px 10px;
-
-    text-align: center;
-
-    border:
-        1px dashed #ccc;
-
-    border-radius: 7px;
-
-    color: #999;
-
-    font-size: 9px;
-}
-
-
-/* =========================================================
-   PAYMENT ACTIONS
-========================================================= */
-
-.payment-actions {
-    display: flex;
-
-    justify-content: flex-end;
-
-    gap: 10px;
-
-    margin-top: 18px;
-}
-
-.reject-button,
-.verify-button {
-    min-height: 35px;
-
-    padding:
-        0 16px;
-
-    border: none;
-
-    border-radius: 7px;
-
-    font-size: 10px;
-
-    font-weight: 700;
-
-    cursor: pointer;
-
-    transition:
-        opacity 0.2s ease,
-        transform 0.2s ease;
-}
-
-.reject-button:hover,
-.verify-button:hover {
-    transform: translateY(-1px);
-}
-
-.reject-button:disabled,
-.verify-button:disabled {
-    opacity: 0.55;
-
-    cursor: not-allowed;
-
-    transform: none;
-}
-
-.reject-button {
-    background: #fff0f0;
-
-    color: #d32f2f;
-}
-
-.verify-button {
-    background: #e8f8ef;
-
-    color: #16804a;
-}
-
-
-/* =========================================================
-   NOTIFICATION
-========================================================= */
-
-.notification {
-    position: fixed;
-
-    top: 22px;
-    right: 22px;
-
-    z-index: 5000;
-
-    min-width: 300px;
-
-    max-width: 430px;
-
-    min-height: 45px;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 10px;
-
-    padding:
-        0 13px;
-
-    background: #fff;
-
-    border-radius: 9px;
-
-    box-shadow:
-        0 10px 30px
-        rgba(0, 0, 0, 0.13);
-
-    font-size: 10px;
-
-    font-weight: 700;
-}
-
-.notification.error {
-    border-left:
-        4px solid #d32f2f;
-
-    color: #d32f2f;
-}
-
-.notification.success {
-    border-left:
-        4px solid #16804a;
-
-    color: #16804a;
-}
-
-.notification-icon {
-    width: 20px;
-    height: 20px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    border-radius: 50%;
-
-    background: #f5f5f5;
-
-    font-weight: 900;
-}
-
-.notification button {
-    margin-left: auto;
-
-    border: none;
-
-    background: transparent;
-
-    color: #999;
-
-    font-size: 16px;
-
-    cursor: pointer;
-}
-
-
-/* =========================================================
-   CONFIRMATION MODAL
-========================================================= */
-
-.modal-overlay {
-    position: fixed;
-
-    inset: 0;
-
-    z-index: 6000;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    padding: 20px;
-
-    background:
-        rgba(0, 0, 0, 0.35);
-
-    backdrop-filter:
-        blur(2px);
-}
-
-.confirm-modal {
-    width: min(
-        410px,
-        92vw
-    );
-
-    padding: 28px;
-
-    text-align: center;
-
-    background: #fff;
-
-    border-radius: 14px;
-
-    box-shadow:
-        0 20px 50px
-        rgba(0, 0, 0, 0.2);
-}
-
-.modal-icon {
-    width: 48px;
-    height: 48px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    margin:
-        0 auto 15px;
-
-    border-radius: 50%;
-
-    font-size: 21px;
-
-    font-weight: 900;
-}
-
-.success-icon {
-    background: #e8f8ef;
-
-    color: #16804a;
-}
-
-.danger-icon {
-    background: #fff0f0;
-
-    color: #d32f2f;
-}
-
-.confirm-modal h3 {
-    margin:
-        0 0 10px;
-
-    color: #222;
-
-    font-size: 18px;
-}
-
-.confirm-modal p {
-    margin: 0;
-
-    color: #777;
-
-    font-size: 11px;
-
-    line-height: 1.6;
-}
-
-.confirm-modal-actions {
-    display: flex;
-
-    justify-content: center;
-
-    gap: 10px;
-
-    margin-top: 23px;
-}
-
-.modal-cancel,
-.modal-confirm {
-    min-width: 105px;
-
-    height: 36px;
-
-    padding:
-        0 14px;
-
-    border-radius: 7px;
-
-    font-size: 10px;
-
-    font-weight: 700;
-
-    cursor: pointer;
-}
-
-.modal-cancel {
-    border:
-        1px solid #ddd;
-
-    background: #fff;
-
-    color: #555;
-}
-
-.modal-confirm {
-    border: none;
-
-    color: #fff;
-}
-
-.modal-confirm.danger {
-    background: #d32f2f;
-}
-
-.modal-confirm.success {
-    background: #16804a;
-}
-
-.modal-cancel:disabled,
-.modal-confirm:disabled {
-    opacity: 0.55;
-
-    cursor: not-allowed;
+    text-align: right;
 }
 
 
 /* =========================================================
    FOOTER
-========================================================= */
+   ========================================================= */
 
-.dashboard-footer {
-    min-height: 55px;
+.admin-footer,
+.dashboard-footer,
+.footer {
+    width: 100%;
+
+    min-height: 43px;
 
     margin-top: auto;
 
-    padding:
-        0 32px;
+    padding: 0 28px;
 
     display: flex;
 
@@ -2479,246 +858,198 @@ body {
 
     justify-content: space-between;
 
-    background: #fff;
+    background: #ffffff;
 
-    border-top:
-        1px solid #e5e5e5;
+    border-top: 1px solid #e5e7eb;
 
-    color: #999;
+    color: #7b8794;
+
+    font-size: 8px;
+}
+
+
+/* =========================================================
+   STAFF MANAGEMENT PAGE SUPPORT
+   ========================================================= */
+
+.staff-management,
+.staff-page {
+    width: 100%;
+}
+
+.staff-table {
+    width: 100%;
+
+    margin-top: 20px;
+
+    overflow: hidden;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 11px;
+}
+
+.staff-table table {
+    width: 100%;
+
+    border-collapse: collapse;
+}
+
+.staff-table th {
+    padding: 13px 15px;
+
+    background: #f8fafc;
+
+    color: #64748b;
 
     font-size: 9px;
+
+    font-weight: 700;
+
+    text-align: left;
+
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.staff-table td {
+    padding: 14px 15px;
+
+    color: #374151;
+
+    font-size: 9px;
+
+    border-bottom: 1px solid #edf0f3;
+}
+
+.staff-table tr:last-child td {
+    border-bottom: none;
 }
 
 
 /* =========================================================
-   LOADING SCREEN
-========================================================= */
+   RESPONSIVE - TABLET
+   ========================================================= */
 
-.dashboard-loading {
-    min-height: 100vh;
+@media (max-width: 1100px) {
 
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-
-    justify-content: center;
-
-    color: #777;
-
-    font-size: 12px;
-}
-
-
-/* =========================================================
-   TABLET
-========================================================= */
-
-@media (max-width: 900px) {
-
-    .sidebar {
-        width: 190px;
-    }
-
-    .dashboard-main {
-        padding:
-            25px 20px 35px;
-    }
-
-    .cards {
+    .stats-grid,
+    .dashboard-stats,
+    .stat-grid {
         grid-template-columns:
-            1fr;
+            repeat(2, minmax(0, 1fr));
     }
 
-    .payment-details {
-        grid-template-columns:
-            repeat(2, 1fr);
-    }
+    .dashboard-content,
+    .content-area,
+    .admin-content {
+        max-width: 100%;
 
+        padding-left: 25px;
+        padding-right: 25px;
+    }
 }
 
 
 /* =========================================================
-   MOBILE
-========================================================= */
+   RESPONSIVE - MOBILE
+   ========================================================= */
 
-@media (max-width: 650px) {
+@media (max-width: 700px) {
 
-    .admin-dashboard {
-        flex-direction: column;
+    .sidebar,
+    .admin-sidebar {
+        width: 175px;
+        min-width: 175px;
     }
 
-    .sidebar {
-        width: 100%;
+    .main-content,
+    .admin-main {
+        width: calc(100% - 175px);
 
-        min-height: auto;
-
-        padding: 12px;
-
-        flex-direction: row;
-
-        align-items: center;
-
-        gap: 8px;
-
-        overflow-x: auto;
+        margin-left: 175px;
     }
 
-    .brand-section {
-        display: none;
-    }
-
-    .sidebar-navigation {
-        flex-direction: row;
-
-        flex-shrink: 0;
-    }
-
-    .side-item {
-        width: auto;
-
-        min-width: max-content;
-
-        padding:
-            0 12px;
-    }
-
-    .sidebar-spacer {
-        display: none;
-    }
-
-    .logout-button {
-        width: auto;
-
-        min-width: 75px;
-
-        margin-left: auto;
-
-        flex-shrink: 0;
-    }
-
-    .dashboard-header {
-        height: 70px;
-
-        padding:
-            0 18px;
-    }
-
-    .dashboard-header h1 {
-        font-size: 18px;
-    }
-
-    .admin-badge {
-        display: none;
-    }
-
-    .dashboard-main {
-        padding:
-            22px 15px 30px;
-    }
-
-    .page-heading {
-        align-items: flex-start;
-    }
-
-    .page-heading h2 {
-        font-size: 20px;
-    }
-
-    .payment-summary-card {
-        flex-wrap: wrap;
-    }
-
-    .summary-content {
-        min-width:
-            calc(100% - 55px);
-    }
-
-    .view-payment-button {
-        width: 100%;
-    }
-
-    .payment-details {
+    .stats-grid,
+    .dashboard-stats,
+    .stat-grid {
         grid-template-columns: 1fr;
     }
 
-    .payment-actions {
+    .verification-card,
+    .payment-verification-card,
+    .payment-card {
         flex-direction: column;
+
+        align-items: stretch;
     }
 
-    .reject-button,
-    .verify-button {
+    .verification-card-content,
+    .payment-card-content {
+        flex: none;
+
         width: 100%;
     }
 
-    .notification {
-        left: 15px;
-
-        right: 15px;
-
-        min-width: auto;
+    .admin-header,
+    .dashboard-header,
+    .topbar {
+        padding: 0 18px;
     }
 
-    .dashboard-footer {
-        padding:
-            15px;
-
-        flex-direction: column;
-
-        gap: 5px;
+    .dashboard-content,
+    .content-area,
+    .admin-content {
+        padding: 25px 18px 40px;
     }
-
 }
 
 
 /* =========================================================
    SMALL MOBILE
-========================================================= */
+   ========================================================= */
 
-@media (max-width: 400px) {
+@media (max-width: 480px) {
 
-    .dashboard-header {
-        padding:
-            0 14px;
+    .sidebar,
+    .admin-sidebar {
+        width: 155px;
+        min-width: 155px;
     }
 
-    .dashboard-main {
-        padding:
-            18px 12px 25px;
+    .main-content,
+    .admin-main {
+        width: calc(100% - 155px);
+
+        margin-left: 155px;
     }
 
-    .stat-card {
-        min-height: 105px;
+    .sidebar-header,
+    .sidebar-brand,
+    .brand {
+        padding-left: 15px;
+        padding-right: 15px;
     }
 
-    .payment-card {
-        padding: 15px;
+    .sidebar-navigation,
+    .sidebar-nav,
+    .sidebar-menu,
+    .nav-links {
+        padding-left: 7px;
+        padding-right: 7px;
     }
 
-    .payment-card-header {
-        flex-direction: column;
+    .side-item,
+    .nav-item,
+    .nav-link {
+        padding-left: 10px;
+        padding-right: 10px;
     }
 
-    .status-badge {
-        align-self: flex-start;
+    .admin-header h1,
+    .dashboard-header h1,
+    .topbar h1 {
+        font-size: 17px;
     }
-
-}
-.stat-card-clickable {
-    width: 100%;
-    text-align: left;
-    font-family: inherit;
-    cursor: pointer;
-    transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease,
-        border-color 0.2s ease;
-}
-
-.stat-card-clickable:hover {
-    transform: translateY(-2px);
-    border-color: #ffd5bd;
-    box-shadow:
-        0 8px 20px rgba(0, 0, 0, 0.07);
 }

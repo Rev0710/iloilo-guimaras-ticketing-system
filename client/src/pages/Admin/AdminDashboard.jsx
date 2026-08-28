@@ -84,6 +84,21 @@ const AdminDashboard = () => {
         useState(null);
 
     // =========================================================
+    // STAFF MANAGEMENT
+    // =========================================================
+
+    const [staff, setStaff] = useState([]);
+    const [staffLoading, setStaffLoading] = useState(false);
+    const [staffActionLoading, setStaffActionLoading] = useState(null);
+    const [showStaffModal, setShowStaffModal] = useState(false);
+    const [staffForm, setStaffForm] = useState({
+        name: "",
+        email: "",
+        password: "",
+        confirmPassword: ""
+    });
+
+    // =========================================================
     // SHOW NOTIFICATION
     // =========================================================
 
@@ -750,6 +765,336 @@ const AdminDashboard = () => {
         };
 
     // =========================================================
+    // LOAD STAFF
+    // =========================================================
+
+    const loadStaff = async () => {
+        const token = localStorage.getItem("adminToken");
+        if (!token) return;
+
+        setStaffLoading(true);
+
+        try {
+            const response = await fetch(
+                `${API_URL}/admin/staff`,
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json"
+                    }
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.message || "Unable to load staff accounts."
+                );
+            }
+
+            setStaff(data.staff || []);
+        } catch (error) {
+            console.error("Load staff error:", error);
+            showNotification(
+                error.message || "Unable to load staff accounts.",
+                "error"
+            );
+        } finally {
+            setStaffLoading(false);
+        }
+    };
+
+    // =========================================================
+    // OPEN ADD STAFF
+    // =========================================================
+
+    const openAddStaff = () => {
+        setStaffForm({
+            name: "",
+            email: "",
+            password: "",
+            confirmPassword: ""
+        });
+        setShowStaffModal(true);
+    };
+
+    // =========================================================
+    // CLOSE STAFF MODAL
+    // =========================================================
+
+    const closeStaffModal = () => {
+        if (staffActionLoading) return;
+        setShowStaffModal(false);
+        setStaffForm({
+            name: "",
+            email: "",
+            password: "",
+            confirmPassword: ""
+        });
+    };
+
+    // =========================================================
+    // STAFF FORM CHANGE
+    // =========================================================
+
+    const handleStaffFormChange = (e) => {
+        const { name, value } = e.target;
+        setStaffForm(previous => ({
+            ...previous,
+            [name]: value
+        }));
+    };
+
+    // =========================================================
+    // CREATE STAFF
+    // =========================================================
+
+    const handleCreateStaff = async (e) => {
+        e.preventDefault();
+
+        const token = localStorage.getItem("adminToken");
+        if (!token) return;
+
+        if (
+            !staffForm.name.trim() ||
+            !staffForm.email.trim() ||
+            !staffForm.password ||
+            !staffForm.confirmPassword
+        ) {
+            showNotification(
+                "Please complete all required fields.",
+                "error"
+            );
+            return;
+        }
+
+        if (staffForm.password !== staffForm.confirmPassword) {
+            showNotification("Passwords do not match.", "error");
+            return;
+        }
+
+        if (staffForm.password.length < 6) {
+            showNotification(
+                "Password must be at least 6 characters.",
+                "error"
+            );
+            return;
+        }
+
+        setStaffActionLoading("create");
+
+        try {
+            const response = await fetch(
+                `${API_URL}/admin/staff`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                        Accept: "application/json"
+                    },
+                    body: JSON.stringify({
+                        name: staffForm.name.trim(),
+                        email: staffForm.email.trim(),
+                        password: staffForm.password,
+                        confirmPassword: staffForm.confirmPassword
+                    })
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.message || "Unable to create staff account."
+                );
+            }
+
+            showNotification(
+                "Staff account created successfully.",
+                "success"
+            );
+
+            setShowStaffModal(false);
+            setStaffForm({
+                name: "",
+                email: "",
+                password: "",
+                confirmPassword: ""
+            });
+
+            await loadStaff();
+        } catch (error) {
+            console.error("Create staff error:", error);
+            showNotification(
+                error.message || "Unable to create staff account.",
+                "error"
+            );
+        } finally {
+            setStaffActionLoading(null);
+        }
+    };
+
+    // =========================================================
+    // ACTIVATE STAFF
+    // =========================================================
+
+    const handleActivateStaff = async (staffId) => {
+        const token = localStorage.getItem("adminToken");
+        if (!token) return;
+
+        setStaffActionLoading(staffId);
+
+        try {
+            const response = await fetch(
+                `${API_URL}/admin/staff/${staffId}/activate`,
+                {
+                    method: "PUT",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json"
+                    }
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.message || "Unable to activate staff account."
+                );
+            }
+
+            showNotification(
+                "Staff account activated successfully.",
+                "success"
+            );
+
+            await loadStaff();
+        } catch (error) {
+            console.error("Activate staff error:", error);
+            showNotification(
+                error.message || "Unable to activate staff account.",
+                "error"
+            );
+        } finally {
+            setStaffActionLoading(null);
+        }
+    };
+
+    // =========================================================
+    // DEACTIVATE STAFF
+    // =========================================================
+
+    const handleDeactivateStaff = async (staffId) => {
+        const token = localStorage.getItem("adminToken");
+        if (!token) return;
+
+        setStaffActionLoading(staffId);
+
+        try {
+            const response = await fetch(
+                `${API_URL}/admin/staff/${staffId}/deactivate`,
+                {
+                    method: "PUT",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json"
+                    }
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.message || "Unable to deactivate staff account."
+                );
+            }
+
+            showNotification(
+                "Staff account deactivated successfully.",
+                "success"
+            );
+
+            await loadStaff();
+        } catch (error) {
+            console.error("Deactivate staff error:", error);
+            showNotification(
+                error.message || "Unable to deactivate staff account.",
+                "error"
+            );
+        } finally {
+            setStaffActionLoading(null);
+        }
+    };
+
+    // =========================================================
+    // DELETE STAFF
+    // =========================================================
+
+    const handleDeleteStaff = async (staffId) => {
+        const token = localStorage.getItem("adminToken");
+        if (!token) return;
+
+        const confirmed = window.confirm(
+            "Are you sure you want to delete this staff account?"
+        );
+
+        if (!confirmed) return;
+
+        setStaffActionLoading(staffId);
+
+        try {
+            const response = await fetch(
+                `${API_URL}/admin/staff/${staffId}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json"
+                    }
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.message || "Unable to delete staff account."
+                );
+            }
+
+            showNotification(
+                "Staff account deleted successfully.",
+                "success"
+            );
+
+            await loadStaff();
+        } catch (error) {
+            console.error("Delete staff error:", error);
+            showNotification(
+                error.message || "Unable to delete staff account.",
+                "error"
+            );
+        } finally {
+            setStaffActionLoading(null);
+        }
+    };
+
+    // =========================================================
+    // LOAD STAFF WHEN STAFF VIEW OPENS
+    // =========================================================
+
+    useEffect(() => {
+        if (activeView === "staff") {
+            loadStaff();
+        }
+    }, [activeView]);
+
+    // =========================================================
     // FORMAT DATE
     // =========================================================
 
@@ -995,6 +1340,19 @@ const AdminDashboard = () => {
 
                     </button>
 
+
+                    <button
+                        className={
+                            `side-item ${
+                                activeView === "staff"
+                                    ? "active"
+                                    : ""
+                            }`
+                        }
+                        onClick={() => handleViewChange("staff")}
+                    >
+                        <span>Staff Management</span>
+                    </button>
                 </nav>
 
 
@@ -2042,6 +2400,172 @@ const AdminDashboard = () => {
 
 
                 {/* =================================================
+                    STAFF MANAGEMENT VIEW
+                ================================================= */}
+
+                {activeView === "staff" && (
+                    <div className="staff-page">
+
+                        <div className="staff-header">
+                            <div>
+                                <span className="eyebrow">ADMINISTRATION</span>
+                                <h2>Staff Management</h2>
+                                <p>
+                                    Manage staff accounts that can access the
+                                    staff ticket scanner.
+                                </p>
+                            </div>
+
+                            <div className="staff-header-actions">
+                                <button
+                                    type="button"
+                                    className="refresh-button"
+                                    onClick={loadStaff}
+                                    disabled={staffLoading}
+                                >
+                                    {staffLoading ? "Refreshing..." : "↻ Refresh"}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className="staff-add-button"
+                                    onClick={openAddStaff}
+                                >
+                                    + Add Staff
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="staff-summary-card">
+                            <div>
+                                <span>Total Staff</span>
+                                <strong>{staff.length}</strong>
+                            </div>
+                            <div>
+                                <span>Active</span>
+                                <strong>
+                                    {staff.filter(item => item.isActive).length}
+                                </strong>
+                            </div>
+                            <div>
+                                <span>Inactive</span>
+                                <strong>
+                                    {staff.filter(item => !item.isActive).length}
+                                </strong>
+                            </div>
+                        </div>
+
+                        {staffLoading ? (
+                            <div className="staff-loading">
+                                <div className="loading-spinner"></div>
+                                <p>Loading staff accounts...</p>
+                            </div>
+                        ) : staff.length === 0 ? (
+                            <div className="empty-staff-card">
+                                <div className="empty-staff-icon">+</div>
+                                <h3>No Staff Accounts</h3>
+                                <p>
+                                    Add a staff account to allow personnel to
+                                    log in and scan ferry tickets.
+                                </p>
+                                <button
+                                    type="button"
+                                    className="staff-add-button"
+                                    onClick={openAddStaff}
+                                >
+                                    + Add First Staff
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="staff-table-card">
+                                <div className="staff-table-wrap">
+                                    <table className="staff-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Email</th>
+                                                <th>Role</th>
+                                                <th>Status</th>
+                                                <th>Created</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {staff.map(item => {
+                                                const id = item._id || item.id;
+                                                const busy = staffActionLoading === id;
+
+                                                return (
+                                                    <tr key={id}>
+                                                        <td>
+                                                            <strong>{item.name || "—"}</strong>
+                                                        </td>
+                                                        <td>{item.email || "—"}</td>
+                                                        <td>
+                                                            <span className="staff-role">
+                                                                {item.role || "staff"}
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span
+                                                                className={`staff-status ${
+                                                                    item.isActive
+                                                                        ? "active"
+                                                                        : "inactive"
+                                                                }`}
+                                                            >
+                                                                {item.isActive ? "ACTIVE" : "INACTIVE"}
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            {item.createdAt
+                                                                ? formatDate(item.createdAt)
+                                                                : "—"}
+                                                        </td>
+                                                        <td>
+                                                            <div className="staff-actions">
+                                                                {item.isActive ? (
+                                                                    <button
+                                                                        type="button"
+                                                                        className="staff-action deactivate"
+                                                                        disabled={busy}
+                                                                        onClick={() => handleDeactivateStaff(id)}
+                                                                    >
+                                                                        {busy ? "..." : "Deactivate"}
+                                                                    </button>
+                                                                ) : (
+                                                                    <button
+                                                                        type="button"
+                                                                        className="staff-action activate"
+                                                                        disabled={busy}
+                                                                        onClick={() => handleActivateStaff(id)}
+                                                                    >
+                                                                        {busy ? "..." : "Activate"}
+                                                                    </button>
+                                                                )}
+
+                                                                <button
+                                                                    type="button"
+                                                                    className="staff-action delete"
+                                                                    disabled={busy}
+                                                                    onClick={() => handleDeleteStaff(id)}
+                                                                >
+                                                                    {busy ? "..." : "Delete"}
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* =================================================
                     FOOTER
                 ================================================= */}
 
@@ -2059,6 +2583,117 @@ const AdminDashboard = () => {
 
             </section>
 
+
+            {/* =====================================================
+                ADD STAFF MODAL
+            ===================================================== */}
+
+            {showStaffModal && (
+                <div className="modal-overlay" onClick={closeStaffModal}>
+                    <div
+                        className="staff-modal"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="staff-modal-header">
+                            <div>
+                                <span className="modal-eyebrow">STAFF ACCOUNT</span>
+                                <h3>Add Staff</h3>
+                                <p>
+                                    Create an account for staff ticket verification.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                className="staff-modal-close"
+                                onClick={closeStaffModal}
+                                disabled={!!staffActionLoading}
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleCreateStaff}>
+                            <div className="staff-form-group">
+                                <label htmlFor="staff-name">Full Name</label>
+                                <input
+                                    id="staff-name"
+                                    name="name"
+                                    type="text"
+                                    value={staffForm.name}
+                                    onChange={handleStaffFormChange}
+                                    placeholder="Enter staff name"
+                                    autoComplete="name"
+                                    disabled={!!staffActionLoading}
+                                />
+                            </div>
+
+                            <div className="staff-form-group">
+                                <label htmlFor="staff-email">Email Address</label>
+                                <input
+                                    id="staff-email"
+                                    name="email"
+                                    type="email"
+                                    value={staffForm.email}
+                                    onChange={handleStaffFormChange}
+                                    placeholder="Enter staff email"
+                                    autoComplete="email"
+                                    disabled={!!staffActionLoading}
+                                />
+                            </div>
+
+                            <div className="staff-form-grid">
+                                <div className="staff-form-group">
+                                    <label htmlFor="staff-password">Password</label>
+                                    <input
+                                        id="staff-password"
+                                        name="password"
+                                        type="password"
+                                        value={staffForm.password}
+                                        onChange={handleStaffFormChange}
+                                        placeholder="Minimum 6 characters"
+                                        autoComplete="new-password"
+                                        disabled={!!staffActionLoading}
+                                    />
+                                </div>
+
+                                <div className="staff-form-group">
+                                    <label htmlFor="staff-confirm-password">Confirm Password</label>
+                                    <input
+                                        id="staff-confirm-password"
+                                        name="confirmPassword"
+                                        type="password"
+                                        value={staffForm.confirmPassword}
+                                        onChange={handleStaffFormChange}
+                                        placeholder="Repeat password"
+                                        autoComplete="new-password"
+                                        disabled={!!staffActionLoading}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="staff-modal-actions">
+                                <button
+                                    type="button"
+                                    className="modal-cancel"
+                                    onClick={closeStaffModal}
+                                    disabled={!!staffActionLoading}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="modal-confirm success"
+                                    disabled={!!staffActionLoading}
+                                >
+                                    {staffActionLoading === "create"
+                                        ? "Creating..."
+                                        : "Create Staff"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* =====================================================
                 NOTIFICATION
@@ -4838,8 +5473,350 @@ const AdminDashboard = () => {
 
 
                 /* =================================================
+                   STAFF MANAGEMENT
+                ================================================= */
+
+                .staff-page {
+                    width: 100%;
+                    max-width: 1100px;
+                    margin: 0 auto;
+                }
+
+                .staff-header {
+                    display: flex;
+                    align-items: flex-start;
+                    justify-content: space-between;
+                    gap: 20px;
+                    margin-bottom: 22px;
+                }
+
+                .staff-header h2 {
+                    margin: 0 0 6px;
+                    color: #222;
+                    font-size: 25px;
+                    font-weight: 800;
+                    letter-spacing: -0.6px;
+                }
+
+                .staff-header p {
+                    margin: 0;
+                    color: #888;
+                    font-size: 11px;
+                    line-height: 1.5;
+                }
+
+                .staff-header-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 9px;
+                    flex-shrink: 0;
+                }
+
+                .staff-add-button {
+                    min-height: 37px;
+                    padding: 0 16px;
+                    border: none;
+                    border-radius: 8px;
+                    background: #f28c28;
+                    color: #ffffff;
+                    font-size: 10px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                }
+
+                .staff-add-button:hover {
+                    background: #df7818;
+                    transform: translateY(-1px);
+                }
+
+                .staff-summary-card {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 1px;
+                    margin-bottom: 18px;
+                    overflow: hidden;
+                    background: #e8e8e8;
+                    border: 1px solid #e8e8e8;
+                    border-radius: 12px;
+                }
+
+                .staff-summary-card > div {
+                    min-height: 85px;
+                    padding: 17px 20px;
+                    background: #ffffff;
+                }
+
+                .staff-summary-card span {
+                    display: block;
+                    margin-bottom: 7px;
+                    color: #888;
+                    font-size: 9px;
+                }
+
+                .staff-summary-card strong {
+                    color: #222;
+                    font-size: 23px;
+                }
+
+                .staff-loading,
+                .empty-staff-card {
+                    min-height: 280px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-direction: column;
+                    padding: 40px 25px;
+                    background: #ffffff;
+                    border: 1px solid #e5e5e5;
+                    border-radius: 13px;
+                    text-align: center;
+                }
+
+                .staff-loading p,
+                .empty-staff-card p {
+                    margin: 12px 0 18px;
+                    color: #888;
+                    font-size: 10px;
+                    line-height: 1.5;
+                }
+
+                .empty-staff-icon {
+                    width: 54px;
+                    height: 54px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin-bottom: 13px;
+                    border-radius: 50%;
+                    background: #fff0df;
+                    color: #f28c28;
+                    font-size: 25px;
+                    font-weight: 800;
+                }
+
+                .empty-staff-card h3 {
+                    margin: 0;
+                    color: #222;
+                    font-size: 16px;
+                }
+
+                .staff-table-card {
+                    overflow: hidden;
+                    background: #ffffff;
+                    border: 1px solid #e5e5e5;
+                    border-radius: 13px;
+                }
+
+                .staff-table-wrap {
+                    width: 100%;
+                    overflow-x: auto;
+                }
+
+                .staff-table {
+                    width: 100%;
+                    min-width: 760px;
+                    border-collapse: collapse;
+                }
+
+                .staff-table th {
+                    padding: 14px 16px;
+                    background: #fafafa;
+                    color: #777;
+                    border-bottom: 1px solid #e5e5e5;
+                    text-align: left;
+                    font-size: 9px;
+                    font-weight: 800;
+                    text-transform: uppercase;
+                    letter-spacing: 0.4px;
+                }
+
+                .staff-table td {
+                    padding: 14px 16px;
+                    color: #333;
+                    border-bottom: 1px solid #f1f1f1;
+                    font-size: 10px;
+                    vertical-align: middle;
+                }
+
+                .staff-table tbody tr:last-child td {
+                    border-bottom: none;
+                }
+
+                .staff-table td strong {
+                    color: #222;
+                    font-size: 10px;
+                }
+
+                .staff-role {
+                    display: inline-flex;
+                    padding: 5px 8px;
+                    border-radius: 20px;
+                    background: #f5f5f5;
+                    color: #555;
+                    font-size: 8px;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                }
+
+                .staff-status {
+                    display: inline-flex;
+                    padding: 5px 8px;
+                    border-radius: 20px;
+                    font-size: 8px;
+                    font-weight: 800;
+                }
+
+                .staff-status.active {
+                    background: #e9f8ef;
+                    color: #16804a;
+                }
+
+                .staff-status.inactive {
+                    background: #fff0f0;
+                    color: #d32f2f;
+                }
+
+                .staff-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                }
+
+                .staff-action {
+                    min-height: 30px;
+                    padding: 0 9px;
+                    border: none;
+                    border-radius: 6px;
+                    font-size: 8px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                }
+
+                .staff-action.activate {
+                    background: #e9f8ef;
+                    color: #16804a;
+                }
+
+                .staff-action.deactivate {
+                    background: #fff7df;
+                    color: #a46f00;
+                }
+
+                .staff-action.delete {
+                    background: #fff0f0;
+                    color: #d32f2f;
+                }
+
+                .staff-action:hover:not(:disabled) {
+                    transform: translateY(-1px);
+                }
+
+                .staff-action:disabled {
+                    opacity: 0.55;
+                    cursor: not-allowed;
+                }
+
+                .staff-modal {
+                    width: 100%;
+                    max-width: 560px;
+                    padding: 25px;
+                    background: #ffffff;
+                    border-radius: 15px;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+                }
+
+                .staff-modal-header {
+                    display: flex;
+                    align-items: flex-start;
+                    justify-content: space-between;
+                    gap: 15px;
+                    margin-bottom: 20px;
+                }
+
+                .staff-modal-header h3 {
+                    margin: 0 0 5px;
+                    color: #222;
+                    font-size: 20px;
+                }
+
+                .staff-modal-header p {
+                    margin: 0;
+                    color: #888;
+                    font-size: 10px;
+                    line-height: 1.5;
+                }
+
+                .staff-modal-close {
+                    width: 30px;
+                    height: 30px;
+                    flex-shrink: 0;
+                    border: none;
+                    border-radius: 7px;
+                    background: #f5f5f5;
+                    color: #777;
+                    font-size: 20px;
+                    cursor: pointer;
+                }
+
+                .staff-modal-close:hover {
+                    background: #eeeeee;
+                }
+
+                .staff-form-grid {
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 12px;
+                }
+
+                .staff-form-group {
+                    margin-bottom: 14px;
+                }
+
+                .staff-form-group label {
+                    display: block;
+                    margin-bottom: 6px;
+                    color: #555;
+                    font-size: 9px;
+                    font-weight: 700;
+                }
+
+                .staff-form-group input {
+                    width: 100%;
+                    height: 40px;
+                    padding: 0 11px;
+                    border: 1px solid #dddddd;
+                    border-radius: 8px;
+                    outline: none;
+                    background: #ffffff;
+                    color: #222;
+                    font-family: inherit;
+                    font-size: 10px;
+                    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+                }
+
+                .staff-form-group input:focus {
+                    border-color: #f28c28;
+                    box-shadow: 0 0 0 3px rgba(242,140,40,0.1);
+                }
+
+                .staff-form-group input:disabled {
+                    background: #f7f7f7;
+                    cursor: not-allowed;
+                }
+
+                .staff-modal-actions {
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 9px;
+                    margin-top: 7px;
+                }
+
+                /* =================================================
                    TABLET
                 ================================================= */
+
 
                 @media (max-width: 1000px) {
 
@@ -4966,6 +5943,41 @@ const AdminDashboard = () => {
                             auto;
                     }
 
+
+                    .staff-header {
+                        flex-direction: column;
+                    }
+
+                    .staff-header-actions {
+                        width: 100%;
+                    }
+
+                    .staff-header-actions .refresh-button,
+                    .staff-header-actions .staff-add-button {
+                        flex: 1;
+                    }
+
+                    .staff-summary-card {
+                        grid-template-columns: 1fr;
+                    }
+
+                    .staff-form-grid {
+                        grid-template-columns: 1fr;
+                        gap: 0;
+                    }
+
+                    .staff-modal {
+                        padding: 20px;
+                    }
+
+                    .staff-modal-actions {
+                        flex-direction: column;
+                    }
+
+                    .staff-modal-actions .modal-cancel,
+                    .staff-modal-actions .modal-confirm {
+                        width: 100%;
+                    }
 
                     .dashboard-header {
                         min-height:

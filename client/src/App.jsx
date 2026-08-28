@@ -1,36 +1,52 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
+
 import Trips from "./pages/Trips";
+
 import Dashboard from "./pages/passenger/Dashboard";
 import BookTrip from "./pages/passenger/BookTrip";
 import Payment from "./pages/passenger/Payment";
 import MayaPayment from "./pages/passenger/MayaPayment";
 import Confirmation from "./pages/passenger/confirmation";
 import Bookings from "./pages/Bookings";
-import LandingPage from "./pages/public/LandingPage";
+import Profile from "./pages/passenger/Profile";
 import Login from "./pages/passenger/Login";
 import Register from "./pages/passenger/Register";
+
+import LandingPage from "./pages/public/LandingPage";
+
 import AdminRegister from "./pages/Admin/AdminRegister";
 import AdminLogin from "./pages/Admin/AdminLogin";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
-import Profile from "./pages/passenger/Profile";
+
+import StaffLogin from "./pages/Staff/StaffLogin";
+import StaffScanner from "./pages/Staff/StaffScanner";
+
 
 function App() {
     return (
         <Routes>
 
-            {/* STUDENT LOGIN */}
+            {/* =========================================
+                PUBLIC LANDING PAGE
+            ========================================= */}
+            <Route
+                path="/"
+                element={<LandingPage />}
+            />
+
+
+            {/* =========================================
+                PASSENGER / TOURIST
+            ========================================= */}
+
+            {/* LOGIN */}
             <Route
                 path="/login"
                 element={<Login />}
             />
 
-            <Route
-            path="/"
-            element={<LandingPage />}
-            />
-
-            {/* STUDENT REGISTRATION */}
+            {/* REGISTER */}
             <Route
                 path="/register"
                 element={<Register />}
@@ -40,6 +56,12 @@ function App() {
             <Route
                 path="/dashboard"
                 element={<Dashboard />}
+            />
+
+            {/* PROFILE */}
+            <Route
+                path="/profile"
+                element={<Profile />}
             />
 
             {/* BOOKINGS */}
@@ -60,7 +82,7 @@ function App() {
                 element={<Payment />}
             />
 
-            {/* Maya PAYMENT */}
+            {/* MAYA PAYMENT */}
             <Route
                 path="/maya-payment"
                 element={<MayaPayment />}
@@ -71,32 +93,54 @@ function App() {
                 path="/confirmation"
                 element={<Confirmation />}
             />
-<Route
-    path="/admin-register"
-    element={<AdminRegister />}
-/>
 
-<Route
-    path="/admin-login"
-    element={<AdminLogin />}
-/>
+            {/* TRIPS */}
+            <Route
+                path="/trips"
+                element={<Trips />}
+            />
 
-<Route
-    path="/admin-dashboard"
-    element={<AdminDashboard />}
-/>
- <Route
-        path="/trips"
-        element={<Trips />}
-    />
 
-    <Route
-    path="/profile"
-    element={<Profile />}
-/>
+            {/* =========================================
+                ADMIN
+            ========================================= */}
+
+            {/* ADMIN REGISTER */}
+            <Route
+                path="/admin-register"
+                element={<AdminRegister />}
+            />
+
+            {/* ADMIN LOGIN */}
+            <Route
+                path="/admin-login"
+                element={<AdminLogin />}
+            />
+
+            {/* ADMIN DASHBOARD */}
+            <Route
+                path="/admin-dashboard"
+                element={<AdminDashboard />}
+            />
+
+
+            {/* =========================================
+                STAFF
+            ========================================= */}
+
+            {/* STAFF LOGIN */}
+            <Route
+                path="/staff/login"
+                element={<StaffLogin />}
+            />
+
+            {/* STAFF QR SCANNER */}
+            <Route
+                path="/staff/scanner"
+                element={<StaffScanner />}
+            />
 
         </Routes>
-        
     );
 }
 
