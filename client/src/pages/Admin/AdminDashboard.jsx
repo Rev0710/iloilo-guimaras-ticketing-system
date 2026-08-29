@@ -5,7 +5,6 @@ const API_URL = "http://localhost:5000/api";
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
-
     // =========================================================
     // ADMIN
     // =========================================================
@@ -83,6 +82,8 @@ const AdminDashboard = () => {
     const [confirmAction, setConfirmAction] =
         useState(null);
 
+    const [showLogoutModal, setShowLogoutModal] =
+    useState(false);
     // =========================================================
     // STAFF MANAGEMENT
     // =========================================================
@@ -502,23 +503,36 @@ const AdminDashboard = () => {
     };
 
     // =========================================================
-    // LOGOUT
-    // =========================================================
+        // OPEN LOGOUT CONFIRMATION
+        // =========================================================
 
-    const handleLogout = () => {
+        const handleLogout = () => {
 
-        localStorage.removeItem(
-            "adminToken"
-        );
+            setShowLogoutModal(true);
 
-        localStorage.removeItem(
-            "adminData"
-        );
+        };
 
-        navigate("/", {
-            replace: true
-        });
-    };
+        // =========================================================
+        // CONFIRM LOGOUT
+        // =========================================================
+
+        const confirmLogout = () => {
+
+            localStorage.removeItem(
+                "adminToken"
+            );
+
+            localStorage.removeItem(
+                "adminData"
+            );
+
+            setShowLogoutModal(false);
+
+            navigate("/", {
+                replace: true
+            });
+
+        };
 
     // =========================================================
     // OPEN CONFIRMATION MODAL
@@ -1259,10 +1273,61 @@ const AdminDashboard = () => {
     // MAIN UI
     // =========================================================
 
-    return (
+    
+   return(
 
-        <main className="admin-dashboard">
+   <main className="admin-dashboard">
 
+        {showLogoutModal && (
+
+    <div className="logout-modal-overlay">
+
+        <div className="logout-modal">
+
+            <div className="logout-modal-icon">
+                !
+            </div>
+
+            <div className="logout-modal-content">
+
+                <h2>
+                    Confirm Logout
+                </h2>
+
+                <p>
+                    Are you sure you want to log out
+                    of the Administrator Dashboard?
+                </p>
+
+            </div>
+
+            <div className="logout-modal-actions">
+
+                <button
+                    type="button"
+                    className="logout-cancel-button"
+                    onClick={() =>
+                        setShowLogoutModal(false)
+                    }
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="button"
+                    className="logout-confirm-button"
+                    onClick={confirmLogout}
+                >
+                    Log Out
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+)}
             {/* =====================================================
                 SIDEBAR
             ===================================================== */}
@@ -6696,6 +6761,361 @@ const AdminDashboard = () => {
     }
 
 }
+    /* =========================================================
+   LOGOUT CONFIRMATION MODAL
+   ========================================================= */
+
+/*
+ * IMPORTANT:
+ * The JSX uses .logout-modal-overlay.
+ * Do NOT change the JSX.
+ */
+
+.logout-modal-overlay {
+    position: fixed !important;
+
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+
+    width: 100vw !important;
+    height: 100vh !important;
+
+    display: flex !important;
+
+    align-items: center !important;
+    justify-content: center !important;
+
+    padding: 20px;
+
+    background: rgba(15, 23, 42, 0.48);
+
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+
+    z-index: 99999 !important;
+
+    animation:
+        logoutOverlayIn
+        0.2s ease-out;
+}
+
+
+/* =========================================================
+   LOGOUT MODAL CARD
+========================================================= */
+
+.logout-modal {
+    position: relative;
+
+    width: 100%;
+    max-width: 420px;
+
+    padding: 30px 30px 26px;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 16px;
+
+    box-shadow:
+        0 25px 60px rgba(0, 0, 0, 0.18),
+        0 8px 20px rgba(0, 0, 0, 0.08);
+
+    text-align: center;
+
+    animation:
+        logoutModalIn
+        0.25s ease-out;
+}
+
+
+/* =========================================================
+   LOGOUT ICON
+========================================================= */
+
+.logout-modal-icon {
+    width: 52px;
+    height: 52px;
+
+    margin: 0 auto 17px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #fff0f0;
+
+    color: #d32f2f;
+
+    font-size: 21px;
+
+    font-weight: 800;
+
+    border: 1px solid #ffe0e0;
+}
+
+
+/* =========================================================
+   LOGOUT CONTENT
+========================================================= */
+
+.logout-modal-content {
+    width: 100%;
+}
+
+.logout-modal-content h2 {
+    margin: 0 0 9px;
+
+    color: #1f2937;
+
+    font-size: 20px;
+
+    font-weight: 800;
+
+    line-height: 1.25;
+}
+
+.logout-modal-content p {
+    max-width: 330px;
+
+    margin: 0 auto;
+
+    color: #6b7280;
+
+    font-size: 11px;
+
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   LOGOUT ACTION BUTTONS
+========================================================= */
+
+.logout-modal-actions {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 10px;
+
+    margin-top: 25px;
+}
+
+
+/* =========================================================
+   CANCEL BUTTON
+========================================================= */
+
+.logout-cancel-button {
+    min-width: 115px;
+
+    height: 40px;
+
+    padding: 0 18px;
+
+    border: 1px solid #dfe3e8;
+
+    border-radius: 8px;
+
+    background: #ffffff;
+
+    color: #4b5563;
+
+    font-family: inherit;
+
+    font-size: 10px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.15s ease;
+}
+
+.logout-cancel-button:hover {
+    background: #f8fafc;
+
+    border-color: #cfd5dc;
+}
+
+.logout-cancel-button:active {
+    transform: scale(0.98);
+}
+
+
+/* =========================================================
+   CONFIRM LOGOUT BUTTON
+========================================================= */
+
+.logout-confirm-button {
+    min-width: 115px;
+
+    height: 40px;
+
+    padding: 0 18px;
+
+    border: none;
+
+    border-radius: 8px;
+
+    background: #d32f2f;
+
+    color: #ffffff;
+
+    font-family: inherit;
+
+    font-size: 10px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.15s ease,
+        box-shadow 0.2s ease;
+}
+
+.logout-confirm-button:hover {
+    background: #b92525;
+
+    box-shadow:
+        0 5px 12px rgba(211, 47, 47, 0.22);
+}
+
+.logout-confirm-button:active {
+    transform: scale(0.98);
+}
+
+
+/* =========================================================
+   MODAL ANIMATIONS
+========================================================= */
+
+@keyframes logoutOverlayIn {
+
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+
+}
+
+
+@keyframes logoutModalIn {
+
+    from {
+        opacity: 0;
+
+        transform:
+            translateY(12px)
+            scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+
+        transform:
+            translateY(0)
+            scale(1);
+    }
+
+}
+
+
+/* =========================================================
+   MOBILE LOGOUT MODAL
+========================================================= */
+
+@media (max-width: 650px) {
+
+    .logout-modal-overlay {
+        padding: 16px;
+    }
+
+    .logout-modal {
+        max-width: 100%;
+
+        padding:
+            25px 20px 21px;
+
+        border-radius: 14px;
+    }
+
+    .logout-modal-icon {
+        width: 48px;
+        height: 48px;
+
+        margin-bottom: 14px;
+
+        font-size: 19px;
+    }
+
+    .logout-modal-content h2 {
+        font-size: 18px;
+    }
+
+    .logout-modal-content p {
+        font-size: 10px;
+    }
+
+    .logout-modal-actions {
+        gap: 8px;
+
+        margin-top: 21px;
+    }
+
+    .logout-cancel-button,
+    .logout-confirm-button {
+        min-width: 0;
+
+        width: 50%;
+
+        height: 39px;
+    }
+
+}
+
+
+/* =========================================================
+   VERY SMALL MOBILE
+========================================================= */
+
+@media (max-width: 400px) {
+
+    .logout-modal-overlay {
+        padding: 12px;
+    }
+
+    .logout-modal {
+        padding: 23px 17px 19px;
+    }
+
+    .logout-modal-actions {
+        flex-direction: column;
+    }
+
+    .logout-cancel-button,
+    .logout-confirm-button {
+        width: 100%;
+    }
+
+}
+
 
             `}</style>
 
