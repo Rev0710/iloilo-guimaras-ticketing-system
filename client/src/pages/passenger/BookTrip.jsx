@@ -1,28 +1,56 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+    useLocation,
+    useNavigate
+} from "react-router-dom";
 
+
+// =========================================================
+// LOGO
+// =========================================================
 
 const LOGO_URL =
-    "https://scontent.fcgy2-2.fna.fbcdn.net/v/t1.15752-9/775468126_1793367781697550_3767041847597317415_n.png?stp=dst-png&cstp=mx532x469&ctp=s532x469&_nc_cat=103&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeEKTnmoEB20Fs5gE6WYWTxBd_QaoqEL1HV39BqioQvUdc9ZjhsVKyPy19OQYcSyO20Y_14PqMHIf2M01vrRKE4U&_nc_ohc=fK0ygs4SALUQ7kNvwEhUgQl&_nc_oc=Adr97yUKqKQuY-Rb-Lpj__SjoqmY7YY75sVczdULR8n8AbUyhy3oVy9DJ-YO_YUPfnTE&_nc_zt=23&_nc_ht=scontent.fcgy2-2.fna&_nc_ss=7a2a8&oh=03_Q7cD6AFmBhmkMTNembwVy95XQOYfaHONnpCT7udBE1IJnmNvHg&oe=6AB20956";
+    "/images/logo.png";
 
 
-const MAX_PASSENGERS = 5;
+// =========================================================
+// PASSENGER LIMITS
+// =========================================================
+//
+// MOTORCYCLE:
+// 1 account owner + maximum 2 additional passengers
+// = 3 passengers maximum.
+//
+// NO MOTORCYCLE:
+// 1 account owner + maximum 9 friends
+// = 10 passengers maximum.
+// =========================================================
+
+const MOTORCYCLE_MAX_PASSENGERS = 3;
+const NO_MOTORCYCLE_MAX_PASSENGERS = 10;
+
 const MIN_PASSENGERS = 1;
 
+
+// =========================================================
+// BOOK TRIP
+// =========================================================
 
 const BookTrip = () => {
 
     const navigate = useNavigate();
 
+    const location = useLocation();
 
-    /*
-     * =========================================================
-     * RECOVER PREVIOUS TRIP
-     * =========================================================
-     */
+
+    // =====================================================
+    // RECOVER SAVED TRIP
+    // =====================================================
 
     const savedTrip =
-        sessionStorage.getItem("tripDetails");
+        sessionStorage.getItem(
+            "tripDetails"
+        );
 
 
     let previousTrip = {};
@@ -30,9 +58,10 @@ const BookTrip = () => {
 
     try {
 
-        previousTrip = savedTrip
-            ? JSON.parse(savedTrip)
-            : {};
+        previousTrip =
+            savedTrip
+                ? JSON.parse(savedTrip)
+                : {};
 
     } catch (error) {
 
@@ -45,83 +74,335 @@ const BookTrip = () => {
     }
 
 
-    /*
-     * =========================================================
-     * TRIP INFORMATION
-     * =========================================================
-     */
+    // =====================================================
+    // GET SELECTED FERRY
+    // =====================================================
+    //
+    // The Trips page can pass the selected ferry through:
+    //
+    // navigate("/book-trip", {
+    //     state: {
+    //         trip: selectedTrip
+    //     }
+    // })
+    //
+    // We also check sessionStorage so the selection can
+    // survive page refresh/navigation.
+    // =====================================================
+
+    const getStoredObject = (key) => {
+
+        try {
+
+            const value =
+                sessionStorage.getItem(key);
+
+            return value
+                ? JSON.parse(value)
+                : null;
+
+        } catch (error) {
+
+            console.warn(
+                `Unable to read ${key}:`,
+                error
+            );
+
+            return null;
+        }
+    };
+
+
+    const selectedFerryFromState =
+        location.state?.trip ||
+        location.state?.selectedTrip ||
+        location.state?.ferry ||
+        location.state?.selectedFerry ||
+        null;
+
+
+    const selectedFerryFromStorage =
+        getStoredObject("selectedFerry") ||
+        getStoredObject("selectedTrip") ||
+        getStoredObject("selectedVessel") ||
+        getStoredObject("tripSelection") ||
+        null;
+
+
+    const selectedFerry =
+        selectedFerryFromState ||
+        selectedFerryFromStorage ||
+        {};
+
+
+    // =====================================================
+    // FERRY INFORMATION
+    // =====================================================
+
+    const ferryName =
+        selectedFerry.ferryName ||
+        selectedFerry.vesselName ||
+        selectedFerry.vessel ||
+        selectedFerry.name ||
+        previousTrip.ferryName ||
+        previousTrip.vesselName ||
+        previousTrip.vessel ||
+        "Ferry Vessel";
+
+
+    const ferryDepartureTime =
+        selectedFerry.departureTime ||
+        selectedFerry.departure ||
+        selectedFerry.time ||
+        previousTrip.departureTime ||
+        previousTrip.ferryTime ||
+        "";
+
+
+    const ferryOrigin =
+        selectedFerry.origin ||
+        selectedFerry.from ||
+        previousTrip.origin ||
+        "";
+
+
+    const ferryDestination =
+        selectedFerry.destination ||
+        selectedFerry.to ||
+        previousTrip.destination ||
+        "";
+
+
+    // =====================================================
+    // CONVERT TIME TO HTML TIME FORMAT
+    // =====================================================
+
+    const normalizeTime = (value) => {
+
+        if (!value) {
+            return "";
+        }
+
+
+        // Already in HH:mm
+        if (
+            /^\d{2}:\d{2}$/.test(
+                String(value)
+            )
+        ) {
+            return String(value);
+        }
+
+
+        // Example: "6:00 AM"
+        const match =
+            String(value)
+                .trim()
+                .match(
+                    /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i
+                );
+
+
+        if (!match) {
+            return "";
+        }
+
+
+        let hour =
+            Number(match[1]);
+
+        const minute =
+            match[2];
+
+        const period =
+            match[3].toUpperCase();
+
+
+        if (
+            period === "AM" &&
+            hour === 12
+        ) {
+            hour = 0;
+        }
+
+
+        if (
+            period === "PM" &&
+            hour !== 12
+        ) {
+            hour += 12;
+        }
+
+
+        return (
+            String(hour).padStart(2, "0") +
+            ":" +
+            minute
+        );
+    };
+
+
+    const selectedFerryTime =
+        normalizeTime(
+            ferryDepartureTime
+        );
+
+
+    // =====================================================
+    // TRIP INFORMATION
+    // =====================================================
 
     const [origin, setOrigin] =
         useState(
-            previousTrip.origin || ""
+            ferryOrigin ||
+            previousTrip.origin ||
+            ""
         );
 
 
     const [destination, setDestination] =
         useState(
-            previousTrip.destination || ""
+            ferryDestination ||
+            previousTrip.destination ||
+            ""
         );
 
 
     const [date, setDate] =
         useState(
-            previousTrip.date || ""
+            previousTrip.date ||
+            ""
         );
 
 
     const [time, setTime] =
         useState(
-            previousTrip.time || ""
+            previousTrip.time ||
+            selectedFerryTime ||
+            ""
         );
 
 
-    /*
-     * =========================================================
-     * PASSENGER MODE
-     *
-     * solo          = 1 passenger
-     * withPassenger = 2 to 5 passengers
-     * =========================================================
-     */
+    // =====================================================
+    // CUSTOM DATE / TIME PICKERS
+    // =====================================================
+
+    const [datePickerOpen, setDatePickerOpen] =
+        useState(false);
+
+    const [timePickerOpen, setTimePickerOpen] =
+        useState(false);
+
+    // Custom route dropdowns prevent the browser's native
+    // select popup from appearing.
+    const [originPickerOpen, setOriginPickerOpen] =
+        useState(false);
+
+    const [destinationPickerOpen, setDestinationPickerOpen] =
+        useState(false);
+
+    const [calendarMonth, setCalendarMonth] =
+        useState(() => {
+            const initialDate =
+                previousTrip.date || new Date().toISOString().split("T")[0];
+
+            const parts =
+                initialDate.split("-");
+
+            return new Date(
+                Number(parts[0]),
+                Number(parts[1]) - 1,
+                1
+            );
+        });
+
+
+    // =====================================================
+    // VEHICLE TYPE
+    // =====================================================
+    //
+    // Default remains Motorcycle so existing bookings
+    // continue to work.
+    // =====================================================
+
+    const [vehicleChoice, setVehicleChoice] =
+        useState(
+            previousTrip.vehicleType ===
+                "No Motorcycle"
+                ? "noMotorcycle"
+                : "motorcycle"
+        );
+
+
+    const vehicleType =
+        vehicleChoice ===
+            "noMotorcycle"
+            ? "No Motorcycle"
+            : "Motorcycle";
+
+
+    const [plateNumber, setPlateNumber] =
+        useState(
+            previousTrip.plateNumber ||
+            ""
+        );
+
+
+    // =====================================================
+    // PASSENGER LIMIT
+    // =====================================================
+
+    const MAX_PASSENGERS =
+        vehicleChoice ===
+            "noMotorcycle"
+            ? NO_MOTORCYCLE_MAX_PASSENGERS
+            : MOTORCYCLE_MAX_PASSENGERS;
+
+
+    // =====================================================
+    // PASSENGER MODE
+    // =====================================================
 
     const [passengerMode, setPassengerMode] =
         useState(
             previousTrip.passengerMode ||
             (
-                Number(previousTrip.passengers || 1) > 1
+                Number(
+                    previousTrip.passengers ||
+                    1
+                ) > 1
                     ? "withPassenger"
                     : "solo"
             )
         );
 
 
-    /*
-     * =========================================================
-     * PASSENGER INFORMATION
-     *
-     * This is now an ARRAY.
-     *
-     * Every passenger gets:
-     * - name
-     * - age
-     * - gender
-     * =========================================================
-     */
+    // =====================================================
+    // PASSENGER CREATOR
+    // =====================================================
 
     const createPassenger = (
         existing = {}
     ) => ({
+
         name:
             existing.name ||
             "",
+
         age:
             existing.age ||
             "",
+
         gender:
             existing.gender ||
             "",
+
     });
 
+
+    // =====================================================
+    // PREVIOUS PASSENGERS
+    // =====================================================
 
     const existingPassengerDetails =
         Array.isArray(
@@ -131,16 +412,9 @@ const BookTrip = () => {
             : [];
 
 
-    /*
-     * =========================================================
-     * INITIAL PASSENGER COUNT
-     *
-     * Default:
-     * - previous saved count
-     * - otherwise 2 for with passenger
-     * - otherwise 1 for solo
-     * =========================================================
-     */
+    // =====================================================
+    // INITIAL PASSENGER COUNT
+    // =====================================================
 
     const savedPassengerCount =
         Number(
@@ -164,11 +438,9 @@ const BookTrip = () => {
         );
 
 
-    /*
-     * =========================================================
-     * CREATE PASSENGER ARRAY
-     * =========================================================
-     */
+    // =====================================================
+    // BUILD INITIAL PASSENGERS
+    // =====================================================
 
     const buildInitialPassengers = () => {
 
@@ -191,7 +463,9 @@ const BookTrip = () => {
                     )
                 );
 
-            } else if (
+            }
+
+            else if (
                 index === 0 &&
                 (
                     previousTrip.passengerName ||
@@ -200,14 +474,7 @@ const BookTrip = () => {
                 )
             ) {
 
-                /*
-                 * Backward compatibility
-                 *
-                 * Old saved bookings only had:
-                 * passengerName
-                 * passengerAge
-                 * passengerGender
-                 */
+                // Backward compatibility
 
                 result.push({
 
@@ -225,7 +492,9 @@ const BookTrip = () => {
 
                 });
 
-            } else {
+            }
+
+            else {
 
                 result.push(
                     createPassenger()
@@ -246,39 +515,17 @@ const BookTrip = () => {
     );
 
 
-    /*
-     * =========================================================
-     * PASSENGER COUNT
-     * =========================================================
-     */
+    // =====================================================
+    // PASSENGER COUNT
+    // =====================================================
 
     const passengers =
         passengerDetails.length;
 
 
-    /*
-     * =========================================================
-     * MOTORCYCLE
-     * =========================================================
-     */
-
-    const vehicleType =
-        previousTrip.vehicleType ||
-        "Motorcycle";
-
-
-    const [plateNumber, setPlateNumber] =
-        useState(
-            previousTrip.plateNumber ||
-            ""
-        );
-
-
-    /*
-     * =========================================================
-     * PASSENGER FIELD UPDATE
-     * =========================================================
-     */
+    // =====================================================
+    // UPDATE PASSENGER
+    // =====================================================
 
     const updatePassenger = (
         index,
@@ -309,13 +556,9 @@ const BookTrip = () => {
     };
 
 
-    /*
-     * =========================================================
-     * PASSENGER INCREASE
-     *
-     * MAXIMUM = 5
-     * =========================================================
-     */
+    // =====================================================
+    // INCREASE PASSENGERS
+    // =====================================================
 
     const handlePassengerIncrease = () => {
 
@@ -323,23 +566,21 @@ const BookTrip = () => {
             passengers >=
             MAX_PASSENGERS
         ) {
+
             return;
         }
 
 
         setPassengerDetails(
             (previous) => [
+
                 ...previous,
+
                 createPassenger()
+
             ]
         );
 
-
-        /*
-         * If user is adding passengers,
-         * automatically switch to
-         * "With Passenger".
-         */
 
         if (
             passengerMode !==
@@ -353,11 +594,9 @@ const BookTrip = () => {
     };
 
 
-    /*
-     * =========================================================
-     * PASSENGER DECREASE
-     * =========================================================
-     */
+    // =====================================================
+    // DECREASE PASSENGERS
+    // =====================================================
 
     const handlePassengerDecrease = () => {
 
@@ -365,6 +604,7 @@ const BookTrip = () => {
             passengers <=
             MIN_PASSENGERS
         ) {
+
             return;
         }
 
@@ -378,11 +618,6 @@ const BookTrip = () => {
         );
 
 
-        /*
-         * If only one passenger
-         * remains, switch to Solo.
-         */
-
         if (
             passengers - 1 === 1
         ) {
@@ -394,53 +629,43 @@ const BookTrip = () => {
     };
 
 
-    /*
-     * =========================================================
-     * PASSENGER MODE CHANGE
-     * =========================================================
-     */
+    // =====================================================
+    // PASSENGER MODE
+    // =====================================================
 
     const handlePassengerModeChange = (
         mode
     ) => {
 
-        setPassengerMode(mode);
+        setPassengerMode(
+            mode
+        );
 
 
-        /*
-         * SOLO
-         *
-         * Only one passenger.
-         */
+        // =================================================
+        // SOLO
+        // =================================================
 
         if (
             mode === "solo"
         ) {
 
             setPassengerDetails(
-                (previous) => {
+                (previous) => [
 
-                    /*
-                     * Keep the first passenger's
-                     * information.
-                     */
+                    previous[0] ||
+                    createPassenger()
 
-                    return [
-                        previous[0] ||
-                        createPassenger()
-                    ];
-                }
+                ]
             );
 
             return;
         }
 
 
-        /*
-         * WITH PASSENGER
-         *
-         * Minimum = 2
-         */
+        // =================================================
+        // WITH PASSENGER
+        // =================================================
 
         setPassengerDetails(
             (previous) => {
@@ -454,20 +679,107 @@ const BookTrip = () => {
 
 
                 return [
+
                     ...previous,
 
                     createPassenger()
+
                 ];
             }
         );
     };
 
 
-    /*
-     * =========================================================
-     * DATE
-     * =========================================================
-     */
+    // =====================================================
+    // CHANGE VEHICLE
+    // =====================================================
+
+    const handleVehicleChange = (
+        choice
+    ) => {
+
+        setVehicleChoice(
+            choice
+        );
+
+
+        // =================================================
+        // MOTORCYCLE
+        // =================================================
+
+        if (
+            choice === "motorcycle"
+        ) {
+
+            // Motorcycle allows maximum 3 passengers.
+
+            setPassengerDetails(
+                (previous) =>
+                    previous.slice(
+                        0,
+                        MOTORCYCLE_MAX_PASSENGERS
+                    )
+            );
+
+
+            if (
+                passengerDetails.length >
+                MOTORCYCLE_MAX_PASSENGERS
+            ) {
+
+                setPassengerMode(
+                    "withPassenger"
+                );
+            }
+
+
+            return;
+        }
+
+
+        // =================================================
+        // NO MOTORCYCLE
+        // =================================================
+
+        if (
+            choice ===
+            "noMotorcycle"
+        ) {
+
+            // No motorcycle allows up to 10.
+
+            // We do not automatically add
+            // 10 passengers. The user adds
+            // friends using the + button.
+
+            return;
+        }
+    };
+
+
+    // =====================================================
+    // ROUTE PICKER
+    // =====================================================
+
+    const routeOptions = [
+        "Iloilo",
+        "Guimaras"
+    ];
+
+    const selectOrigin = (value) => {
+        setOrigin(value);
+        setOriginPickerOpen(false);
+    };
+
+    const selectDestination = (value) => {
+        setDestination(value);
+        setDestinationPickerOpen(false);
+    };
+
+
+    // =====================================================
+    // TODAY
+    // =====================================================
 
     const today =
         new Date()
@@ -475,11 +787,211 @@ const BookTrip = () => {
             .split("T")[0];
 
 
-    /*
-     * =========================================================
-     * SUBMIT BOOKING
-     * =========================================================
-     */
+    // =====================================================
+    // FORMAT FERRY TIME FOR DISPLAY
+    // =====================================================
+
+    const formatDisplayTime = (
+        value
+    ) => {
+
+        if (!value) {
+            return "Departure time";
+        }
+
+
+        const normalized =
+            normalizeTime(value);
+
+
+        if (!normalized) {
+            return value;
+        }
+
+
+        const [
+            hours,
+            minutes
+        ] =
+            normalized.split(":");
+
+
+        const hourNumber =
+            Number(hours);
+
+
+        const period =
+            hourNumber >= 12
+                ? "PM"
+                : "AM";
+
+
+        const displayHour =
+            hourNumber % 12 || 12;
+
+
+        return (
+            `${displayHour}:${minutes} ${period}`
+        );
+    };
+
+
+    // =====================================================
+    // CUSTOM DATE PICKER HELPERS
+    // =====================================================
+
+    const formatDisplayDate = (value) => {
+
+        if (!value) {
+            return "mm/dd/yyyy";
+        }
+
+        const parts = String(value).split("-");
+
+        if (parts.length !== 3) {
+            return value;
+        }
+
+        return `${parts[1]}/${parts[2]}/${parts[0]}`;
+    };
+
+
+    const selectDate = (year, month, day) => {
+
+        const selected = new Date(
+            year,
+            month,
+            day
+        );
+
+        const selectedString =
+            `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+        if (selected < new Date(`${today}T00:00:00`)) {
+            return;
+        }
+
+        setDate(selectedString);
+        setDatePickerOpen(false);
+    };
+
+
+    const changeCalendarMonth = (amount) => {
+
+        setCalendarMonth((current) =>
+            new Date(
+                current.getFullYear(),
+                current.getMonth() + amount,
+                1
+            )
+        );
+    };
+
+
+    const getCalendarDays = () => {
+
+        const year =
+            calendarMonth.getFullYear();
+
+        const month =
+            calendarMonth.getMonth();
+
+        const firstDay =
+            new Date(year, month, 1).getDay();
+
+        const daysInMonth =
+            new Date(year, month + 1, 0).getDate();
+
+        const daysInPreviousMonth =
+            new Date(year, month, 0).getDate();
+
+        const cells = [];
+
+        for (let i = firstDay - 1; i >= 0; i -= 1) {
+            cells.push({
+                day: daysInPreviousMonth - i,
+                monthOffset: -1
+            });
+        }
+
+        for (let day = 1; day <= daysInMonth; day += 1) {
+            cells.push({
+                day,
+                monthOffset: 0
+            });
+        }
+
+        let nextDay = 1;
+
+        while (cells.length % 7 !== 0) {
+            cells.push({
+                day: nextDay,
+                monthOffset: 1
+            });
+            nextDay += 1;
+        }
+
+        return cells;
+    };
+
+
+    const isDateToday = (year, month, day) =>
+        `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}` === today;
+
+
+    const isDateSelected = (year, month, day) =>
+        `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}` === date;
+
+
+    const isDatePast = (year, month, day) => {
+
+        const value =
+            `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+        return value < today;
+    };
+
+
+    // =====================================================
+    // CUSTOM TIME PICKER HELPERS
+    // =====================================================
+
+    const timeOptions = [];
+
+    for (
+        let totalMinutes = 3 * 60 + 30;
+        totalMinutes <= 19 * 60 + 30;
+        totalMinutes += 30
+    ) {
+        const hour24 = Math.floor(totalMinutes / 60);
+        const minute = totalMinutes % 60;
+        const hour12 = hour24 % 12 || 12;
+        const period = hour24 >= 12 ? "PM" : "AM";
+
+        timeOptions.push({
+            value: `${String(hour24).padStart(2, "0")}:${String(minute).padStart(2, "0")}`,
+            label: `${hour12}:${String(minute).padStart(2, "0")} ${period}`
+        });
+    }
+
+
+    const selectTime = (value) => {
+
+        setTime(value);
+        setTimePickerOpen(false);
+    };
+
+
+    const currentTimeLabel =
+        timeOptions.find(
+            (option) => option.value === time
+        )?.label ||
+        formatDisplayTime(time);
+
+
+    // =====================================================
+    // SUBMIT BOOKING
+    // =====================================================
 
     const handleSubmit = (
         event
@@ -488,18 +1000,15 @@ const BookTrip = () => {
         event.preventDefault();
 
 
-        /*
-         * =====================================================
-         * BASIC TRIP VALIDATION
-         * =====================================================
-         */
+        // =================================================
+        // BASIC TRIP VALIDATION
+        // =================================================
 
         if (
             !origin ||
             !destination ||
             !date ||
-            !time ||
-            !plateNumber.trim()
+            !time
         ) {
 
             alert(
@@ -510,11 +1019,9 @@ const BookTrip = () => {
         }
 
 
-        /*
-         * =====================================================
-         * SAME PORT VALIDATION
-         * =====================================================
-         */
+        // =================================================
+        // SAME PORT
+        // =================================================
 
         if (
             origin === destination
@@ -528,41 +1035,54 @@ const BookTrip = () => {
         }
 
 
-        /*
-         * =====================================================
-         * PASSENGER COUNT VALIDATION
-         * =====================================================
-         */
+        // =================================================
+        // VEHICLE VALIDATION
+        // =================================================
 
         if (
-            passengers <
-            MIN_PASSENGERS ||
-            passengers >
-            MAX_PASSENGERS
+            vehicleChoice ===
+            "motorcycle" &&
+            !plateNumber.trim()
         ) {
 
             alert(
-                "You can book a maximum of 5 passengers."
+                "Please enter the motorcycle plate number."
             );
 
             return;
         }
 
 
-        /*
-         * =====================================================
-         * PASSENGER INFORMATION VALIDATION
-         *
-         * EVERY PASSENGER MUST HAVE:
-         * - NAME
-         * - AGE
-         * - GENDER
-         * =====================================================
-         */
+        // =================================================
+        // PASSENGER COUNT
+        // =================================================
+
+        if (
+            passengers <
+                MIN_PASSENGERS ||
+            passengers >
+                MAX_PASSENGERS
+        ) {
+
+            alert(
+                vehicleChoice ===
+                    "motorcycle"
+                    ? "A motorcycle booking can have a maximum of 3 passengers."
+                    : "A no-motorcycle booking can have a maximum of 10 passengers."
+            );
+
+            return;
+        }
+
+
+        // =================================================
+        // PASSENGER INFORMATION
+        // =================================================
 
         for (
             let index = 0;
-            index < passengerDetails.length;
+            index <
+            passengerDetails.length;
             index++
         ) {
 
@@ -570,7 +1090,12 @@ const BookTrip = () => {
                 passengerDetails[index];
 
 
+            // ---------------------------------------------
+            // NAME
+            // ---------------------------------------------
+
             if (
+                !passenger.name ||
                 !passenger.name.trim()
             ) {
 
@@ -584,8 +1109,15 @@ const BookTrip = () => {
             }
 
 
+            // ---------------------------------------------
+            // AGE
+            // ---------------------------------------------
+
             if (
-                !passenger.age
+                passenger.age ===
+                undefined ||
+                passenger.age ===
+                ""
             ) {
 
                 alert(
@@ -622,6 +1154,10 @@ const BookTrip = () => {
             }
 
 
+            // ---------------------------------------------
+            // GENDER
+            // ---------------------------------------------
+
             if (
                 !passenger.gender
             ) {
@@ -637,11 +1173,9 @@ const BookTrip = () => {
         }
 
 
-        /*
-         * =====================================================
-         * CLEAN PASSENGER DATA
-         * =====================================================
-         */
+        // =================================================
+        // CLEAN PASSENGER DATA
+        // =================================================
 
         const cleanedPassengerDetails =
             passengerDetails.map(
@@ -663,74 +1197,82 @@ const BookTrip = () => {
             );
 
 
-        /*
-         * =====================================================
-         * FIRST PASSENGER
-         *
-         * These are kept for compatibility
-         * with the existing Payment and
-         * Confirmation pages.
-         * =====================================================
-         */
+        // =================================================
+        // FIRST PASSENGER
+        // =================================================
 
         const firstPassenger =
             cleanedPassengerDetails[0];
 
 
-        /*
-         * =====================================================
-         * COMPLETE TRIP DETAILS
-         * =====================================================
-         */
+        // =================================================
+        // COMPLETE TRIP DETAILS
+        // =================================================
 
         const tripDetails = {
 
-            /*
-             * Route
-             */
+            // ---------------------------------------------
+            // ROUTE
+            // ---------------------------------------------
 
             origin,
 
             destination,
 
 
-            /*
-             * Schedule
-             */
+            // ---------------------------------------------
+            // SCHEDULE
+            // ---------------------------------------------
 
             date,
 
             time,
 
 
-            /*
-             * Passenger mode
-             */
+            // ---------------------------------------------
+            // SELECTED FERRY
+            // ---------------------------------------------
+
+            ferryName,
+
+            vesselName:
+                ferryName,
+
+            ferry:
+                ferryName,
+
+            departureTime:
+                formatDisplayTime(
+                    ferryDepartureTime ||
+                    time
+                ),
+
+
+            // ---------------------------------------------
+            // PASSENGER MODE
+            // ---------------------------------------------
 
             passengerMode,
 
 
-            /*
-             * Total number of passengers
-             */
+            // ---------------------------------------------
+            // PASSENGER COUNT
+            // ---------------------------------------------
 
             passengers,
 
 
-            /*
-             * NEW:
-             * Complete passenger list
-             */
+            // ---------------------------------------------
+            // COMPLETE PASSENGER LIST
+            // ---------------------------------------------
 
             passengerDetails:
                 cleanedPassengerDetails,
 
 
-            /*
-             * OLD COMPATIBILITY FIELDS
-             *
-             * These represent Passenger 1.
-             */
+            // ---------------------------------------------
+            // COMPATIBILITY FIELDS
+            // ---------------------------------------------
 
             passengerName:
                 firstPassenger.name,
@@ -742,25 +1284,56 @@ const BookTrip = () => {
                 firstPassenger.gender,
 
 
-            /*
-             * Vehicle
-             */
+            // ---------------------------------------------
+            // VEHICLE
+            // ---------------------------------------------
 
             vehicleType,
 
+
             plateNumber:
-                plateNumber
-                    .trim()
-                    .toUpperCase(),
+                vehicleChoice ===
+                    "motorcycle"
+                    ? plateNumber
+                        .trim()
+                        .toUpperCase()
+                    : "",
 
         };
 
 
-        /*
-         * =====================================================
-         * SAVE TRIP DETAILS
-         * =====================================================
-         */
+        // =================================================
+        // SAVE SELECTED FERRY
+        // =================================================
+
+        sessionStorage.setItem(
+            "selectedFerry",
+            JSON.stringify({
+
+                ...selectedFerry,
+
+                ferryName,
+
+                vesselName:
+                    ferryName,
+
+                departureTime:
+                    formatDisplayTime(
+                        ferryDepartureTime ||
+                        time
+                    ),
+
+                origin,
+
+                destination,
+
+            })
+        );
+
+
+        // =================================================
+        // SAVE TRIP DETAILS
+        // =================================================
 
         sessionStorage.setItem(
             "tripDetails",
@@ -770,11 +1343,9 @@ const BookTrip = () => {
         );
 
 
-        /*
-         * =====================================================
-         * SAVE PENDING TRIP
-         * =====================================================
-         */
+        // =================================================
+        // SAVE PENDING TRIP
+        // =================================================
 
         sessionStorage.setItem(
             "pendingTrip",
@@ -784,11 +1355,9 @@ const BookTrip = () => {
         );
 
 
-        /*
-         * =====================================================
-         * SAVE LATEST BOOKING
-         * =====================================================
-         */
+        // =================================================
+        // SAVE LATEST BOOKING
+        // =================================================
 
         sessionStorage.setItem(
             "latestBooking",
@@ -798,14 +1367,9 @@ const BookTrip = () => {
         );
 
 
-        /*
-         * =====================================================
-         * CONSOLE CHECK
-         *
-         * You can open browser console
-         * to verify all passengers.
-         * =====================================================
-         */
+        // =================================================
+        // CONSOLE CHECK
+        // =================================================
 
         console.log(
             "Complete Trip Details:",
@@ -813,23 +1377,27 @@ const BookTrip = () => {
         );
 
 
-        /*
-         * =====================================================
-         * GO TO PAYMENT
-         * =====================================================
-         */
+        // =================================================
+        // GO TO PAYMENT
+        // =================================================
 
         navigate(
             "/payment",
             {
                 state: {
+
                     trip:
                         tripDetails
+
                 }
             }
         );
     };
 
+
+    // =====================================================
+    // RENDER
+    // =====================================================
 
     return (
 
@@ -852,6 +1420,7 @@ const BookTrip = () => {
 
 
                 body {
+
                     font-family:
                         Arial,
                         Helvetica,
@@ -1031,7 +1600,7 @@ const BookTrip = () => {
 
 
                 /* =================================================
-                   PAGE HEADING
+                   HEADING
                 ================================================= */
 
                 .book-trip-heading {
@@ -1071,6 +1640,169 @@ const BookTrip = () => {
 
                     font-size:
                         13px;
+                }
+
+
+                /* =================================================
+                   SELECTED FERRY
+                ================================================= */
+
+                .selected-ferry-card {
+
+                    margin:
+                        0 42px 10px;
+
+                    padding:
+                        18px;
+
+                    border:
+                        1px solid #f5d7bf;
+
+                    border-radius:
+                        14px;
+
+                    background:
+                        linear-gradient(
+                            135deg,
+                            #fffaf6,
+                            #fff4eb
+                        );
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    justify-content:
+                        space-between;
+
+                    gap:
+                        18px;
+                }
+
+
+                .selected-ferry-left {
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    gap:
+                        14px;
+
+                    min-width:
+                        0;
+                }
+
+
+                .ferry-icon {
+
+                    width:
+                        48px;
+
+                    height:
+                        48px;
+
+                    flex:
+                        0 0 48px;
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    justify-content:
+                        center;
+
+                    border-radius:
+                        12px;
+
+                    background:
+                        #fff0e3;
+
+                    font-size:
+                        25px;
+                }
+
+
+                .selected-ferry-label {
+
+                    color:
+                        #f28c28;
+
+                    font-size:
+                        10px;
+
+                    font-weight:
+                        800;
+
+                    text-transform:
+                        uppercase;
+
+                    letter-spacing:
+                        0.6px;
+
+                    margin-bottom:
+                        4px;
+                }
+
+
+                .selected-ferry-name {
+
+                    color:
+                        #222222;
+
+                    font-size:
+                        17px;
+
+                    font-weight:
+                        750;
+                }
+
+
+                .selected-ferry-route {
+
+                    color:
+                        #999999;
+
+                    font-size:
+                        11px;
+
+                    margin-top:
+                        4px;
+                }
+
+
+                .selected-ferry-time {
+
+                    flex:
+                        0 0 auto;
+
+                    padding:
+                        10px
+                        14px;
+
+                    border-radius:
+                        10px;
+
+                    background:
+                        #ffffff;
+
+                    color:
+                        #f28c28;
+
+                    font-size:
+                        13px;
+
+                    font-weight:
+                        800;
+
+                    border:
+                        1px solid #f2dccb;
                 }
 
 
@@ -1123,9 +1855,7 @@ const BookTrip = () => {
                         38px;
 
                     flex:
-                        0
-                        0
-                        38px;
+                        0 0 38px;
 
                     display:
                         flex;
@@ -1216,6 +1946,182 @@ const BookTrip = () => {
 
                     min-width:
                         0;
+                }
+
+
+                /* =================================================
+                   CUSTOM ROUTE PICKERS
+                ================================================= */
+
+                .custom-route-field {
+                    position: relative;
+                }
+
+                .route-picker-trigger {
+                    width: 100%;
+                    height: 50px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 12px;
+                    padding: 0 14px;
+                    border: 1px solid #dddddd;
+                    border-radius: 10px;
+                    outline: none;
+                    background: #ffffff;
+                    color: #222222;
+                    font: inherit;
+                    font-size: 13px;
+                    font-weight: 500;
+                    text-align: left;
+                    cursor: pointer;
+                    transition:
+                        border-color .2s ease,
+                        box-shadow .2s ease,
+                        background .2s ease;
+                }
+
+                .route-picker-trigger:hover {
+                    border-color: #f2b47f;
+                    background: #fffdfa;
+                }
+
+                .route-picker-trigger.active {
+                    border-color: #f28c28;
+                    background: #fffaf6;
+                    box-shadow: 0 0 0 3px rgba(242, 140, 40, .10);
+                }
+
+                .route-picker-value {
+                    color: #111827;
+                    font-weight: 650;
+                }
+
+                .route-picker-placeholder {
+                    color: #6b7280;
+                    font-weight: 500;
+                }
+
+                .route-chevron {
+                    width: 28px;
+                    height: 28px;
+                    flex: 0 0 28px;
+                    display: grid;
+                    place-items: center;
+                    border-radius: 8px;
+                    background: #fff3e8;
+                    color: #f28c28;
+                    font-size: 16px;
+                    line-height: 1;
+                    transition: transform .2s ease;
+                }
+
+                .route-chevron.open {
+                    transform: rotate(180deg);
+                }
+
+                .route-options {
+                    position: absolute;
+                    z-index: 70;
+                    top: calc(100% + 8px);
+                    left: 0;
+                    right: 0;
+                    padding: 7px;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 14px;
+                    background: #ffffff;
+                    box-shadow:
+                        0 18px 45px rgba(17, 24, 39, .14),
+                        0 4px 12px rgba(17, 24, 39, .05);
+                    overflow: hidden;
+                    animation: routePickerAppear .15s ease-out;
+                }
+
+                @keyframes routePickerAppear {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-5px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+
+                .route-options-heading {
+                    padding: 8px 9px 9px;
+                    border-bottom: 1px solid #f1f2f4;
+                }
+
+                .route-options-heading span {
+                    display: block;
+                    color: #111827;
+                    font-size: 11px;
+                    font-weight: 800;
+                }
+
+                .route-options-heading small {
+                    display: block;
+                    margin-top: 3px;
+                    color: #9ca3af;
+                    font-size: 9px;
+                }
+
+                .route-option {
+                    width: 100%;
+                    min-height: 42px;
+                    display: flex;
+                    align-items: center;
+                    gap: 9px;
+                    margin-top: 4px;
+                    padding: 0 9px;
+                    border: 1px solid transparent;
+                    border-radius: 9px;
+                    background: #ffffff;
+                    color: #374151;
+                    font: inherit;
+                    font-size: 12px;
+                    font-weight: 600;
+                    text-align: left;
+                    cursor: pointer;
+                    transition:
+                        background .15s ease,
+                        border-color .15s ease,
+                        color .15s ease;
+                }
+
+                .route-option:hover {
+                    background: #fff7f0;
+                    border-color: #f5d0b1;
+                    color: #ea6f0b;
+                }
+
+                .route-option.selected {
+                    background: #fff1e5;
+                    border-color: #f8c59f;
+                    color: #ea6f0b;
+                }
+
+                .route-option-icon {
+                    width: 24px;
+                    height: 24px;
+                    flex: 0 0 24px;
+                    display: grid;
+                    place-items: center;
+                    border-radius: 7px;
+                    background: #fff3e8;
+                    color: #f28c28;
+                    font-size: 12px;
+                    font-weight: 800;
+                }
+
+                .route-option-check {
+                    margin-left: auto;
+                    color: #ea6f0b;
+                    font-size: 9px;
+                    font-weight: 800;
+                    text-transform: uppercase;
+                    letter-spacing: .3px;
                 }
 
 
@@ -1340,7 +2246,7 @@ const BookTrip = () => {
 
 
                 /* =================================================
-                   DATE / TIME
+                   DATE TIME
                 ================================================= */
 
                 .date-time-row {
@@ -1356,12 +2262,611 @@ const BookTrip = () => {
                         minmax(0, 1fr);
 
                     gap:
-                        20px;
+                        18px;
+
+                    align-items:
+                        stretch;
                 }
 
 
                 /* =================================================
-                   PASSENGER MODE
+                   TRAVEL SCHEDULE UI
+                ================================================= */
+
+                .schedule-field {
+
+                    position:
+                        relative;
+
+                    min-width:
+                        0;
+
+                    padding:
+                        18px;
+
+                    border:
+                        1px solid #e5e7eb;
+
+                    border-radius:
+                        16px;
+
+                    background:
+                        linear-gradient(
+                            180deg,
+                            #ffffff 0%,
+                            #fffdfb 100%
+                        );
+
+                    box-shadow:
+                        0 2px 8px rgba(17, 24, 39, 0.03);
+
+                    transition:
+                        border-color 0.2s ease,
+                        box-shadow 0.2s ease,
+                        transform 0.2s ease;
+                }
+
+
+                .schedule-field:hover {
+
+                    border-color:
+                        #f3c39c;
+
+                    box-shadow:
+                        0 5px 18px rgba(17, 24, 39, 0.06);
+                }
+
+
+                .schedule-field:focus-within {
+
+                    border-color:
+                        #f28c28;
+
+                    box-shadow:
+                        0 0 0 4px
+                        rgba(242, 140, 40, 0.09),
+                        0 6px 20px rgba(17, 24, 39, 0.06);
+                }
+
+
+                .schedule-field .form-group {
+
+                    margin-bottom:
+                        0;
+                }
+
+
+                .schedule-field label {
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    gap:
+                        9px;
+
+                    margin-bottom:
+                        10px;
+
+                    color:
+                        #111827;
+
+                    font-size:
+                        13px;
+
+                    font-weight:
+                        750;
+
+                    letter-spacing:
+                        0.1px;
+                }
+
+
+                .schedule-label-icon {
+
+                    width:
+                        28px;
+
+                    height:
+                        28px;
+
+                    flex:
+                        0 0 28px;
+
+                    display:
+                        inline-flex;
+
+                    align-items:
+                        center;
+
+                    justify-content:
+                        center;
+
+                    border:
+                        1px solid #f7dfca;
+
+                    border-radius:
+                        8px;
+
+                    background:
+                        #fff3e8;
+
+                    color:
+                        #f28c28;
+
+                    font-size:
+                        13px;
+
+                    box-shadow:
+                        0 1px 2px rgba(242, 140, 40, 0.08);
+                }
+
+
+                .schedule-field input[type="date"],
+                .schedule-field input[type="time"] {
+
+                    width:
+                        100%;
+
+                    height:
+                        52px;
+
+                    box-sizing:
+                        border-box;
+
+                    padding:
+                        0 14px;
+
+                    border:
+                        1px solid #dfe3e8;
+
+                    border-radius:
+                        12px;
+
+                    outline:
+                        none;
+
+                    background:
+                        #ffffff;
+
+                    color:
+                        #1f2937;
+
+                    font-size:
+                        14px;
+
+                    font-weight:
+                        650;
+
+                    transition:
+                        border-color 0.2s ease,
+                        background 0.2s ease,
+                        box-shadow 0.2s ease;
+
+                    color-scheme:
+                        light;
+                }
+
+
+                .schedule-field input[type="date"]::-webkit-datetime-edit,
+                .schedule-field input[type="time"]::-webkit-datetime-edit {
+
+                    color:
+                        #1f2937;
+                }
+
+
+                .schedule-field input[type="date"]::-webkit-calendar-picker-indicator,
+                .schedule-field input[type="time"]::-webkit-calendar-picker-indicator {
+
+                    cursor:
+                        pointer;
+
+                    opacity:
+                        0.75;
+
+                    transition:
+                        opacity 0.2s ease;
+                }
+
+
+                .schedule-field input[type="date"]::-webkit-calendar-picker-indicator:hover,
+                .schedule-field input[type="time"]::-webkit-calendar-picker-indicator:hover {
+
+                    opacity:
+                        1;
+                }
+
+
+                .schedule-field input[type="date"]:hover,
+                .schedule-field input[type="time"]:hover {
+
+                    border-color:
+                        #f2b47f;
+
+                    background:
+                        #fffdfa;
+                }
+
+
+                .schedule-field input[type="date"]:focus,
+                .schedule-field input[type="time"]:focus {
+
+                    border-color:
+                        #f28c28;
+
+                    background:
+                        #ffffff;
+
+                    box-shadow:
+                        0 0 0 3px
+                        rgba(242, 140, 40, 0.10);
+                }
+
+
+                .schedule-range-note {
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    gap:
+                        7px;
+
+                    min-height:
+                        18px;
+
+                    margin-top:
+                        8px;
+
+                    color:
+                        #7b8491;
+
+                    font-size:
+                        10px;
+
+                    line-height:
+                        1.45;
+                }
+
+
+                .schedule-range-note > span:first-child {
+
+                    width:
+                        17px;
+
+                    height:
+                        17px;
+
+                    flex:
+                        0 0 17px;
+
+                    display:
+                        inline-flex;
+
+                    align-items:
+                        center;
+
+                    justify-content:
+                        center;
+
+                    border-radius:
+                        50%;
+
+                    background:
+                        #fff3e8;
+
+                    color:
+                        #f28c28;
+
+                    font-size:
+                        9px;
+                }
+
+
+                .schedule-range-note strong {
+
+                    color:
+                        #374151;
+
+                    font-weight:
+                        700;
+                }
+
+
+                .schedule-field .field-help {
+
+                    display:
+                        block;
+
+                    width:
+                        100%;
+
+                    box-sizing:
+                        border-box;
+
+                    margin-top:
+                        10px;
+
+                    padding:
+                        10px 12px;
+
+                    border:
+                        1px solid #f5d8c0;
+
+                    border-radius:
+                        10px;
+
+                    background:
+                        #fff8f2;
+
+                    color:
+                        #7b6250;
+
+                    font-size:
+                        10.5px;
+
+                    line-height:
+                        1.45;
+
+                    overflow:
+                        hidden;
+
+                    text-overflow:
+                        ellipsis;
+                }
+
+
+                .schedule-field .field-help strong {
+
+                    color:
+                        #e87517;
+
+                    font-weight:
+                        750;
+                }
+
+
+                /* =================================================
+                   VEHICLE CHOICE
+                ================================================= */
+                /* =================================================
+                   VEHICLE CHOICE
+                ================================================= */
+
+                .vehicle-choice {
+
+                    display:
+                        grid;
+
+                    grid-template-columns:
+                        repeat(
+                            2,
+                            minmax(0, 1fr)
+                        );
+
+                    gap:
+                        16px;
+
+                    margin-bottom:
+                        20px;
+                }
+
+
+                .vehicle-choice-card {
+
+                    position:
+                        relative;
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    gap:
+                        13px;
+
+                    min-height:
+                        82px;
+
+                    padding:
+                        16px 18px;
+
+                    border:
+                        1px solid #dddddd;
+
+                    border-radius:
+                        12px;
+
+                    background:
+                        #ffffff;
+
+                    cursor:
+                        pointer;
+
+                    transition:
+                        0.2s ease;
+                }
+
+
+                .vehicle-choice-card:hover {
+
+                    border-color:
+                        #f28c28;
+
+                    background:
+                        #fffaf6;
+                }
+
+
+                .vehicle-choice-card.active {
+
+                    border:
+                        2px solid #f28c28;
+
+                    background:
+                        #fff8f1;
+                }
+
+
+                .vehicle-radio {
+
+                    width:
+                        18px;
+
+                    height:
+                        18px;
+
+                    flex:
+                        0 0 18px;
+
+                    border:
+                        2px solid #cccccc;
+
+                    border-radius:
+                        50%;
+
+                    position:
+                        relative;
+                }
+
+
+                .vehicle-choice-card.active
+                .vehicle-radio {
+
+                    border-color:
+                        #f28c28;
+                }
+
+
+                .vehicle-choice-card.active
+                .vehicle-radio::after {
+
+                    content:
+                        "";
+
+                    position:
+                        absolute;
+
+                    width:
+                        8px;
+
+                    height:
+                        8px;
+
+                    left:
+                        3px;
+
+                    top:
+                        3px;
+
+                    border-radius:
+                        50%;
+
+                    background:
+                        #f28c28;
+                }
+
+
+                .vehicle-icon {
+
+                    width:
+                        38px;
+
+                    height:
+                        38px;
+
+                    display:
+                        flex;
+
+                    align-items:
+                        center;
+
+                    justify-content:
+                        center;
+
+                    border-radius:
+                        10px;
+
+                    background:
+                        #fff0e3;
+
+                    font-size:
+                        20px;
+                }
+
+
+                .vehicle-content {
+
+                    display:
+                        flex;
+
+                    flex-direction:
+                        column;
+
+                    gap:
+                        4px;
+                }
+
+
+                .vehicle-content strong {
+
+                    color:
+                        #222222;
+
+                    font-size:
+                        13px;
+                }
+
+
+                .vehicle-content span {
+
+                    color:
+                        #999999;
+
+                    font-size:
+                        11px;
+
+                    line-height:
+                        1.4;
+                }
+
+
+                .vehicle-limit-badge {
+
+                    margin-left:
+                        auto;
+
+                    padding:
+                        6px 9px;
+
+                    border-radius:
+                        8px;
+
+                    background:
+                        #fff0e3;
+
+                    color:
+                        #f28c28;
+
+                    font-size:
+                        10px;
+
+                    font-weight:
+                        800;
+
+                    white-space:
+                        nowrap;
+                }
+
+
+                /* =================================================
+                   PASSENGER CHOICE
                 ================================================= */
 
                 .passenger-choice {
@@ -1449,9 +2954,7 @@ const BookTrip = () => {
                         18px;
 
                     flex:
-                        0
-                        0
-                        18px;
+                        0 0 18px;
 
                     border:
                         2px solid #cccccc;
@@ -1818,9 +3321,7 @@ const BookTrip = () => {
                         100%;
 
                     flex:
-                        0
-                        0
-                        60px;
+                        0 0 60px;
 
                     border:
                         none;
@@ -1912,6 +3413,9 @@ const BookTrip = () => {
                     justify-content:
                         space-between;
 
+                    gap:
+                        15px;
+
                     margin-top:
                         8px;
                 }
@@ -1937,6 +3441,9 @@ const BookTrip = () => {
 
                     font-weight:
                         700;
+
+                    text-align:
+                        right;
                 }
 
 
@@ -1956,6 +3463,45 @@ const BookTrip = () => {
 
                     line-height:
                         1.4;
+                }
+
+
+                /* =================================================
+                   NO MOTORCYCLE NOTICE
+                ================================================= */
+
+                .no-motorcycle-notice {
+
+                    margin-bottom:
+                        20px;
+
+                    padding:
+                        14px;
+
+                    border:
+                        1px solid #f4dfcf;
+
+                    border-radius:
+                        11px;
+
+                    background:
+                        #fffaf6;
+
+                    color:
+                        #8a5a32;
+
+                    font-size:
+                        12px;
+
+                    line-height:
+                        1.5;
+                }
+
+
+                .no-motorcycle-notice strong {
+
+                    color:
+                        #f28c28;
                 }
 
 
@@ -2000,9 +3546,7 @@ const BookTrip = () => {
                         28px;
 
                     flex:
-                        0
-                        0
-                        28px;
+                        0 0 28px;
 
                     display:
                         flex;
@@ -2063,7 +3607,7 @@ const BookTrip = () => {
 
 
                 /* =================================================
-                   CONTINUE BUTTON
+                   CONTINUE
                 ================================================= */
 
                 .continue-button {
@@ -2151,31 +3695,300 @@ const BookTrip = () => {
                 }
 
 
-                .continue-button:active {
-
-                    transform:
-                        translateY(0);
-                }
-
-
                 .button-arrow {
 
                     font-size:
                         18px;
-
-                    transition:
-                        transform
-                        0.2s ease;
                 }
 
 
-                .continue-button:hover
-                .button-arrow {
+                /* =================================================
+                   CUSTOM DATE / TIME PICKERS
+                ================================================= */
 
-                    transform:
-                        translateX(4px);
+                .schedule-picker-trigger {
+                    width: 100%;
+                    min-height: 52px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 12px;
+                    padding: 0 15px;
+                    border: 1px solid #dfe3e8;
+                    border-radius: 12px;
+                    background: #ffffff;
+                    color: #111827;
+                    font: inherit;
+                    text-align: left;
+                    cursor: pointer;
+                    transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
                 }
 
+                .schedule-picker-trigger:hover {
+                    border-color: #f2a15c;
+                    background: #fffdfb;
+                }
+
+                .schedule-picker-trigger.active {
+                    border-color: #ff7a18;
+                    box-shadow: 0 0 0 3px rgba(255, 122, 24, .10);
+                    background: #fffdfb;
+                }
+
+                .picker-value {
+                    font-weight: 600;
+                    color: #111827;
+                    letter-spacing: .1px;
+                }
+
+                .picker-placeholder {
+                    color: #6b7280;
+                    font-weight: 500;
+                }
+
+                .picker-trigger-icon {
+                    width: 30px;
+                    height: 30px;
+                    flex: 0 0 30px;
+                    display: grid;
+                    place-items: center;
+                    border-radius: 8px;
+                    background: #fff2e7;
+                    color: #f28c28;
+                    font-size: 17px;
+                }
+
+                .custom-date-picker,
+                .custom-time-picker {
+                    position: absolute;
+                    z-index: 50;
+                    left: 18px;
+                    right: 18px;
+                    top: 118px;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 16px;
+                    background: #ffffff;
+                    box-shadow: 0 18px 45px rgba(17, 24, 39, .15);
+                    overflow: hidden;
+                    animation: pickerAppear .16s ease-out;
+                }
+
+                .custom-time-picker {
+                    top: 118px;
+                }
+
+                @keyframes pickerAppear {
+                    from { opacity: 0; transform: translateY(-5px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+
+                .picker-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 16px 16px 13px;
+                    border-bottom: 1px solid #f1f2f4;
+                }
+
+                .picker-month {
+                    display: block;
+                    color: #111827;
+                    font-size: 15px;
+                    font-weight: 700;
+                }
+
+                .picker-year {
+                    display: block;
+                    margin-top: 2px;
+                    color: #9ca3af;
+                    font-size: 12px;
+                    font-weight: 500;
+                }
+
+                .picker-nav {
+                    display: flex;
+                    gap: 6px;
+                }
+
+                .picker-nav button {
+                    width: 32px;
+                    height: 32px;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 8px;
+                    background: #ffffff;
+                    color: #374151;
+                    font-size: 21px;
+                    line-height: 1;
+                    cursor: pointer;
+                }
+
+                .picker-nav button:hover {
+                    border-color: #f28c28;
+                    color: #f28c28;
+                    background: #fff8f1;
+                }
+
+                .calendar-weekdays,
+                .calendar-grid {
+                    display: grid;
+                    grid-template-columns: repeat(7, 1fr);
+                    gap: 4px;
+                    padding: 0 12px;
+                }
+
+                .calendar-weekdays {
+                    padding-top: 12px;
+                    padding-bottom: 6px;
+                }
+
+                .calendar-weekdays span {
+                    text-align: center;
+                    color: #9ca3af;
+                    font-size: 10px;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                }
+
+                .calendar-grid {
+                    padding-bottom: 12px;
+                }
+
+                .calendar-day {
+                    width: 100%;
+                    aspect-ratio: 1;
+                    min-height: 32px;
+                    border: 0;
+                    border-radius: 9px;
+                    background: transparent;
+                    color: #374151;
+                    font-size: 12px;
+                    font-weight: 500;
+                    cursor: pointer;
+                }
+
+                .calendar-day:hover:not(:disabled) {
+                    background: #fff1e5;
+                    color: #ea6f0b;
+                }
+
+                .calendar-day.outside {
+                    color: #cbd0d7;
+                }
+
+                .calendar-day.past {
+                    color: #d6d9de;
+                    cursor: not-allowed;
+                }
+
+                .calendar-day.today {
+                    box-shadow: inset 0 0 0 1px #f6b27a;
+                }
+
+                .calendar-day.selected {
+                    background: #ff7a18;
+                    color: #ffffff;
+                    font-weight: 700;
+                    box-shadow: 0 4px 10px rgba(255, 122, 24, .24);
+                }
+
+                .picker-footer {
+                    padding: 10px 12px;
+                    border-top: 1px solid #f1f2f4;
+                    background: #fffdfb;
+                    text-align: right;
+                }
+
+                .picker-footer button {
+                    border: 0;
+                    background: transparent;
+                    color: #ea6f0b;
+                    font-size: 12px;
+                    font-weight: 700;
+                    cursor: pointer;
+                }
+
+                .time-picker-heading {
+                    padding: 15px 16px;
+                    border-bottom: 1px solid #f1f2f4;
+                    background: #fffdfb;
+                }
+
+                .time-picker-heading strong,
+                .time-picker-heading span {
+                    display: block;
+                }
+
+                .time-picker-heading strong {
+                    color: #111827;
+                    font-size: 13px;
+                }
+
+                .time-picker-heading span {
+                    margin-top: 3px;
+                    color: #9ca3af;
+                    font-size: 11px;
+                }
+
+                .time-options-grid {
+                    max-height: 280px;
+                    overflow-y: auto;
+                    padding: 10px;
+                    display: grid;
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                    gap: 7px;
+                }
+
+                .time-option {
+                    min-height: 42px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 6px;
+                    padding: 0 10px;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 9px;
+                    background: #ffffff;
+                    color: #374151;
+                    font-size: 11px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: .15s ease;
+                }
+
+                .time-option:hover {
+                    border-color: #f3b47d;
+                    background: #fff8f1;
+                    color: #ea6f0b;
+                }
+
+                .time-option.selected {
+                    border-color: #ff7a18;
+                    background: #fff1e5;
+                    color: #ea6f0b;
+                }
+
+                .selected-ferry-note {
+                    min-height: 38px;
+                    display: flex;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    gap: 4px;
+                    margin-top: 9px;
+                    padding: 8px 11px;
+                    border: 1px solid #ffd8bc;
+                    border-radius: 10px;
+                    background: #fffaf6;
+                    color: #6b7280;
+                    font-size: 11px;
+                }
+
+                .selected-ferry-note strong {
+                    color: #ea6f0b;
+                }
+
+                .schedule-field {
+                    position: relative;
+                }
 
                 /* =================================================
                    TABLET
@@ -2205,6 +4018,16 @@ const BookTrip = () => {
                             0
                             35px
                             40px;
+                    }
+
+
+                    .selected-ferry-card {
+
+                        margin-left:
+                            35px;
+
+                        margin-right:
+                            35px;
                     }
 
 
@@ -2282,6 +4105,17 @@ const BookTrip = () => {
                     }
 
 
+                    .date-time-row {
+                        grid-template-columns: 1fr;
+                        gap: 14px;
+                    }
+
+
+                    .schedule-field {
+                        padding: 14px;
+                    }
+
+
                     .header-spacer {
 
                         width:
@@ -2294,7 +4128,7 @@ const BookTrip = () => {
                         padding:
                             30px
                             20px
-                            25px;
+                            20px;
                     }
 
 
@@ -2305,19 +4139,37 @@ const BookTrip = () => {
                     }
 
 
-                    .book-trip-heading p {
-
-                        font-size:
-                            13px;
-                    }
-
-
                     .trip-form {
 
                         padding:
                             0
                             20px
                             35px;
+                    }
+
+
+                    .selected-ferry-card {
+
+                        margin:
+                            0
+                            20px
+                            10px;
+
+                        align-items:
+                            flex-start;
+
+                        flex-direction:
+                            column;
+                    }
+
+
+                    .selected-ferry-time {
+
+                        width:
+                            100%;
+
+                        text-align:
+                            center;
                     }
 
 
@@ -2353,6 +4205,13 @@ const BookTrip = () => {
 
                         gap:
                             0;
+                    }
+
+
+                    .vehicle-choice {
+
+                        grid-template-columns:
+                            1fr;
                     }
 
 
@@ -2420,10 +4279,51 @@ const BookTrip = () => {
                     }
 
 
+                    .passenger-limit {
+
+                        align-items:
+                            flex-start;
+
+                        flex-direction:
+                            column;
+
+                        gap:
+                            4px;
+                    }
+
+
+                    .passenger-limit-text {
+
+                        text-align:
+                            left;
+                    }
+
+
                     .continue-button {
 
                         height:
                             52px;
+                    }
+
+                }
+
+
+                @media (max-width: 600px) {
+
+                    .custom-date-picker,
+                    .custom-time-picker {
+                        left: 0;
+                        right: 0;
+                        top: 116px;
+                    }
+
+                    .time-options-grid {
+                        grid-template-columns: repeat(2, minmax(0, 1fr));
+                        max-height: 300px;
+                    }
+
+                    .calendar-day {
+                        min-height: 36px;
                     }
 
                 }
@@ -2451,6 +4351,16 @@ const BookTrip = () => {
                             16px;
 
                         padding-right:
+                            16px;
+                    }
+
+
+                    .selected-ferry-card {
+
+                        margin-left:
+                            16px;
+
+                        margin-right:
                             16px;
                     }
 
@@ -2502,7 +4412,7 @@ const BookTrip = () => {
 
 
                     {/* =================================================
-                       HEADER
+                        HEADER
                     ================================================= */}
 
                     <header
@@ -2514,10 +4424,10 @@ const BookTrip = () => {
                             className="back-button"
                             onClick={() =>
                                 navigate(
-                                    "/dashboard"
+                                    "/trips"
                                 )
                             }
-                            aria-label="Back to dashboard"
+                            aria-label="Back to available trips"
                         >
                             ←
                         </button>
@@ -2527,11 +4437,10 @@ const BookTrip = () => {
                             className="book-trip-logo"
                         >
 
-                        <img
-                            src="/images/logo.png"
-                            alt="GuimarasGo Logo"
-                            className="logo"
-                        />
+                            <img
+                                src={LOGO_URL}
+                                alt="GuimarasGo Logo"
+                            />
 
                         </div>
 
@@ -2545,7 +4454,7 @@ const BookTrip = () => {
 
 
                     {/* =================================================
-                       PAGE HEADING
+                        PAGE HEADING
                     ================================================= */}
 
                     <section
@@ -2557,16 +4466,75 @@ const BookTrip = () => {
                         </h1>
 
                         <p>
-                            Choose your route,
-                            schedule, and
-                            passenger details.
+                            Complete your travel,
+                            passenger, and vehicle details.
                         </p>
 
                     </section>
 
 
                     {/* =================================================
-                       FORM
+                        SELECTED FERRY
+                    ================================================= */}
+
+                    <div
+                        className="selected-ferry-card"
+                    >
+
+                        <div
+                            className="selected-ferry-left"
+                        >
+
+                            <div
+                                className="ferry-icon"
+                            >
+                                ⛴️
+                            </div>
+
+
+                            <div>
+
+                                <div
+                                    className="selected-ferry-label"
+                                >
+                                    Selected Ferry
+                                </div>
+
+
+                                <div
+                                    className="selected-ferry-name"
+                                >
+                                    {ferryName}
+                                </div>
+
+
+                                <div
+                                    className="selected-ferry-route"
+                                >
+                                    {origin || "Origin"}
+                                    {" → "}
+                                    {destination || "Destination"}
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div
+                            className="selected-ferry-time"
+                        >
+                            {formatDisplayTime(
+                                ferryDepartureTime ||
+                                time
+                            )}
+                        </div>
+
+                    </div>
+
+
+                    {/* =================================================
+                        FORM
                     ================================================= */}
 
                     <form
@@ -2578,7 +4546,7 @@ const BookTrip = () => {
 
 
                         {/* =================================================
-                           01 - ROUTE
+                            01 - ROUTE
                         ================================================= */}
 
                         <section
@@ -2603,7 +4571,7 @@ const BookTrip = () => {
                                     </h2>
 
                                     <p>
-                                        Select your departure
+                                        Confirm your departure
                                         and destination ports.
                                     </p>
 
@@ -2619,45 +4587,70 @@ const BookTrip = () => {
                                 {/* ORIGIN */}
 
                                 <div
-                                    className="route-field"
+                                    className={`route-field custom-route-field ${originPickerOpen ? "route-open" : ""}`}
                                 >
 
-                                    <label
-                                        htmlFor="origin"
-                                    >
+                                    <label>
                                         Origin Port
                                     </label>
 
-
-                                    <select
-                                        id="origin"
-                                        value={origin}
-                                        onChange={(
-                                            event
-                                        ) =>
-                                            setOrigin(
-                                                event
-                                                    .target
-                                                    .value
-                                            )
-                                        }
+                                    <button
+                                        type="button"
+                                        className={`route-picker-trigger ${originPickerOpen ? "active" : ""}`}
+                                        onClick={() => {
+                                            setOriginPickerOpen((open) => !open);
+                                            setDestinationPickerOpen(false);
+                                        }}
+                                        aria-expanded={originPickerOpen}
+                                        aria-haspopup="listbox"
                                     >
+                                        <span className={origin ? "route-picker-value" : "route-picker-placeholder"}>
+                                            {origin || "Select origin"}
+                                        </span>
 
-                                        <option
-                                            value=""
+                                        <span
+                                            className={`route-chevron ${originPickerOpen ? "open" : ""}`}
+                                            aria-hidden="true"
                                         >
-                                            Select origin
-                                        </option>
+                                            ▾
+                                        </span>
+                                    </button>
 
-                                        <option value="Iloilo">
-                                            Iloilo
-                                        </option>
+                                    {originPickerOpen && (
+                                        <div
+                                            className="route-options"
+                                            role="listbox"
+                                            aria-label="Origin port"
+                                        >
+                                            <div className="route-options-heading">
+                                                <span>Departure Port</span>
+                                                <small>Select your starting port</small>
+                                            </div>
 
-                                        <option value="Guimaras">
-                                            Guimaras
-                                        </option>
+                                            {routeOptions.map((option) => (
+                                                <button
+                                                    key={`origin-${option}`}
+                                                    type="button"
+                                                    role="option"
+                                                    aria-selected={origin === option}
+                                                    className={`route-option ${origin === option ? "selected" : ""}`}
+                                                    onClick={() => selectOrigin(option)}
+                                                >
+                                                    <span className="route-option-icon">
+                                                        {origin === option ? "✓" : "•"}
+                                                    </span>
 
-                                    </select>
+                                                    <span>{option}</span>
+
+                                                    {origin === option && (
+                                                        <span className="route-option-check">
+                                                            Selected
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
 
                                 </div>
 
@@ -2666,55 +4659,79 @@ const BookTrip = () => {
 
                                 <div
                                     className="route-arrow"
+                                    aria-hidden="true"
                                 >
-                                    →
+                                    <span>→</span>
                                 </div>
 
 
                                 {/* DESTINATION */}
 
                                 <div
-                                    className="route-field"
+                                    className={`route-field custom-route-field ${destinationPickerOpen ? "route-open" : ""}`}
                                 >
 
-                                    <label
-                                        htmlFor="destination"
-                                    >
+                                    <label>
                                         Destination Port
                                     </label>
 
-
-                                    <select
-                                        id="destination"
-                                        value={
-                                            destination
-                                        }
-                                        onChange={(
-                                            event
-                                        ) =>
-                                            setDestination(
-                                                event
-                                                    .target
-                                                    .value
-                                            )
-                                        }
+                                    <button
+                                        type="button"
+                                        className={`route-picker-trigger ${destinationPickerOpen ? "active" : ""}`}
+                                        onClick={() => {
+                                            setDestinationPickerOpen((open) => !open);
+                                            setOriginPickerOpen(false);
+                                        }}
+                                        aria-expanded={destinationPickerOpen}
+                                        aria-haspopup="listbox"
                                     >
+                                        <span className={destination ? "route-picker-value" : "route-picker-placeholder"}>
+                                            {destination || "Select destination"}
+                                        </span>
 
-                                        <option
-                                            value=""
+                                        <span
+                                            className={`route-chevron ${destinationPickerOpen ? "open" : ""}`}
+                                            aria-hidden="true"
                                         >
-                                            Select destination
-                                        </option>
+                                            ▾
+                                        </span>
+                                    </button>
 
-                                        <option value="Iloilo">
-                                            Iloilo
-                                        </option>
+                                    {destinationPickerOpen && (
+                                        <div
+                                            className="route-options"
+                                            role="listbox"
+                                            aria-label="Destination port"
+                                        >
+                                            <div className="route-options-heading">
+                                                <span>Arrival Port</span>
+                                                <small>Select your destination port</small>
+                                            </div>
 
-                                        <option value="Guimaras">
-                                            Guimaras
-                                        </option>
+                                            {routeOptions.map((option) => (
+                                                <button
+                                                    key={`destination-${option}`}
+                                                    type="button"
+                                                    role="option"
+                                                    aria-selected={destination === option}
+                                                    className={`route-option ${destination === option ? "selected" : ""}`}
+                                                    onClick={() => selectDestination(option)}
+                                                >
+                                                    <span className="route-option-icon">
+                                                        {destination === option ? "✓" : "•"}
+                                                    </span>
 
-                                    </select>
+                                                    <span>{option}</span>
+
+                                                    {destination === option && (
+                                                        <span className="route-option-check">
+                                                            Selected
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
 
                                 </div>
 
@@ -2724,7 +4741,7 @@ const BookTrip = () => {
 
 
                         {/* =================================================
-                           02 - SCHEDULE
+                            02 - SCHEDULE
                         ================================================= */}
 
                         <section
@@ -2749,8 +4766,8 @@ const BookTrip = () => {
                                     </h2>
 
                                     <p>
-                                        Select your travel
-                                        date and departure time.
+                                        Confirm your travel
+                                        date and ferry departure.
                                     </p>
 
                                 </div>
@@ -2762,34 +4779,135 @@ const BookTrip = () => {
                                 className="date-time-row"
                             >
 
+
                                 {/* DATE */}
 
                                 <div
-                                    className="form-group"
+                                    className="schedule-field schedule-field-date"
                                 >
 
-                                    <label
-                                        htmlFor="date"
-                                    >
-                                        Travel Date
-                                    </label>
+                                    <div className="form-group">
 
+                                        <label>
+                                            <span
+                                                className="schedule-label-icon"
+                                                aria-hidden="true"
+                                            >
+                                                📅
+                                            </span>
+                                            Travel Date
+                                        </label>
 
-                                    <input
-                                        id="date"
-                                        type="date"
-                                        min={today}
-                                        value={date}
-                                        onChange={(
-                                            event
-                                        ) =>
-                                            setDate(
-                                                event
-                                                    .target
-                                                    .value
-                                            )
-                                        }
-                                    />
+                                        <button
+                                            type="button"
+                                            className={`schedule-picker-trigger ${datePickerOpen ? "active" : ""}`}
+                                            onClick={() => {
+                                                setDatePickerOpen((open) => !open);
+                                                setTimePickerOpen(false);
+                                            }}
+                                            aria-expanded={datePickerOpen}
+                                            aria-haspopup="dialog"
+                                        >
+                                            <span
+                                                className={date ? "picker-value" : "picker-placeholder"}
+                                            >
+                                                {formatDisplayDate(date)}
+                                            </span>
+                                            <span className="picker-trigger-icon" aria-hidden="true">▦</span>
+                                        </button>
+
+                                        {datePickerOpen && (
+
+                                            <div
+                                                className="custom-date-picker"
+                                                role="dialog"
+                                                aria-label="Travel date picker"
+                                            >
+                                                <div className="picker-header">
+                                                    <div>
+                                                        <span className="picker-month">
+                                                            {calendarMonth.toLocaleString("en-US", { month: "long" })}
+                                                        </span>
+                                                        <span className="picker-year">
+                                                            {calendarMonth.getFullYear()}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="picker-nav">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => changeCalendarMonth(-1)}
+                                                            aria-label="Previous month"
+                                                        >
+                                                            ‹
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => changeCalendarMonth(1)}
+                                                            aria-label="Next month"
+                                                        >
+                                                            ›
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <div className="calendar-weekdays">
+                                                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                                                        <span key={day}>{day}</span>
+                                                    ))}
+                                                </div>
+
+                                                <div className="calendar-grid">
+                                                    {getCalendarDays().map((cell, index) => {
+                                                        const cellDate = new Date(
+                                                            calendarMonth.getFullYear(),
+                                                            calendarMonth.getMonth() + cell.monthOffset,
+                                                            cell.day
+                                                        );
+                                                        const year = cellDate.getFullYear();
+                                                        const month = cellDate.getMonth();
+                                                        const day = cellDate.getDate();
+                                                        const past = isDatePast(year, month, day);
+                                                        const selected = isDateSelected(year, month, day);
+                                                        const todayCell = isDateToday(year, month, day);
+                                                        const outside = cell.monthOffset !== 0;
+
+                                                        return (
+                                                            <button
+                                                                key={`${year}-${month}-${day}-${index}`}
+                                                                type="button"
+                                                                className={`calendar-day ${outside ? "outside" : ""} ${past ? "past" : ""} ${selected ? "selected" : ""} ${todayCell ? "today" : ""}`}
+                                                                disabled={past}
+                                                                onClick={() => selectDate(year, month, day)}
+                                                            >
+                                                                {day}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+
+                                                <div className="picker-footer">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const parts = today.split("-");
+                                                            setCalendarMonth(new Date(Number(parts[0]), Number(parts[1]) - 1, 1));
+                                                            setDate(today);
+                                                            setDatePickerOpen(false);
+                                                        }}
+                                                    >
+                                                        Today
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="schedule-range-note">
+                                            <span aria-hidden="true">✓</span>
+                                            <span>Select today or a future travel date.</span>
+                                        </div>
+
+                                    </div>
 
                                 </div>
 
@@ -2797,47 +4915,92 @@ const BookTrip = () => {
                                 {/* TIME */}
 
                                 <div
-                                    className="form-group"
+                                    className="schedule-field schedule-field-time"
                                 >
 
-                                    <label
-                                        htmlFor="time"
-                                    >
-                                        Departure Time
-                                    </label>
+                                    <div className="form-group">
 
+                                        <label>
+                                            <span
+                                                className="schedule-label-icon"
+                                                aria-hidden="true"
+                                            >
+                                                🕐
+                                            </span>
+                                            Departure Time
+                                        </label>
 
-                                    <input
-                                        id="time"
-                                        type="time"
-                                        value={time}
-                                        onChange={(
-                                            event
-                                        ) =>
-                                            setTime(
-                                                event
-                                                    .target
-                                                    .value
-                                            )
-                                        }
-                                    />
+                                        <button
+                                            type="button"
+                                            className={`schedule-picker-trigger ${timePickerOpen ? "active" : ""}`}
+                                            onClick={() => {
+                                                setTimePickerOpen((open) => !open);
+                                                setDatePickerOpen(false);
+                                            }}
+                                            aria-expanded={timePickerOpen}
+                                            aria-haspopup="listbox"
+                                        >
+                                            <span
+                                                className={time ? "picker-value" : "picker-placeholder"}
+                                            >
+                                                {time ? currentTimeLabel : "--:-- --"}
+                                            </span>
+                                            <span className="picker-trigger-icon" aria-hidden="true">◷</span>
+                                        </button>
 
-                                    <small
-                                        className="field-help"
-                                    >
-                                        Select your preferred
-                                        departure time.
-                                    </small>
+                                        {timePickerOpen && (
+                                            <div
+                                                className="custom-time-picker"
+                                                role="listbox"
+                                                aria-label="Departure time picker"
+                                            >
+                                                <div className="time-picker-heading">
+                                                    <div>
+                                                        <strong>Select departure time</strong>
+                                                        <span>Available from 3:30 AM to 7:30 PM</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="time-options-grid">
+                                                    {timeOptions.map((option) => (
+                                                        <button
+                                                            key={option.value}
+                                                            type="button"
+                                                            role="option"
+                                                            aria-selected={option.value === time}
+                                                            className={`time-option ${option.value === time ? "selected" : ""}`}
+                                                            onClick={() => selectTime(option.value)}
+                                                        >
+                                                            <span>{option.label}</span>
+                                                            {option.value === time && <span aria-hidden="true">✓</span>}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="schedule-range-note">
+                                            <span aria-hidden="true">⏱</span>
+                                            <span>Ferry departure window: <strong>3:30 AM – 7:30 PM</strong></span>
+                                        </div>
+
+                                        <div className="selected-ferry-note">
+                                            <span>Selected ferry:</span>
+                                            <strong>{ferryName}</strong>
+                                            <span>—</span>
+                                            <span>{formatDisplayTime(ferryDepartureTime || time)}</span>
+                                        </div>
+
+                                    </div>
 
                                 </div>
-
                             </div>
 
                         </section>
 
 
                         {/* =================================================
-                           03 - PASSENGER DETAILS
+                            03 - VEHICLE
                         ================================================= */}
 
                         <section
@@ -2858,6 +5021,256 @@ const BookTrip = () => {
                                 <div>
 
                                     <h2>
+                                        Vehicle
+                                    </h2>
+
+                                    <p>
+                                        Select whether you are
+                                        bringing a motorcycle.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+
+                            <div
+                                className="vehicle-choice"
+                            >
+
+
+                                {/* MOTORCYCLE */}
+
+                                <div
+                                    className={
+                                        `vehicle-choice-card ${
+                                            vehicleChoice ===
+                                            "motorcycle"
+                                                ? "active"
+                                                : ""
+                                        }`
+                                    }
+                                    onClick={() =>
+                                        handleVehicleChange(
+                                            "motorcycle"
+                                        )
+                                    }
+                                >
+
+                                    <div
+                                        className="vehicle-radio"
+                                    />
+
+
+                                    <div
+                                        className="vehicle-icon"
+                                    >
+                                        🏍️
+                                    </div>
+
+
+                                    <div
+                                        className="vehicle-content"
+                                    >
+
+                                        <strong>
+                                            Motorcycle
+                                        </strong>
+
+                                        <span>
+                                            Bringing a motorcycle
+                                            on the ferry.
+                                        </span>
+
+                                    </div>
+
+
+                                    <div
+                                        className="vehicle-limit-badge"
+                                    >
+                                        Max 3
+                                    </div>
+
+                                </div>
+
+
+                                {/* NO MOTORCYCLE */}
+
+                                <div
+                                    className={
+                                        `vehicle-choice-card ${
+                                            vehicleChoice ===
+                                            "noMotorcycle"
+                                                ? "active"
+                                                : ""
+                                        }`
+                                    }
+                                    onClick={() =>
+                                        handleVehicleChange(
+                                            "noMotorcycle"
+                                        )
+                                    }
+                                >
+
+                                    <div
+                                        className="vehicle-radio"
+                                    />
+
+
+                                    <div
+                                        className="vehicle-icon"
+                                    >
+                                        👥
+                                    </div>
+
+
+                                    <div
+                                        className="vehicle-content"
+                                    >
+
+                                        <strong>
+                                            No Motorcycle
+                                        </strong>
+
+                                        <span>
+                                            Travel with friends
+                                            without a vehicle.
+                                        </span>
+
+                                    </div>
+
+
+                                    <div
+                                        className="vehicle-limit-badge"
+                                    >
+                                        Max 10
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            {/* =================================================
+                                MOTORCYCLE DETAILS
+                            ================================================= */}
+
+                            {vehicleChoice ===
+                                "motorcycle" && (
+
+                                <>
+
+                                    <div
+                                        className="form-group"
+                                    >
+
+                                        <label>
+                                            Vehicle Type
+                                        </label>
+
+
+                                        <input
+                                            type="text"
+                                            value="Motorcycle"
+                                            disabled
+                                        />
+
+                                    </div>
+
+
+                                    <div
+                                        className="form-group"
+                                    >
+
+                                        <label
+                                            htmlFor="plateNumber"
+                                        >
+                                            Plate Number
+                                        </label>
+
+
+                                        <input
+                                            id="plateNumber"
+                                            type="text"
+                                            placeholder="Enter plate number"
+                                            value={
+                                                plateNumber
+                                            }
+                                            onChange={(
+                                                event
+                                            ) =>
+                                                setPlateNumber(
+                                                    event
+                                                        .target
+                                                        .value
+                                                )
+                                            }
+                                            maxLength={20}
+                                        />
+
+
+                                        <small
+                                            className="field-help"
+                                        >
+                                            Example:
+                                            ABC-1234
+                                        </small>
+
+                                    </div>
+
+                                </>
+
+                            )}
+
+
+                            {/* =================================================
+                                NO MOTORCYCLE MESSAGE
+                            ================================================= */}
+
+                            {vehicleChoice ===
+                                "noMotorcycle" && (
+
+                                <div
+                                    className="no-motorcycle-notice"
+                                >
+
+                                    <strong>
+                                        No Motorcycle selected.
+                                    </strong>
+                                    {" "}
+                                    You can add yourself and up
+                                    to 9 friends, for a maximum
+                                    of 10 passengers on this booking.
+
+                                </div>
+
+                            )}
+
+                        </section>
+
+
+                        {/* =================================================
+                            04 - PASSENGER DETAILS
+                        ================================================= */}
+
+                        <section
+                            className="form-section"
+                        >
+
+                            <div
+                                className="section-title"
+                            >
+
+                                <span
+                                    className="section-number"
+                                >
+                                    04
+                                </span>
+
+
+                                <div>
+
+                                    <h2>
                                         Passenger Details
                                     </h2>
 
@@ -2872,7 +5285,7 @@ const BookTrip = () => {
 
 
                             {/* =================================================
-                               SOLO / WITH PASSENGER
+                                SOLO / WITH PASSENGER
                             ================================================= */}
 
                             <div
@@ -2966,7 +5379,8 @@ const BookTrip = () => {
                                         </strong>
 
                                         <span>
-                                            I am travelling with someone.
+                                            I am travelling
+                                            with someone.
                                         </span>
 
                                     </div>
@@ -2977,65 +5391,261 @@ const BookTrip = () => {
 
 
                             {/* =================================================
-                               DYNAMIC PASSENGER INFORMATION
+                                NO MOTORCYCLE FRIEND MESSAGE
+                            ================================================= */}
+
+                            {vehicleChoice ===
+                                "noMotorcycle" && (
+
+                                <div
+                                    className="no-motorcycle-notice"
+                                >
+
+                                    <strong>
+                                        Account Owner + Friends
+                                    </strong>
+                                    <br />
+
+                                    Passenger 1 is the account
+                                    owner. Add up to 9 friends
+                                    using the + button below.
+
+                                </div>
+
+                            )}
+
+
+                            {/* =================================================
+                                PASSENGER LIST
                             ================================================= */}
 
                             <div
                                 className="passenger-list"
                             >
 
-                                {passengerDetails.map(
-                                    (
-                                        passenger,
-                                        index
-                                    ) => (
-
-                                        <div
-                                            className="passenger-card"
-                                            key={
-                                                index
-                                            }
-                                        >
-
-                                            {/* CARD HEADER */}
+                                {
+                                    passengerDetails.map(
+                                        (
+                                            passenger,
+                                            index
+                                        ) => (
 
                                             <div
-                                                className="passenger-card-header"
+                                                className="passenger-card"
+                                                key={
+                                                    index
+                                                }
                                             >
 
                                                 <div
-                                                    className="passenger-card-title"
+                                                    className="passenger-card-header"
                                                 >
 
                                                     <div
-                                                        className="passenger-card-number"
+                                                        className="passenger-card-title"
                                                     >
-                                                        {
-                                                            String(
-                                                                index +
-                                                                1
-                                                            ).padStart(
-                                                                2,
-                                                                "0"
-                                                            )
-                                                        }
-                                                    </div>
 
-
-                                                    <div>
-
-                                                        <strong>
-                                                            Passenger{" "}
+                                                        <div
+                                                            className="passenger-card-number"
+                                                        >
                                                             {
-                                                                index +
-                                                                1
+                                                                String(
+                                                                    index +
+                                                                    1
+                                                                ).padStart(
+                                                                    2,
+                                                                    "0"
+                                                                )
                                                             }
-                                                        </strong>
+                                                        </div>
 
-                                                        <span>
-                                                            {" "}
-                                                            — Personal Information
-                                                        </span>
+
+                                                        <div>
+
+                                                            <strong>
+                                                                Passenger
+                                                                {" "}
+                                                                {
+                                                                    index +
+                                                                    1
+                                                                }
+                                                            </strong>
+
+
+                                                            <span>
+                                                                {" "}
+                                                                —{" "}
+                                                                {
+                                                                    index ===
+                                                                    0
+                                                                        ? "Account Owner"
+                                                                        : "Friend"
+                                                                }
+                                                            </span>
+
+                                                        </div>
+
+                                                    </div>
+
+                                                </div>
+
+
+                                                {/* PASSENGER FIELDS */}
+
+                                                <div
+                                                    className="passenger-fields"
+                                                >
+
+
+                                                    {/* FULL NAME */}
+
+                                                    <div
+                                                        className="form-group"
+                                                    >
+
+                                                        <label
+                                                            htmlFor={
+                                                                `passenger-name-${index}`
+                                                            }
+                                                        >
+                                                            Full Name
+                                                        </label>
+
+
+                                                        <input
+                                                            id={
+                                                                `passenger-name-${index}`
+                                                            }
+                                                            type="text"
+                                                            className="passenger-input"
+                                                            placeholder="Enter passenger full name"
+                                                            value={
+                                                                passenger.name
+                                                            }
+                                                            onChange={(
+                                                                event
+                                                            ) =>
+                                                                updatePassenger(
+                                                                    index,
+                                                                    "name",
+                                                                    event
+                                                                        .target
+                                                                        .value
+                                                                )
+                                                            }
+                                                            autoComplete="name"
+                                                        />
+
+                                                    </div>
+
+
+                                                    {/* AGE */}
+
+                                                    <div
+                                                        className="form-group"
+                                                    >
+
+                                                        <label
+                                                            htmlFor={
+                                                                `passenger-age-${index}`
+                                                            }
+                                                        >
+                                                            Age
+                                                        </label>
+
+
+                                                        <input
+                                                            id={
+                                                                `passenger-age-${index}`
+                                                            }
+                                                            type="number"
+                                                            className="passenger-input"
+                                                            placeholder="Age"
+                                                            min="1"
+                                                            max="120"
+                                                            value={
+                                                                passenger.age
+                                                            }
+                                                            onChange={(
+                                                                event
+                                                            ) =>
+                                                                updatePassenger(
+                                                                    index,
+                                                                    "age",
+                                                                    event
+                                                                        .target
+                                                                        .value
+                                                                )
+                                                            }
+                                                        />
+
+                                                    </div>
+
+
+                                                    {/* GENDER */}
+
+                                                    <div
+                                                        className="form-group"
+                                                    >
+
+                                                        <label
+                                                            htmlFor={
+                                                                `passenger-gender-${index}`
+                                                            }
+                                                        >
+                                                            Gender
+                                                        </label>
+
+
+                                                        <select
+                                                            id={
+                                                                `passenger-gender-${index}`
+                                                            }
+                                                            className="passenger-input"
+                                                            value={
+                                                                passenger.gender
+                                                            }
+                                                            onChange={(
+                                                                event
+                                                            ) =>
+                                                                updatePassenger(
+                                                                    index,
+                                                                    "gender",
+                                                                    event
+                                                                        .target
+                                                                        .value
+                                                                )
+                                                            }
+                                                        >
+
+                                                            <option
+                                                                value=""
+                                                            >
+                                                                Select gender
+                                                            </option>
+
+
+                                                            <option
+                                                                value="Male"
+                                                            >
+                                                                Male
+                                                            </option>
+
+
+                                                            <option
+                                                                value="Female"
+                                                            >
+                                                                Female
+                                                            </option>
+
+
+                                                            <option
+                                                                value="Prefer not to say"
+                                                            >
+                                                                Prefer not to say
+                                                            </option>
+
+                                                        </select>
 
                                                     </div>
 
@@ -3043,175 +5653,15 @@ const BookTrip = () => {
 
                                             </div>
 
-
-                                            {/* PASSENGER FIELDS */}
-
-                                            <div
-                                                className="passenger-fields"
-                                            >
-
-
-                                                {/* FULL NAME */}
-
-                                                <div
-                                                    className="form-group"
-                                                >
-
-                                                    <label
-                                                        htmlFor={
-                                                            `passenger-name-${index}`
-                                                        }
-                                                    >
-                                                        Full Name
-                                                    </label>
-
-
-                                                    <input
-                                                        id={
-                                                            `passenger-name-${index}`
-                                                        }
-                                                        type="text"
-                                                        className="passenger-input"
-                                                        placeholder="Enter passenger full name"
-                                                        value={
-                                                            passenger.name
-                                                        }
-                                                        onChange={(
-                                                            event
-                                                        ) =>
-                                                            updatePassenger(
-                                                                index,
-                                                                "name",
-                                                                event
-                                                                    .target
-                                                                    .value
-                                                            )
-                                                        }
-                                                        autoComplete="name"
-                                                    />
-
-                                                </div>
-
-
-                                                {/* AGE */}
-
-                                                <div
-                                                    className="form-group"
-                                                >
-
-                                                    <label
-                                                        htmlFor={
-                                                            `passenger-age-${index}`
-                                                        }
-                                                    >
-                                                        Age
-                                                    </label>
-
-
-                                                    <input
-                                                        id={
-                                                            `passenger-age-${index}`
-                                                        }
-                                                        type="number"
-                                                        className="passenger-input"
-                                                        placeholder="Age"
-                                                        min="1"
-                                                        max="120"
-                                                        value={
-                                                            passenger.age
-                                                        }
-                                                        onChange={(
-                                                            event
-                                                        ) =>
-                                                            updatePassenger(
-                                                                index,
-                                                                "age",
-                                                                event
-                                                                    .target
-                                                                    .value
-                                                            )
-                                                        }
-                                                    />
-
-                                                </div>
-
-
-                                                {/* GENDER */}
-
-                                                <div
-                                                    className="form-group"
-                                                >
-
-                                                    <label
-                                                        htmlFor={
-                                                            `passenger-gender-${index}`
-                                                        }
-                                                    >
-                                                        Gender
-                                                    </label>
-
-
-                                                    <select
-                                                        id={
-                                                            `passenger-gender-${index}`
-                                                        }
-                                                        className="passenger-input"
-                                                        value={
-                                                            passenger.gender
-                                                        }
-                                                        onChange={(
-                                                            event
-                                                        ) =>
-                                                            updatePassenger(
-                                                                index,
-                                                                "gender",
-                                                                event
-                                                                    .target
-                                                                    .value
-                                                            )
-                                                        }
-                                                    >
-
-                                                        <option
-                                                            value=""
-                                                        >
-                                                            Select gender
-                                                        </option>
-
-                                                        <option
-                                                            value="Male"
-                                                        >
-                                                            Male
-                                                        </option>
-
-                                                        <option
-                                                            value="Female"
-                                                        >
-                                                            Female
-                                                        </option>
-
-                                                        <option
-                                                            value="Prefer not to say"
-                                                        >
-                                                            Prefer not to say
-                                                        </option>
-
-                                                    </select>
-
-                                                </div>
-
-                                            </div>
-
-                                        </div>
-
+                                        )
                                     )
-                                )}
+                                }
 
                             </div>
 
 
                             {/* =================================================
-                               NUMBER OF PASSENGERS
+                                NUMBER OF PASSENGERS
                             ================================================= */}
 
                             <div
@@ -3256,6 +5706,7 @@ const BookTrip = () => {
                                             }
                                         </strong>
 
+
                                         <span>
                                             {
                                                 passengers ===
@@ -3294,15 +5745,24 @@ const BookTrip = () => {
                                     <span
                                         className="passenger-help"
                                     >
-                                        Add personal details
-                                        for every passenger.
+
+                                        {vehicleChoice ===
+                                            "noMotorcycle"
+                                            ? "Add personal details for yourself and every friend."
+                                            : "Add personal details for every passenger."}
+
                                     </span>
 
 
                                     <span
                                         className="passenger-limit-text"
                                     >
-                                        Maximum 5 passengers
+
+                                        {vehicleChoice ===
+                                            "noMotorcycle"
+                                            ? "Maximum 10 passengers • Owner + 9 friends"
+                                            : "Maximum 3 passengers with motorcycle"}
+
                                     </span>
 
                                 </div>
@@ -3313,108 +5773,7 @@ const BookTrip = () => {
 
 
                         {/* =================================================
-                           04 - VEHICLE
-                        ================================================= */}
-
-                        <section
-                            className="form-section"
-                        >
-
-                            <div
-                                className="section-title"
-                            >
-
-                                <span
-                                    className="section-number"
-                                >
-                                    04
-                                </span>
-
-
-                                <div>
-
-                                    <h2>
-                                        Vehicle Details
-                                    </h2>
-
-                                    <p>
-                                        Enter the motorcycle
-                                        plate number.
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-
-                            {/* VEHICLE TYPE */}
-
-                            <div
-                                className="form-group"
-                            >
-
-                                <label>
-                                    Vehicle Type
-                                </label>
-
-
-                                <input
-                                    type="text"
-                                    value={
-                                        vehicleType
-                                    }
-                                    disabled
-                                />
-
-                            </div>
-
-
-                            {/* PLATE NUMBER */}
-
-                            <div
-                                className="form-group"
-                            >
-
-                                <label
-                                    htmlFor="plateNumber"
-                                >
-                                    Plate Number
-                                </label>
-
-
-                                <input
-                                    id="plateNumber"
-                                    type="text"
-                                    placeholder="Enter plate number"
-                                    value={
-                                        plateNumber
-                                    }
-                                    onChange={(
-                                        event
-                                    ) =>
-                                        setPlateNumber(
-                                            event
-                                                .target
-                                                .value
-                                        )
-                                    }
-                                    maxLength={20}
-                                />
-
-
-                                <small
-                                    className="field-help"
-                                >
-                                    Example: ABC-1234
-                                </small>
-
-                            </div>
-
-                        </section>
-
-
-                        {/* =================================================
-                           BOOKING NOTE
+                            BOOKING NOTE
                         ================================================= */}
 
                         <div
@@ -3434,11 +5793,15 @@ const BookTrip = () => {
                                     Before continuing
                                 </strong>
 
+
                                 <p>
+
                                     Please make sure that
-                                    all passenger information,
-                                    trip schedule, and plate
-                                    number are correct.
+                                    your selected ferry,
+                                    passenger information,
+                                    travel schedule, and
+                                    vehicle details are correct.
+
                                 </p>
 
                             </div>
@@ -3447,7 +5810,7 @@ const BookTrip = () => {
 
 
                         {/* =================================================
-                           CONTINUE
+                            CONTINUE
                         ================================================= */}
 
                         <button
@@ -3457,6 +5820,7 @@ const BookTrip = () => {
 
                             Continue to Payment
 
+
                             <span
                                 className="button-arrow"
                             >
@@ -3465,7 +5829,6 @@ const BookTrip = () => {
 
                         </button>
 
-
                     </form>
 
                 </div>
@@ -3473,7 +5836,6 @@ const BookTrip = () => {
             </main>
 
         </>
-
     );
 };
 

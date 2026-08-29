@@ -3150,143 +3150,111 @@ const AdminDashboard = () => {
                 }
 
 
-                /* =================================================
-                   CONTENT
-                ================================================= */
+                /* =========================================================
+   DASHBOARD CONTENT
+========================================================= */
 
-                .dashboard-content {
-                    flex:
-                        1;
+.dashboard-content {
+    width: 100%;
 
-                    min-width:
-                        0;
+    min-width: 0;
+    min-height: 100vh;
 
-                    min-height:
-                        100vh;
+    display: flex;
+    flex-direction: column;
 
-                    display:
-                        flex;
+    background: #f5f7fa;
 
-                    flex-direction:
-                        column;
-                }
+    box-sizing: border-box;
+}
 
 
-                /* =================================================
-                   HEADER
-                ================================================= */
+/* =========================================================
+   DASHBOARD HEADER
+========================================================= */
 
-                .dashboard-header {
-                    min-height:
-                        70px;
+.dashboard-header {
+    width: 100%;
 
-                    padding:
-                        0 32px;
+    min-height: 70px;
 
-                    display:
-                        flex;
+    padding: 0 32px;
 
-                    align-items:
-                        center;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 
-                    justify-content:
-                        space-between;
+    background: #ffffff;
 
-                    background:
-                        #ffffff;
+    border-bottom: 1px solid #e5e7eb;
 
-                    border-bottom:
-                        1px solid #e5e5e5;
-                }
+    flex-shrink: 0;
+
+    box-sizing: border-box;
+}
 
 
-                .dashboard-header h1 {
-                    margin:
-                        0 0 4px;
+/* =========================================================
+   MAIN CONTENT
+========================================================= */
 
-                    color:
-                        #222;
+.dashboard-main {
+    width: 100%;
 
-                    font-size:
-                        21px;
+    padding: 28px 35px 20px;
 
-                    font-weight:
-                        800;
+    flex: 0 0 auto;
 
-                    letter-spacing:
-                        -0.4px;
-                }
+    box-sizing: border-box;
+}
 
 
-                .dashboard-header p {
-                    margin:
-                        0;
+/* =========================================================
+   STAFF MANAGEMENT
+========================================================= */
 
-                    color:
-                        #888;
+.dashboard-content > .staff-management {
+    width: 100%;
 
-                    font-size:
-                        11px;
-                }
+    max-width: 1100px;
 
+    margin: 0 auto;
 
-                .dashboard-header strong {
-                    color:
-                        #444;
-                }
+    padding: 0 35px 35px;
 
-
-                .admin-badge {
-                    padding:
-                        8px 15px;
-
-                    border-radius:
-                        20px;
-
-                    background:
-                        #fff0df;
-
-                    color:
-                        #f28c28;
-
-                    font-size:
-                        9px;
-
-                    font-weight:
-                        800;
-
-                    letter-spacing:
-                        0.4px;
-                }
+    box-sizing: border-box;
+}
 
 
-                /* =================================================
-                   MAIN
-                ================================================= */
+/* =========================================================
+   FOOTER
+========================================================= */
 
-                .dashboard-main {
-                    flex:
-                        1;
+.dashboard-footer {
+    width: 100%;
 
-                    width:
-                        100%;
+    min-height: 55px;
 
-                    padding:
-                        34px 35px;
-                }
+    margin-top: auto;
 
+    padding: 0 32px;
 
-                .dashboard-page,
-                .payments-page {
-                    width:
-                        100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 
-                    max-width:
-                        1100px;
+    background: #ffffff;
 
-                    margin:
-                        0 auto;
-                }
+    border-top: 1px solid #e5e7eb;
+
+    color: #999999;
+
+    font-size: 9px;
+
+    flex-shrink: 0;
+
+    box-sizing: border-box;
+}
 
 
                 /* =================================================
@@ -6166,6 +6134,568 @@ const AdminDashboard = () => {
                     }
 
                 }
+                    /* =========================================================
+   STAFF MANAGEMENT - COMPACT PROFESSIONAL LAYOUT
+   UI ONLY - DOES NOT CHANGE FUNCTIONALITY
+========================================================= */
+
+/* Keep Staff Management close to the dashboard header */
+.staff-page {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0;
+}
+
+/* Staff heading */
+.staff-header {
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    margin: 0 0 18px;
+}
+
+/* Heading */
+.staff-header h2 {
+    margin: 0 0 5px;
+    color: #222222;
+    font-size: 25px;
+    line-height: 1.2;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+/* Description */
+.staff-header p {
+    margin: 0;
+    color: #888888;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+/* Administration label */
+.staff-header .eyebrow {
+    display: block;
+    margin-bottom: 5px;
+}
+
+/* Buttons beside Staff Management title */
+.staff-header-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Refresh button */
+.staff-header-actions .refresh-button {
+    min-height: 37px;
+    padding: 0 14px;
+    border: 1px solid #dddddd;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #555555;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.staff-header-actions .refresh-button:hover {
+    background: #fafafa;
+    border-color: #cccccc;
+    transform: translateY(-1px);
+}
+
+/* Add Staff */
+.staff-header-actions .staff-add-button {
+    min-height: 37px;
+    padding: 0 15px;
+    border: none;
+    border-radius: 8px;
+    background: #f28c28;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.staff-header-actions .staff-add-button:hover {
+    background: #df7818;
+    transform: translateY(-1px);
+    box-shadow:
+        0 5px 14px rgba(242, 140, 40, 0.18);
+}
+
+
+/* =========================================================
+   SUMMARY
+========================================================= */
+
+.staff-summary-card {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+
+    margin: 0 0 16px;
+
+    overflow: hidden;
+
+    background: #e8e8e8;
+    border: 1px solid #e8e8e8;
+    border-radius: 12px;
+}
+
+/* Individual summary section */
+.staff-summary-card > div {
+    min-height: 78px;
+    padding: 15px 18px;
+
+    background: #ffffff;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Summary labels */
+.staff-summary-card span {
+    display: block;
+    margin-bottom: 6px;
+
+    color: #888888;
+    font-size: 9px;
+    font-weight: 500;
+}
+
+/* Summary numbers */
+.staff-summary-card strong {
+    display: block;
+
+    color: #222222;
+    font-size: 22px;
+    line-height: 1;
+}
+
+
+/* =========================================================
+   STAFF TABLE
+========================================================= */
+
+.staff-table-card {
+    width: 100%;
+    overflow: hidden;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+
+    box-shadow:
+        0 3px 14px rgba(0, 0, 0, 0.025);
+}
+
+.staff-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.staff-table {
+    width: 100%;
+    min-width: 760px;
+
+    border-collapse: collapse;
+}
+
+/* Table heading */
+.staff-table th {
+    padding: 12px 15px;
+
+    background: #fafafa;
+    color: #777777;
+
+    border-bottom: 1px solid #e5e5e5;
+
+    text-align: left;
+
+    font-size: 8px;
+    font-weight: 800;
+
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Table cells */
+.staff-table td {
+    padding: 13px 15px;
+
+    color: #333333;
+
+    border-bottom: 1px solid #f1f1f1;
+
+    font-size: 10px;
+    vertical-align: middle;
+}
+
+/* Last row */
+.staff-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Hover */
+.staff-table tbody tr {
+    transition: background 0.15s ease;
+}
+
+.staff-table tbody tr:hover {
+    background: #fffaf5;
+}
+
+/* Staff name */
+.staff-table td strong {
+    color: #222222;
+    font-size: 10px;
+}
+
+
+/* =========================================================
+   ROLE BADGE
+========================================================= */
+
+.staff-role {
+    display: inline-flex;
+    align-items: center;
+
+    padding: 4px 8px;
+
+    border-radius: 20px;
+
+    background: #f5f5f5;
+    color: #555555;
+
+    font-size: 8px;
+    font-weight: 700;
+
+    text-transform: uppercase;
+}
+
+
+/* =========================================================
+   STATUS BADGE
+========================================================= */
+
+.staff-status {
+    display: inline-flex;
+    align-items: center;
+
+    padding: 4px 8px;
+
+    border-radius: 20px;
+
+    font-size: 8px;
+    font-weight: 800;
+}
+
+.staff-status.active {
+    background: #e9f8ef;
+    color: #16804a;
+}
+
+.staff-status.inactive {
+    background: #fff0f0;
+    color: #d32f2f;
+}
+
+
+/* =========================================================
+   ACTION BUTTONS
+========================================================= */
+
+.staff-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.staff-action {
+    min-height: 29px;
+
+    padding: 0 9px;
+
+    border: none;
+    border-radius: 6px;
+
+    font-size: 8px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+.staff-action:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.staff-action.activate {
+    background: #e9f8ef;
+    color: #16804a;
+}
+
+.staff-action.activate:hover {
+    background: #d9f2e3;
+}
+
+.staff-action.deactivate {
+    background: #fff7df;
+    color: #a46f00;
+}
+
+.staff-action.deactivate:hover {
+    background: #ffefc4;
+}
+
+.staff-action.delete {
+    background: #fff0f0;
+    color: #d32f2f;
+}
+
+.staff-action.delete:hover {
+    background: #ffe2e2;
+}
+
+.staff-action:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+
+/* =========================================================
+   LOADING / EMPTY STATE
+========================================================= */
+
+.staff-loading,
+.empty-staff-card {
+    width: 100%;
+    min-height: 230px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+
+    padding: 30px 20px;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+
+    text-align: center;
+}
+
+.staff-loading p,
+.empty-staff-card p {
+    margin: 10px 0 16px;
+
+    color: #888888;
+
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.empty-staff-icon {
+    width: 48px;
+    height: 48px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom: 11px;
+
+    border-radius: 50%;
+
+    background: #fff0df;
+    color: #f28c28;
+
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.empty-staff-card h3 {
+    margin: 0;
+
+    color: #222222;
+    font-size: 15px;
+}
+
+
+/* =========================================================
+   IMPORTANT:
+   PREVENT STAFF PAGE FROM BEING VERTICALLY PUSHED
+========================================================= */
+
+.dashboard-main {
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+}
+
+.staff-page {
+    align-self: flex-start;
+}
+
+
+/* =========================================================
+   STAFF MODAL
+   KEEP EXISTING FUNCTIONALITY
+========================================================= */
+
+.staff-modal {
+    width: 100%;
+    max-width: 540px;
+
+    padding: 24px;
+
+    background: #ffffff;
+
+    border-radius: 14px;
+
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.20);
+}
+
+.staff-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin-bottom: 18px;
+}
+
+.staff-modal-header h3 {
+    margin: 0 0 5px;
+
+    color: #222222;
+    font-size: 19px;
+}
+
+.staff-modal-header p {
+    margin: 0;
+
+    color: #888888;
+
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.staff-modal-close {
+    width: 30px;
+    height: 30px;
+
+    flex-shrink: 0;
+
+    border: none;
+    border-radius: 7px;
+
+    background: #f7f7f7;
+    color: #777777;
+
+    font-size: 18px;
+
+    cursor: pointer;
+}
+
+.staff-modal-close:hover {
+    background: #eeeeee;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .staff-page {
+        max-width: 100%;
+    }
+
+    .staff-header {
+        align-items: flex-start;
+    }
+
+    .staff-summary-card {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+}
+
+
+@media (max-width: 700px) {
+
+    .staff-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .staff-header-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .staff-summary-card {
+        grid-template-columns: 1fr;
+    }
+
+    .staff-summary-card > div {
+        min-height: 65px;
+    }
+
+}
+
+
+@media (max-width: 500px) {
+
+    .staff-header-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .staff-header-actions .refresh-button,
+    .staff-header-actions .staff-add-button {
+        width: 100%;
+    }
+
+    .staff-header h2 {
+        font-size: 21px;
+    }
+
+    .staff-header p {
+        font-size: 10px;
+    }
+
+    .staff-table th,
+    .staff-table td {
+        padding: 11px 12px;
+    }
+
+}
 
             `}</style>
 
