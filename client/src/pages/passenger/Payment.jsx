@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 /* =========================================================
    LOGO
-   ========================================================= */
+========================================================= */
 
 const LOGO_URL =
     "https://scontent.fcgy2-2.fna.fbcdn.net/v/t1.15752-9/775468126_1793367781697550_3767041847597317415_n.png?stp=dst-png&cstp=mx532x469&ctp=s532x469&_nc_cat=103&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeEKTnmoEB20Fs5gE6WYWTxBd_QaoqEL1HV39BqioQvUdc9ZjhsVKyPy19OQYcSyO20Y_14PqMHIf2M01vrRKE4U&_nc_ohc=fK0ygs4SALUQ7kNvwEhUgQl&_nc_oc=Adr97yUKqKQuY-Rb-Lpj__Sjoqm7YY75sVczdULR8n8AbUyhy3oVy9DJ-YO_YUPfnTE&_nc_zt=23&_nc_ht=scontent.fcgy2-2.fna&_nc_ss=7a2a8&oh=03_Q7cD6AFmBhmkMTNembwVy95XQOYfaHONnpCT7udBE1IJnmNvHg&oe=6AB20956";
@@ -14,19 +14,23 @@ const Payment = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
+
     /* =========================================================
        GET TRIP DETAILS
-       ========================================================= */
+    ========================================================= */
 
     const savedTrip = sessionStorage.getItem("tripDetails");
 
     let storedTrip = null;
 
     try {
+
         storedTrip = savedTrip
             ? JSON.parse(savedTrip)
             : null;
+
     } catch (error) {
+
         console.error(
             "Unable to recover saved trip:",
             error
@@ -34,6 +38,7 @@ const Payment = () => {
 
         storedTrip = null;
     }
+
 
     const trip =
         location.state?.trip ||
@@ -43,38 +48,54 @@ const Payment = () => {
 
     /* =========================================================
        NORMALIZE TRIP INFORMATION
-       ========================================================= */
+    ========================================================= */
 
     const normalizedTrip = trip
         ? {
+
             ...trip,
 
+
             /* Passenger information */
+
             passengerName:
                 trip.passengerName ||
                 trip.fullName ||
                 trip.name ||
                 "",
 
+
             passengerAge:
                 trip.passengerAge ||
                 trip.age ||
                 "",
+
 
             passengerGender:
                 trip.passengerGender ||
                 trip.gender ||
                 "",
 
-            /* Passenger count */
+
+            /* =================================================
+               PASSENGER COUNT
+
+               Supports the different possible names that
+               may come from the booking page.
+            ================================================= */
+
             passengers:
                 Number(
                     trip.passengers ||
                     trip.numberOfPassengers ||
+                    trip.passengerCount ||
+                    trip.totalPassengers ||
                     1
                 ),
 
+
             /* Plate number */
+
             plateNumber:
                 trip.plateNumber ||
                 trip.plate_number ||
@@ -86,19 +107,22 @@ const Payment = () => {
                 trip.motorcycle?.plateNumber ||
                 "",
 
+
             /* Vehicle */
+
             vehicleType:
                 trip.vehicleType ||
                 trip.vehicle ||
                 trip.vehicleDetails?.type ||
-                "Motorcycle",
+                "No Motorcycle",
+
         }
         : null;
 
 
     /* =========================================================
        PAYMENT METHOD
-       ========================================================= */
+    ========================================================= */
 
     const [paymentMethod, setPaymentMethod] =
         useState("maya");
@@ -106,11 +130,12 @@ const Payment = () => {
 
     /* =========================================================
        IF TRIP INFORMATION IS MISSING
-       ========================================================= */
+    ========================================================= */
 
     if (!normalizedTrip) {
 
         return (
+
             <main className="payment-page">
 
                 <div className="payment-container missing-trip">
@@ -134,68 +159,69 @@ const Payment = () => {
                         ← Back to Trip Details
                     </button>
 
+
+                    <style>{`
+
+                        * {
+                            box-sizing: border-box;
+                        }
+
+                        body {
+                            margin: 0;
+                        }
+
+                        .payment-page {
+                            min-height: 100vh;
+                            min-height: 100dvh;
+                            background: #f7f8fa;
+                            font-family:
+                                Arial,
+                                Helvetica,
+                                sans-serif;
+                            padding: 30px 20px;
+                        }
+
+                        .payment-container {
+                            width: 100%;
+                            max-width: 650px;
+                            margin: 0 auto;
+                            background: #ffffff;
+                            border-radius: 24px;
+                            box-shadow:
+                                0 10px 35px
+                                rgba(0, 0, 0, 0.08);
+                        }
+
+                        .missing-trip {
+                            padding: 40px 30px;
+                            text-align: center;
+                        }
+
+                        .missing-trip h2 {
+                            margin: 0 0 10px;
+                            color: #111111;
+                        }
+
+                        .missing-trip p {
+                            color: #777777;
+                        }
+
+                        .back-trip-button {
+                            margin-top: 20px;
+                            border: none;
+                            background: transparent;
+                            color: #777777;
+                            font-size: 13px;
+                            cursor: pointer;
+                        }
+
+                        .back-trip-button:hover {
+                            color: #f28c28;
+                        }
+
+                    `}</style>
+
                 </div>
-
-                <style>{`
-
-                    * {
-                        box-sizing: border-box;
-                    }
-
-                    body {
-                        margin: 0;
-                    }
-
-                    .payment-page {
-                        min-height: 100vh;
-                        min-height: 100dvh;
-                        background: #f7f8fa;
-                        font-family:
-                            Arial,
-                            Helvetica,
-                            sans-serif;
-                        padding: 30px 20px;
-                    }
-
-                    .payment-container {
-                        width: 100%;
-                        max-width: 650px;
-                        margin: 0 auto;
-                        background: #ffffff;
-                        border-radius: 24px;
-                        box-shadow:
-                            0 10px 35px
-                            rgba(0, 0, 0, 0.08);
-                    }
-
-                    .missing-trip {
-                        padding: 40px 30px;
-                        text-align: center;
-                    }
-
-                    .missing-trip h2 {
-                        margin: 0 0 10px;
-                        color: #111111;
-                    }
-
-                    .missing-trip p {
-                        color: #777777;
-                    }
-
-                    .back-trip-button {
-                        margin-top: 20px;
-                        border: none;
-                        background: transparent;
-                        color: #777777;
-                        font-size: 13px;
-                        cursor: pointer;
-                    }
-
-                    .back-trip-button:hover {
-                        color: #f28c28;
-                    }
-
-                `}</style>
 
             </main>
         );
@@ -204,7 +230,7 @@ const Payment = () => {
 
     /* =========================================================
        PASSENGERS
-       ========================================================= */
+    ========================================================= */
 
     const passengers =
         Number(
@@ -214,7 +240,7 @@ const Payment = () => {
 
     /* =========================================================
        FARES
-       ========================================================= */
+    ========================================================= */
 
     const passengerRate = 40;
 
@@ -224,26 +250,91 @@ const Payment = () => {
 
 
     /* =========================================================
+       DETERMINE VEHICLE TYPE
+
+       This is the important fix.
+
+       Motorcycle bookings receive the motorcycle fare.
+
+       Passenger-only bookings DO NOT receive the
+       motorcycle fare.
+    ========================================================= */
+
+    const vehicleTypeValue =
+        String(
+            normalizedTrip.vehicleType || ""
+        )
+            .trim()
+            .toLowerCase();
+
+
+    /*
+       IMPORTANT:
+
+       "No Motorcycle" must NEVER be treated as a
+       motorcycle booking just because the word
+       "motorcycle" appears in the value.
+
+       Motorcycle = motorcycle fare included.
+       No Motorcycle / Passenger Only = no vehicle fare.
+    */
+    const isNoMotorcycle =
+        vehicleTypeValue === "no motorcycle" ||
+        vehicleTypeValue === "nomotorcycle" ||
+        vehicleTypeValue === "no vehicle" ||
+        vehicleTypeValue === "none" ||
+        vehicleTypeValue === "passenger only" ||
+        vehicleTypeValue === "passenger-only" ||
+        vehicleTypeValue === "passenger" ||
+        vehicleTypeValue === "";
+
+
+    const isMotorcycle =
+        !isNoMotorcycle &&
+        (
+            vehicleTypeValue === "motorcycle" ||
+            vehicleTypeValue.includes("motorcycle")
+        );
+
+
+    /* =========================================================
        PASSENGER FARE
-       ========================================================= */
+    ========================================================= */
 
     const passengerFare =
         passengers * passengerRate;
 
 
     /* =========================================================
+       VEHICLE FARE
+    ========================================================= */
+
+    const applicableMotorcycleFare =
+        isMotorcycle
+            ? motorcycleFare
+            : 0;
+
+
+    /* =========================================================
        TOTAL FARE
-       ========================================================= */
+
+       Passenger fare is ALWAYS included.
+
+       Motorcycle fare is ONLY included when the booking
+       contains a motorcycle.
+
+       PPA fee is included for the booking.
+    ========================================================= */
 
     const totalFare =
         passengerFare +
-        motorcycleFare +
+        applicableMotorcycleFare +
         ppaFee;
 
 
     /* =========================================================
        FORMAT DATE
-       ========================================================= */
+    ========================================================= */
 
     const formattedDate =
         normalizedTrip.date
@@ -262,7 +353,7 @@ const Payment = () => {
 
     /* =========================================================
        FORMAT TIME
-       ========================================================= */
+    ========================================================= */
 
     const formatTime = (time) => {
 
@@ -273,6 +364,7 @@ const Payment = () => {
         const timeString =
             String(time).trim();
 
+
         if (
             timeString
                 .toUpperCase()
@@ -281,33 +373,42 @@ const Payment = () => {
                 .toUpperCase()
                 .includes("PM")
         ) {
+
             return timeString;
         }
 
+
         const parts =
             timeString.split(":");
+
 
         if (parts.length < 2) {
             return timeString;
         }
 
+
         const hours =
             Number(parts[0]);
+
 
         const minutes =
             parts[1];
 
+
         if (Number.isNaN(hours)) {
             return timeString;
         }
+
 
         const suffix =
             hours >= 12
                 ? "PM"
                 : "AM";
 
+
         const displayHour =
             hours % 12 || 12;
+
 
         return `${displayHour}:${minutes} ${suffix}`;
     };
@@ -315,7 +416,7 @@ const Payment = () => {
 
     /* =========================================================
        GENERATE BOOKING REFERENCE
-       ========================================================= */
+    ========================================================= */
 
     const generateBookingReference = () => {
 
@@ -330,8 +431,86 @@ const Payment = () => {
 
 
     /* =========================================================
+       GENERATE A UNIQUE REFERENCE FOR THIS BOOKING
+
+       IMPORTANT:
+       Do NOT recover the previous booking reference.
+       A tourist is allowed to create multiple bookings, even
+       when the new booking has exactly the same trip details.
+
+       We also remember references already generated in this
+       browser session so the next booking cannot reuse the
+       previous reference.
+    ========================================================= */
+
+    const generateUniqueBookingReference = () => {
+
+        let usedReferences = [];
+
+        try {
+            const savedReferences =
+                sessionStorage.getItem(
+                    "usedBookingReferences"
+                );
+
+            usedReferences = savedReferences
+                ? JSON.parse(savedReferences)
+                : [];
+
+            if (!Array.isArray(usedReferences)) {
+                usedReferences = [];
+            }
+
+            /*
+               Also treat the old bookingReference as used.
+               This is important for your current browser because
+               the old reference (for example GG-136550) may still
+               be stored in sessionStorage from the previous code.
+            */
+            const oldBookingReference =
+                sessionStorage.getItem(
+                    "bookingReference"
+                );
+
+            if (
+                oldBookingReference &&
+                !usedReferences.includes(oldBookingReference)
+            ) {
+                usedReferences.push(
+                    oldBookingReference
+                );
+            }
+        } catch (error) {
+            console.error(
+                "Unable to recover used booking references:",
+                error
+            );
+
+            usedReferences = [];
+        }
+
+        let newReference =
+            generateBookingReference();
+
+        let attempts = 0;
+
+        while (
+            usedReferences.includes(newReference) &&
+            attempts < 100
+        ) {
+            newReference =
+                generateBookingReference();
+
+            attempts += 1;
+        }
+
+        return newReference;
+    };
+
+
+    /* =========================================================
        CREATE UNIQUE TRIP KEY
-       ========================================================= */
+    ========================================================= */
 
     const tripKey = JSON.stringify({
 
@@ -363,7 +542,7 @@ const Payment = () => {
 
         vehicleType:
             normalizedTrip.vehicleType ||
-            "Motorcycle",
+            "No Motorcycle",
 
         plateNumber:
             normalizedTrip.plateNumber || "",
@@ -371,35 +550,32 @@ const Payment = () => {
 
 
     /* =========================================================
-       RECOVER BOOKING REFERENCE
-       ========================================================= */
+       NEW BOOKING REFERENCE
 
-    const savedBookingReference =
-        sessionStorage.getItem(
-            "bookingReference"
+       IMPORTANT:
+       Never use the old bookingReference / bookingReferenceTripKey
+       to decide whether this is a new booking. Those values caused
+       the same reference to be reused when the trip details matched.
+
+       Every time the Payment page is entered, a fresh reference is
+       created for the new booking.
+    ========================================================= */
+
+    const [bookingReference] =
+        useState(() =>
+            generateUniqueBookingReference()
         );
-
-    const savedBookingTripKey =
-        sessionStorage.getItem(
-            "bookingReferenceTripKey"
-        );
-
-
-    const bookingReference =
-        savedBookingReference &&
-        savedBookingTripKey === tripKey
-            ? savedBookingReference
-            : generateBookingReference();
 
 
     /* =========================================================
        SAVE BOOKING REFERENCE
-       ========================================================= */
+    ========================================================= */
 
     sessionStorage.setItem(
         "bookingReference",
         bookingReference
     );
+
 
     sessionStorage.setItem(
         "bookingReferenceTripKey",
@@ -409,7 +585,7 @@ const Payment = () => {
 
     /* =========================================================
        BACK TO TRIP DETAILS
-       ========================================================= */
+    ========================================================= */
 
     const handleBackToTripDetails = () => {
 
@@ -418,26 +594,35 @@ const Payment = () => {
             JSON.stringify(normalizedTrip)
         );
 
+
         sessionStorage.setItem(
             "pendingTrip",
             JSON.stringify(normalizedTrip)
         );
 
+
         navigate("/book-trip", {
+
             state: {
-                trip: normalizedTrip,
+
+                trip:
+                    normalizedTrip,
+
             },
+
         });
     };
 
 
     /* =========================================================
        BOOK NOW
-       ========================================================= */
+    ========================================================= */
 
     const handleBookNow = () => {
 
+
         /* Make sure payment method is selected */
+
         if (!paymentMethod) {
 
             alert(
@@ -450,7 +635,7 @@ const Payment = () => {
 
         /* =====================================================
            CURRENT DEMO PAYMENT
-           ===================================================== */
+        ===================================================== */
 
         if (paymentMethod !== "maya") {
 
@@ -467,62 +652,81 @@ const Payment = () => {
 
         /* =====================================================
            CHECK PLATE NUMBER
-           ===================================================== */
 
-        if (
-            !normalizedTrip.plateNumber ||
-            !String(
-                normalizedTrip.plateNumber
-            ).trim()
-        ) {
+           IMPORTANT:
 
-            alert(
-                "Please enter the motorcycle plate number before continuing."
-            );
+           Only motorcycle bookings require a plate number.
 
-            return;
+           Passenger-only bookings can continue without one.
+        ===================================================== */
+
+        if (isMotorcycle) {
+
+            if (
+                !normalizedTrip.plateNumber ||
+                !String(
+                    normalizedTrip.plateNumber
+                ).trim()
+            ) {
+
+                alert(
+                    "Please enter the motorcycle plate number before continuing."
+                );
+
+                return;
+            }
         }
 
 
         /* =====================================================
            FINAL TRIP DATA
-           ===================================================== */
+        ===================================================== */
 
         const finalTrip = {
 
             ...normalizedTrip,
 
+
             origin:
                 normalizedTrip.origin || "",
+
 
             destination:
                 normalizedTrip.destination || "",
 
+
             date:
                 normalizedTrip.date || "",
 
+
             time:
                 normalizedTrip.time || "",
+
 
             passengerName:
                 String(
                     normalizedTrip.passengerName || ""
                 ).trim(),
 
+
             passengerAge:
                 normalizedTrip.passengerAge || "",
 
+
             passengerGender:
                 normalizedTrip.passengerGender || "",
+
 
             passengers:
                 Number(
                     normalizedTrip.passengers || 1
                 ),
 
+
             vehicleType:
                 normalizedTrip.vehicleType ||
-                "Motorcycle",
+                "No Motorcycle",
+
 
             plateNumber:
                 String(
@@ -530,6 +734,7 @@ const Payment = () => {
                 )
                     .trim()
                     .toUpperCase(),
+
 
             bookingReference:
                 bookingReference,
@@ -539,20 +744,23 @@ const Payment = () => {
         /* =====================================================
            IMPORTANT:
            EXACT PAYMENT AMOUNT
-           ===================================================== */
+        ===================================================== */
 
         const paymentAmount =
-            Number(totalFare.toFixed(2));
+            Number(
+                totalFare.toFixed(2)
+            );
 
 
         /* =====================================================
            SAVE COMPLETE TRIP
-           ===================================================== */
+        ===================================================== */
 
         sessionStorage.setItem(
             "tripDetails",
             JSON.stringify(finalTrip)
         );
+
 
         sessionStorage.setItem(
             "pendingTrip",
@@ -563,33 +771,42 @@ const Payment = () => {
         /* =====================================================
            PAYMENT DETAILS
 
-           This is the important part for Maya.
-
            Example:
-           totalFare = 255
 
-           amount = 255
-           amountFormatted = "₱255.00"
-           ===================================================== */
+           Passenger Only
+           3 passengers
+
+           passengerFare = 120
+           motorcycleFare = 0
+           ppaFee = 65
+
+           total = 185
+        ===================================================== */
 
         const paymentDetails = {
 
             bookingReference,
 
+
             paymentMethod:
                 paymentMethod,
+
 
             amount:
                 paymentAmount,
 
+
             amountFormatted:
                 `₱${paymentAmount.toFixed(2)}`,
+
 
             currency:
                 "PHP",
 
+
             status:
                 "PENDING",
+
 
             trip:
                 finalTrip,
@@ -598,7 +815,7 @@ const Payment = () => {
 
         /* =====================================================
            SAVE PAYMENT DETAILS
-           ===================================================== */
+        ===================================================== */
 
         sessionStorage.setItem(
             "paymentDetails",
@@ -608,31 +825,43 @@ const Payment = () => {
 
         /* =====================================================
            BACKUP LATEST BOOKING
-           ===================================================== */
+        ===================================================== */
 
         const pendingBooking = {
 
             bookingReference,
 
+
             ...finalTrip,
+
 
             passengerFare,
 
-            motorcycleFare,
+
+            /* Store only the applicable motorcycle fare */
+
+            motorcycleFare:
+                applicableMotorcycleFare,
+
 
             ppaFee,
+
 
             totalFare:
                 paymentAmount,
 
+
             paymentAmount:
                 paymentAmount,
+
 
             paymentAmountFormatted:
                 `₱${paymentAmount.toFixed(2)}`,
 
+
             paymentMethod:
                 paymentMethod,
+
 
             paymentStatus:
                 "PENDING",
@@ -647,10 +876,7 @@ const Payment = () => {
 
         /* =====================================================
            SAVE MAYA PAYMENT AMOUNT SEPARATELY
-
-           This makes it very easy for maya-payment.jsx
-           to recover the exact amount.
-           ===================================================== */
+        ===================================================== */
 
         sessionStorage.setItem(
             "mayaPaymentAmount",
@@ -665,35 +891,83 @@ const Payment = () => {
 
 
         /* =====================================================
-           GO TO MAYA PAYMENT
+           MARK THIS REFERENCE AS USED
 
-           The amount is sent directly through React Router.
-           ===================================================== */
+           This prevents the next booking in the same tourist
+           session from reusing this booking reference.
+        ===================================================== */
+
+        try {
+            const savedReferences =
+                sessionStorage.getItem(
+                    "usedBookingReferences"
+                );
+
+            let usedReferences = savedReferences
+                ? JSON.parse(savedReferences)
+                : [];
+
+            if (!Array.isArray(usedReferences)) {
+                usedReferences = [];
+            }
+
+            if (!usedReferences.includes(bookingReference)) {
+                usedReferences.push(bookingReference);
+            }
+
+            /* Keep the sessionStorage value reasonably small. */
+            if (usedReferences.length > 100) {
+                usedReferences =
+                    usedReferences.slice(-100);
+            }
+
+            sessionStorage.setItem(
+                "usedBookingReferences",
+                JSON.stringify(usedReferences)
+            );
+        } catch (error) {
+            console.error(
+                "Unable to save used booking reference:",
+                error
+            );
+        }
+
+
+        /* =====================================================
+           GO TO MAYA PAYMENT
+        ===================================================== */
 
         navigate(
             "/maya-payment",
             {
+
                 state: {
 
                     booking:
                         pendingBooking,
 
+
                     trip:
                         finalTrip,
+
 
                     payment:
                         paymentDetails,
 
-                    /* IMPORTANT */
+
                     amount:
                         paymentAmount,
+
 
                     amountFormatted:
                         `₱${paymentAmount.toFixed(2)}`,
 
+
                     bookingReference:
                         bookingReference,
+
                 },
+
             }
         );
     };
@@ -701,19 +975,22 @@ const Payment = () => {
 
     /* =========================================================
        DISPLAY VALUES
-       ========================================================= */
+    ========================================================= */
 
     const displayPassengerName =
         normalizedTrip.passengerName ||
         "Passenger";
 
+
     const displayPassengerAge =
         normalizedTrip.passengerAge ||
         "N/A";
 
+
     const displayPassengerGender =
         normalizedTrip.passengerGender ||
         "N/A";
+
 
     const displayPlateNumber =
         normalizedTrip.plateNumber
@@ -724,6 +1001,7 @@ const Payment = () => {
                 .toUpperCase()
             : "N/A";
 
+
     const displayVehicleType =
         normalizedTrip.vehicleType ||
         "Motorcycle";
@@ -731,7 +1009,7 @@ const Payment = () => {
 
     /* =========================================================
        PAGE
-       ========================================================= */
+    ========================================================= */
 
     return (
 
@@ -798,6 +1076,7 @@ const Payment = () => {
                             M
                         </div>
 
+
                         <div className="payment-info">
 
                             <strong>
@@ -809,6 +1088,7 @@ const Payment = () => {
                             </span>
 
                         </div>
+
 
                         {paymentMethod === "maya" && (
 
@@ -841,6 +1121,7 @@ const Payment = () => {
                             G
                         </div>
 
+
                         <div className="payment-info">
 
                             <strong>
@@ -852,6 +1133,7 @@ const Payment = () => {
                             </span>
 
                         </div>
+
 
                         {paymentMethod === "gcash" && (
 
@@ -888,6 +1170,7 @@ const Payment = () => {
                             💳
                         </div>
 
+
                         <div className="payment-info">
 
                             <strong>
@@ -899,6 +1182,7 @@ const Payment = () => {
                             </span>
 
                         </div>
+
 
                         <span className="coming-soon">
                             Soon
@@ -919,11 +1203,13 @@ const Payment = () => {
                         🔒
                     </div>
 
+
                     <div>
 
                         <strong>
                             Secure Payment
                         </strong>
+
 
                         <p>
 
@@ -1097,7 +1383,10 @@ const Payment = () => {
                         </span>
 
                         <strong>
-                            {displayPlateNumber}
+                            {isMotorcycle
+                                ? displayPlateNumber
+                                : "N/A"
+                            }
                         </strong>
 
                     </div>
@@ -1131,6 +1420,8 @@ const Payment = () => {
                     </h2>
 
 
+                    {/* PASSENGER FARE */}
+
                     <div className="fare-row">
 
                         <span>
@@ -1144,18 +1435,31 @@ const Payment = () => {
                     </div>
 
 
-                    <div className="fare-row">
+                    {/* =================================================
+                        MOTORCYCLE FARE
 
-                        <span>
-                            Motorcycle
-                        </span>
+                        Only display this when the booking actually
+                        contains a motorcycle.
+                    ================================================= */}
 
-                        <span>
-                            ₱{motorcycleFare.toFixed(2)}
-                        </span>
+                    {isMotorcycle && (
 
-                    </div>
+                        <div className="fare-row">
 
+                            <span>
+                                Motorcycle
+                            </span>
+
+                            <span>
+                                ₱{motorcycleFare.toFixed(2)}
+                            </span>
+
+                        </div>
+
+                    )}
+
+
+                    {/* PPA FEE */}
 
                     <div className="fare-row">
 
@@ -1172,6 +1476,8 @@ const Payment = () => {
 
                     <div className="fare-divider"></div>
 
+
+                    {/* TOTAL */}
 
                     <div className="fare-total">
 

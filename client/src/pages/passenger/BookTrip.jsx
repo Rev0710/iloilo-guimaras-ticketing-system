@@ -277,8 +277,8 @@ const BookTrip = () => {
 
     const [time, setTime] =
         useState(
-            previousTrip.time ||
             selectedFerryTime ||
+            previousTrip.time ||
             ""
         );
 
@@ -1210,6 +1210,7 @@ const BookTrip = () => {
         // =================================================
 
         const tripDetails = {
+            
 
             // ---------------------------------------------
             // ROUTE
@@ -1232,6 +1233,13 @@ const BookTrip = () => {
             // ---------------------------------------------
             // SELECTED FERRY
             // ---------------------------------------------
+
+            ferryId:
+                selectedFerry.id ||
+                selectedFerry.ferryId ||
+                selectedFerry.vesselId ||
+                previousTrip.ferryId ||
+                "",
 
             ferryName,
 

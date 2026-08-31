@@ -7,8 +7,11 @@ const Booking = require("../models/Booking");
 const getAllBookings = async (req, res) => {
     try {
 
-        const bookings = await Booking.find()
-            .sort({ createdAt: -1 });
+        const bookings =
+            await Booking.find()
+                .sort({
+                    createdAt: -1
+                });
 
         return res.status(200).json({
             success: true,
@@ -38,12 +41,14 @@ const getAllBookings = async (req, res) => {
 const getPendingPayments = async (req, res) => {
     try {
 
-        const bookings = await Booking.find({
-            paymentStatus:
-                "PENDING VERIFICATION"
-        }).sort({
-            createdAt: -1
-        });
+        const bookings =
+            await Booking.find({
+                paymentStatus:
+                    "PENDING VERIFICATION"
+            })
+            .sort({
+                createdAt: -1
+            });
 
         return res.status(200).json({
             success: true,
@@ -73,11 +78,14 @@ const getPendingPayments = async (req, res) => {
 const getVerifiedPayments = async (req, res) => {
     try {
 
-        const bookings = await Booking.find({
-            paymentStatus: "VERIFIED"
-        }).sort({
-            updatedAt: -1
-        });
+        const bookings =
+            await Booking.find({
+                paymentStatus:
+                    "VERIFIED"
+            })
+            .sort({
+                updatedAt: -1
+            });
 
         return res.status(200).json({
             success: true,
@@ -190,16 +198,818 @@ const getBookingByReference = async (req, res) => {
 
 
 // =========================================================
+// NORMALIZE TEXT
+// =========================================================
+//
+// Used by the ferry-capacity calculation.
+//
+// This prevents small differences such as:
+//
+// "MV Halili"
+// " mv halili "
+// "MV HALILI"
+//
+// from being treated as different ferry names.
+//
+
+const normalizeText = (value) => {
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+        return "";
+    }
+
+    return String(value)
+        .trim()
+        .replace(/\s+/g, " ")
+        .toLowerCase();
+};
+
+
+// =========================================================
+// NORMALIZE TIME
+// =========================================================
+//
+// Converts:
+//
+// 03:30
+// 3:30 AM
+// 03:30 AM
+// 8:00
+// 8:00 AM
+//
+// into the same HH:mm format.
+//
+// This is important because bookings may have been
+// saved using either "09:00" or "9:00 AM".
+//
+
+const normalizeTime = (value) => {
+
+    if (
+        value === null ||
+        value === undefined ||
+        value === ""
+    ) {
+        return "";
+    }
+
+    const text =
+        String(value)
+            .trim()
+            .toUpperCase();
+
+    // Already HH:mm
+    if (
+        /^\d{1,2}:\d{2}$/.test(
+            text
+        )
+    ) {
+
+        const parts =
+            text.split(":");
+
+        const hour =
+            Number(parts[0]);
+
+        const minute =
+            Number(parts[1]);
+
+        if (
+            Number.isFinite(hour) &&
+            Number.isFinite(minute)
+        ) {
+
+            return (
+                String(hour).padStart(2, "0") +
+                ":" +
+                String(minute).padStart(2, "0")
+            );
+        }
+    }
+
+
+    // HH:mm AM/PM
+    const match =
+        text.match(
+            /^(\d{1,2}):(\d{2})\s*(AM|PM)$/
+        );
+
+    if (!match) {
+        return text;
+    }
+
+    let hour =
+        Number(match[1]);
+
+    const minute =
+        Number(match[2]);
+
+    const period =
+        match[3];
+
+
+    if (
+        period === "AM" &&
+        hour === 12
+    ) {
+        hour = 0;
+    }
+
+
+    if (
+        period === "PM" &&
+        hour !== 12
+    ) {
+        hour += 12;
+    }
+
+
+    return (
+        String(hour).padStart(2, "0") +
+        ":" +
+        String(minute).padStart(2, "0")
+    );
+};
+
+
+// =========================================================
+// GET REAL-TIME FERRY CAPACITY
+// =========================================================
+//
+// PUBLIC ENDPOINT
+//
+// GET:
+//
+// /api/bookings/capacity?date=YYYY-MM-DD
+//
+// Passenger capacity:
+//
+// 100 passengers per ferry
+//
+// Motorcycle capacity:
+//
+// 10 motorcycles per ferry
+//
+// Passenger-only booking:
+//
+// +1 passenger
+//
+// Motorcycle booking:
+//
+// +passenger count
+// +1 motorcycle
+//
+// Cancelled bookings:
+//
+// DO NOT COUNT
+//
+// Rejected payments:
+//
+// DO NOT COUNT
+//
+// Pending verification:
+//
+// COUNT
+//
+// Confirmed:
+//
+// COUNT
+//
+// =========================================================
+
+const getBookingCapacity = async (req, res) => {
+
+    try {
+
+        // =====================================================
+        // DATE
+        // =====================================================
+
+        const requestedDate =
+            req.query.date ||
+            new Date()
+                .toISOString()
+                .split("T")[0];
+
+
+        // =====================================================
+        // CAPACITY LIMITS
+        // =====================================================
+
+        const PASSENGER_CAPACITY = 100;
+
+        const MOTORCYCLE_CAPACITY = 10;
+
+
+        // =====================================================
+        // FERRY SCHEDULE
+        // =====================================================
+        //
+        // IMPORTANT:
+        //
+        // These MUST match the ferries displayed in Trips.jsx.
+        //
+        // Current system:
+        //
+        // MV Felipe III
+        // MV FastCraft
+        // MV Halili
+        //
+        // =====================================================
+
+        const ferries = [
+
+            {
+                id:
+                    "MV Felipe III",
+
+                vesselName:
+                    "MV Felipe III",
+
+                departureTime:
+                    "3:30 AM",
+
+                time:
+                    "03:30"
+            },
+
+            {
+                id:
+                    "MV FastCraft",
+
+                vesselName:
+                    "MV FastCraft",
+
+                departureTime:
+                    "8:00 AM",
+
+                time:
+                    "08:00"
+            },
+
+            {
+                id:
+                    "MV Halili",
+
+                vesselName:
+                    "MV Halili",
+
+                departureTime:
+                    "9:00 AM",
+
+                time:
+                    "09:00"
+            }
+
+        ];
+
+
+        // =====================================================
+        // FIND ACTIVE BOOKINGS
+        // =====================================================
+        //
+        // We intentionally include:
+        //
+        // PENDING VERIFICATION
+        // VERIFIED
+        //
+        // because a submitted booking has already reserved
+        // a capacity slot.
+        //
+        // We exclude:
+        //
+        // CANCELLED
+        // REJECTED
+        //
+        // =====================================================
+
+        const bookings =
+            await Booking.find({
+                date:
+                    requestedDate,
+
+                status: {
+                    $ne:
+                        "CANCELLED"
+                },
+
+                paymentStatus: {
+                    $ne:
+                        "REJECTED"
+                }
+
+            })
+            .lean();
+
+
+        // =====================================================
+        // DEBUG INFORMATION
+        // =====================================================
+
+        console.log(
+            "=========================================="
+        );
+
+        console.log(
+            "FERRY CAPACITY CHECK"
+        );
+
+        console.log(
+            "Requested date:",
+            requestedDate
+        );
+
+        console.log(
+            "Total active bookings:",
+            bookings.length
+        );
+
+
+        // =====================================================
+        // CALCULATE EACH FERRY
+        // =====================================================
+
+        const capacities =
+            ferries.map(
+                (ferry) => {
+
+                    // =================================================
+                    // NORMALIZED FERRY INFORMATION
+                    // =================================================
+
+                    const normalizedFerryId =
+                        normalizeText(
+                            ferry.id
+                        );
+
+                    const normalizedFerryName =
+                        normalizeText(
+                            ferry.vesselName
+                        );
+
+                    const normalizedFerryTime =
+                        normalizeTime(
+                            ferry.time
+                        );
+
+                    const normalizedDepartureTime =
+                        normalizeTime(
+                            ferry.departureTime
+                        );
+
+
+                    // =================================================
+                    // FIND BOOKINGS FOR THIS FERRY
+                    // =================================================
+
+                    const ferryBookings =
+                        bookings.filter(
+                            (booking) => {
+
+                                // =====================================
+                                // POSSIBLE BOOKING FERRY ID
+                                // =====================================
+
+                                const bookingFerryId =
+                                    normalizeText(
+                                        booking.ferryId ||
+                                        booking.selectedFerry?.id ||
+                                        booking.selectedTrip?.id ||
+                                        booking.trip?.id ||
+                                        ""
+                                    );
+
+
+                                // =====================================
+                                // POSSIBLE BOOKING VESSEL NAME
+                                // =====================================
+
+                                const bookingVesselName =
+                                    normalizeText(
+                                        booking.vesselName ||
+                                        booking.ferryName ||
+                                        booking.vessel ||
+                                        booking.ferry ||
+                                        booking.selectedFerry?.vesselName ||
+                                        booking.selectedFerry?.ferryName ||
+                                        booking.selectedTrip?.vesselName ||
+                                        booking.selectedTrip?.ferryName ||
+                                        ""
+                                    );
+
+
+                                // =====================================
+                                // POSSIBLE BOOKING TIME
+                                // =====================================
+
+                                const bookingTime =
+                                    normalizeTime(
+                                        booking.time ||
+                                        booking.departureTime ||
+                                        booking.tripTime ||
+                                        booking.selectedFerry?.time ||
+                                        booking.selectedFerry?.departureTime ||
+                                        booking.selectedTrip?.time ||
+                                        booking.selectedTrip?.departureTime ||
+                                        ""
+                                    );
+
+
+                                // =====================================
+                                // MATCH FERRY ID
+                                // =====================================
+
+                                const ferryIdMatches =
+                                    bookingFerryId !== "" &&
+                                    bookingFerryId ===
+                                    normalizedFerryId;
+
+
+                                // =====================================
+                                // MATCH VESSEL NAME
+                                // =====================================
+
+                                const vesselNameMatches =
+                                    bookingVesselName !== "" &&
+                                    bookingVesselName ===
+                                    normalizedFerryName;
+
+
+                                // =====================================
+                                // MATCH TIME
+                                // =====================================
+
+                                const timeMatches =
+                                    bookingTime !== "" &&
+                                    (
+                                        bookingTime ===
+                                        normalizedFerryTime ||
+
+                                        bookingTime ===
+                                        normalizedDepartureTime
+                                    );
+
+
+                                // =====================================
+                                // IMPORTANT MATCHING RULE
+                                // =====================================
+                                //
+                                // Use OR instead of allowing an
+                                // incorrect ferryId to block a correct
+                                // vessel-name match.
+                                //
+                                // This fixes old bookings that may
+                                // contain:
+                                //
+                                // ferryId = ""
+                                //
+                                // or
+                                //
+                                // ferryId = different value
+                                //
+                                // while vesselName is correct.
+                                //
+                                // =====================================
+
+                                const matches =
+                                    ferryIdMatches ||
+                                    vesselNameMatches ||
+                                    (
+                                        bookingVesselName === "" &&
+                                        timeMatches
+                                    );
+
+
+                                // =====================================
+                                // DEBUG BOOKING MATCH
+                                // =====================================
+
+                                if (matches) {
+
+                                    console.log(
+                                        "Booking matched:",
+                                        {
+                                            bookingReference:
+                                                booking.bookingReference,
+
+                                            bookingFerryId:
+                                                booking.ferryId,
+
+                                            bookingVesselName:
+                                                booking.vesselName,
+
+                                            bookingTime:
+                                                booking.time,
+
+                                            targetFerry:
+                                                ferry.vesselName
+                                        }
+                                    );
+                                }
+
+
+                                return matches;
+                            }
+                        );
+
+
+                    // =================================================
+                    // PASSENGER COUNT
+                    // =================================================
+                    //
+                    // Every passenger consumes one passenger slot.
+                    //
+                    // Example:
+                    //
+                    // 1 passenger:
+                    //
+                    // 1/100
+                    //
+                    // 3 passengers:
+                    //
+                    // 3/100
+                    //
+                    // =================================================
+
+                    const passengers =
+                        ferryBookings.reduce(
+                            (
+                                total,
+                                booking
+                            ) => {
+
+                                const passengerCount =
+                                    Number(
+                                        booking.passengers ||
+                                        booking.numberOfPassengers ||
+                                        booking.passengerCount ||
+                                        1
+                                    );
+
+
+                                if (
+                                    !Number.isFinite(
+                                        passengerCount
+                                    )
+                                ) {
+
+                                    return (
+                                        total + 1
+                                    );
+                                }
+
+
+                                return (
+                                    total +
+                                    Math.max(
+                                        1,
+                                        passengerCount
+                                    )
+                                );
+                            },
+                            0
+                        );
+
+
+                    // =================================================
+                    // MOTORCYCLE COUNT
+                    // =================================================
+                    //
+                    // Motorcycle:
+                    //
+                    // +1 motorcycle
+                    //
+                    // Passenger-only:
+                    //
+                    // +0 motorcycles
+                    //
+                    // =================================================
+
+                    const vehicles =
+                        ferryBookings.reduce(
+                            (
+                                total,
+                                booking
+                            ) => {
+
+                                const vehicleType =
+                                    booking.vehicleType ||
+                                    booking.vehicle ||
+                                    booking.vehicleDetails?.type ||
+                                    "";
+
+
+                                const normalizedVehicle =
+                                    normalizeText(
+                                        vehicleType
+                                    );
+
+
+                                // =====================================
+                                // NO VEHICLE VALUES
+                                // =====================================
+
+                                const isNoMotorcycle =
+                                    normalizedVehicle ===
+                                        "no motorcycle" ||
+
+                                    normalizedVehicle ===
+                                        "nomotorcycle" ||
+
+                                    normalizedVehicle ===
+                                        "no vehicle" ||
+
+                                    normalizedVehicle ===
+                                        "novehicle" ||
+
+                                    normalizedVehicle ===
+                                        "none" ||
+
+                                    normalizedVehicle ===
+                                        "passenger only" ||
+
+                                    normalizedVehicle ===
+                                        "passenger-only" ||
+
+                                    normalizedVehicle ===
+                                        "passenger" ||
+
+                                    normalizedVehicle ===
+                                        "";
+
+
+                                // =====================================
+                                // MOTORCYCLE VALUES
+                                // =====================================
+
+                                const hasMotorcycle =
+                                    !isNoMotorcycle &&
+                                    (
+                                        normalizedVehicle ===
+                                            "motorcycle" ||
+
+                                        normalizedVehicle.includes(
+                                            "motorcycle"
+                                        )
+                                    );
+
+
+                                if (
+                                    hasMotorcycle
+                                ) {
+
+                                    return (
+                                        total + 1
+                                    );
+                                }
+
+
+                                return total;
+                            },
+                            0
+                        );
+
+
+                    // =================================================
+                    // REMAINING PASSENGER CAPACITY
+                    // =================================================
+
+                    const passengerRemaining =
+                        Math.max(
+                            0,
+                            PASSENGER_CAPACITY -
+                            passengers
+                        );
+
+
+                    // =================================================
+                    // REMAINING MOTORCYCLE CAPACITY
+                    // =================================================
+
+                    const vehicleRemaining =
+                        Math.max(
+                            0,
+                            MOTORCYCLE_CAPACITY -
+                            vehicles
+                        );
+
+
+                    // =================================================
+                    // DEBUG FERRY RESULT
+                    // =================================================
+
+                    console.log(
+                        `${ferry.vesselName} => ${passengers}/${PASSENGER_CAPACITY} passengers | ${vehicles}/${MOTORCYCLE_CAPACITY} motorcycles`
+                    );
+
+
+                    // =================================================
+                    // RETURN CAPACITY
+                    // =================================================
+
+                    return {
+
+                        id:
+                            ferry.id,
+
+                        vesselName:
+                            ferry.vesselName,
+
+                        departureTime:
+                            ferry.departureTime,
+
+                        time:
+                            ferry.time,
+
+                        passengers:
+                            passengers,
+
+                        passengerCapacity:
+                            PASSENGER_CAPACITY,
+
+                        passengerRemaining:
+                            passengerRemaining,
+
+                        vehicles:
+                            vehicles,
+
+                        vehicleCapacity:
+                            MOTORCYCLE_CAPACITY,
+
+                        vehicleRemaining:
+                            vehicleRemaining
+
+                    };
+                }
+            );
+
+
+        // =====================================================
+        // FINAL DEBUG
+        // =====================================================
+
+        console.log(
+            "=========================================="
+        );
+
+
+        // =====================================================
+        // RESPONSE
+        // =====================================================
+
+        return res.status(200).json({
+
+            success:
+                true,
+
+            date:
+                requestedDate,
+
+            capacities:
+                capacities
+
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "Get ferry capacity error:",
+            error
+        );
+
+        return res.status(500).json({
+
+            success:
+                false,
+
+            message:
+                "Unable to retrieve ferry capacity.",
+
+            error:
+                error.message
+
+        });
+    }
+};
+
+
+// =========================================================
 // VERIFY PAYMENT
 // =========================================================
 
 const verifyPayment = async (req, res) => {
+
     try {
 
         const booking =
             await Booking.findById(
                 req.params.id
             );
+
 
         if (!booking) {
 
@@ -211,10 +1021,9 @@ const verifyPayment = async (req, res) => {
         }
 
 
-        // -----------------------------------------
-        // Prevent verifying an already processed
-        // payment
-        // -----------------------------------------
+        // =================================================
+        // PREVENT DUPLICATE PROCESSING
+        // =================================================
 
         if (
             booking.paymentStatus !==
@@ -222,16 +1031,20 @@ const verifyPayment = async (req, res) => {
         ) {
 
             return res.status(400).json({
-                success: false,
+
+                success:
+                    false,
+
                 message:
                     `This payment has already been ${booking.paymentStatus.toLowerCase()}.`
+
             });
         }
 
 
-        // -----------------------------------------
+        // =================================================
         // VERIFY PAYMENT
-        // -----------------------------------------
+        // =================================================
 
         booking.paymentStatus =
             "VERIFIED";
@@ -248,7 +1061,8 @@ const verifyPayment = async (req, res) => {
 
         return res.status(200).json({
 
-            success: true,
+            success:
+                true,
 
             message:
                 "Payment verified successfully.",
@@ -256,6 +1070,7 @@ const verifyPayment = async (req, res) => {
             booking
 
         });
+
 
     } catch (error) {
 
@@ -265,9 +1080,13 @@ const verifyPayment = async (req, res) => {
         );
 
         return res.status(500).json({
-            success: false,
+
+            success:
+                false,
+
             message:
                 "Unable to verify payment."
+
         });
     }
 };
@@ -278,6 +1097,7 @@ const verifyPayment = async (req, res) => {
 // =========================================================
 
 const rejectPayment = async (req, res) => {
+
     try {
 
         const booking =
@@ -285,20 +1105,24 @@ const rejectPayment = async (req, res) => {
                 req.params.id
             );
 
+
         if (!booking) {
 
             return res.status(404).json({
-                success: false,
+
+                success:
+                    false,
+
                 message:
                     "Booking not found."
+
             });
         }
 
 
-        // -----------------------------------------
-        // Prevent processing an already processed
-        // payment
-        // -----------------------------------------
+        // =================================================
+        // PREVENT DUPLICATE PROCESSING
+        // =================================================
 
         if (
             booking.paymentStatus !==
@@ -306,16 +1130,20 @@ const rejectPayment = async (req, res) => {
         ) {
 
             return res.status(400).json({
-                success: false,
+
+                success:
+                    false,
+
                 message:
                     `This payment has already been ${booking.paymentStatus.toLowerCase()}.`
+
             });
         }
 
 
-        // -----------------------------------------
+        // =================================================
         // REJECT PAYMENT
-        // -----------------------------------------
+        // =================================================
 
         booking.paymentStatus =
             "REJECTED";
@@ -332,7 +1160,8 @@ const rejectPayment = async (req, res) => {
 
         return res.status(200).json({
 
-            success: true,
+            success:
+                true,
 
             message:
                 "Payment rejected successfully.",
@@ -340,6 +1169,7 @@ const rejectPayment = async (req, res) => {
             booking
 
         });
+
 
     } catch (error) {
 
@@ -349,9 +1179,13 @@ const rejectPayment = async (req, res) => {
         );
 
         return res.status(500).json({
-            success: false,
+
+            success:
+                false,
+
             message:
                 "Unable to reject payment."
+
         });
     }
 };
@@ -362,6 +1196,7 @@ const rejectPayment = async (req, res) => {
 // =========================================================
 
 const getBookingStatistics = async (req, res) => {
+
     try {
 
         const totalBookings =
@@ -391,7 +1226,8 @@ const getBookingStatistics = async (req, res) => {
 
         return res.status(200).json({
 
-            success: true,
+            success:
+                true,
 
             statistics: {
 
@@ -407,6 +1243,7 @@ const getBookingStatistics = async (req, res) => {
 
         });
 
+
     } catch (error) {
 
         console.error(
@@ -415,9 +1252,13 @@ const getBookingStatistics = async (req, res) => {
         );
 
         return res.status(500).json({
-            success: false,
+
+            success:
+                false,
+
             message:
                 "Unable to retrieve booking statistics."
+
         });
     }
 };
@@ -443,6 +1284,8 @@ module.exports = {
 
     rejectPayment,
 
-    getBookingStatistics
+    getBookingStatistics,
+
+    getBookingCapacity
 
 };

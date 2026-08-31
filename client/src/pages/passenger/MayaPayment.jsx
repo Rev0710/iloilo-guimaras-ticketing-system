@@ -655,6 +655,29 @@ const MayaPayment = () => {
                     normalizedTrip.time,
 
                 // ---------------------------------------------
+                // SELECTED FERRY
+                // ---------------------------------------------
+
+                ferryId:
+                    normalizedTrip.ferryId ||
+                    "",
+
+                ferryName:
+                    normalizedTrip.ferryName ||
+                    normalizedTrip.vesselName ||
+                    "",
+
+                vesselName:
+                    normalizedTrip.vesselName ||
+                    normalizedTrip.ferryName ||
+                    "",
+
+                departureTime:
+                    normalizedTrip.departureTime ||
+                    normalizedTrip.time ||
+                    "",
+
+                // ---------------------------------------------
                 // PASSENGER
                 // ---------------------------------------------
 
@@ -751,36 +774,114 @@ const MayaPayment = () => {
             // STEP 3 — SAVE BOOKING TO MONGODB
             // =================================================
 
-            const bookingResponse =
-                await fetch(
-                    `${API_URL}/api/payment/create-booking`,
-                    {
-                        method: "POST",
-
-                        headers: {
-                            "Content-Type":
-                                "application/json"
-                        },
-
-                        body:
-                            JSON.stringify(
-                                completedBooking
-                            )
-                    }
-                );
-
+            let bookingResponse;
             let bookingResult;
 
-            try {
+            // =================================================
+            // STEP 3 — SAVE BOOKING TO MONGODB
+            // =================================================
+            //
+            // A booking reference must be unique in MongoDB.
+            // If an old/stale reference is still present in
+            // sessionStorage, the server may return HTTP 409.
+            // In that case we generate a completely fresh
+            // reference and retry the same booking once.
+            // This does NOT change any trip, fare, passenger,
+            // vehicle, or payment information.
+            //
 
-                bookingResult =
-                    await bookingResponse.json();
+            const createBookingRequest = async (bookingData) => {
 
-            } catch (jsonError) {
+                const response =
+                    await fetch(
+                        `${API_URL}/api/payment/create-booking`,
+                        {
+                            method: "POST",
 
-                throw new Error(
-                    "The server returned an invalid response while saving the booking."
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body:
+                                JSON.stringify(
+                                    bookingData
+                                )
+                        }
+                    );
+
+                let result;
+
+                try {
+
+                    result =
+                        await response.json();
+
+                } catch (jsonError) {
+
+                    throw new Error(
+                        "The server returned an invalid response while saving the booking."
+                    );
+                }
+
+                return {
+                    response,
+                    result
+                };
+            };
+
+            ({
+                response: bookingResponse,
+                result: bookingResult
+            } = await createBookingRequest(
+                completedBooking
+            ));
+
+            // =================================================
+            // HANDLE STALE / DUPLICATE REFERENCE
+            // =================================================
+
+            if (
+                bookingResponse.status === 409 &&
+                bookingResult?.message ===
+                    "This booking reference already exists."
+            ) {
+
+                const timestamp =
+                    Date.now().toString().slice(-8);
+
+                const randomPart =
+                    Math.floor(
+                        1000 +
+                        Math.random() * 9000
+                    );
+
+                bookingReference =
+                    `GG-${timestamp}-${randomPart}`;
+
+                completedBooking.bookingReference =
+                    bookingReference;
+
+                // Keep the new reference synchronized
+                // with the current browser session.
+                sessionStorage.setItem(
+                    "currentBookingReference",
+                    bookingReference
                 );
+
+                sessionStorage.setItem(
+                    "bookingReference",
+                    bookingReference
+                );
+
+                // Retry the exact same booking with the
+                // newly generated unique reference.
+                ({
+                    response: bookingResponse,
+                    result: bookingResult
+                } = await createBookingRequest(
+                    completedBooking
+                ));
             }
 
             if (

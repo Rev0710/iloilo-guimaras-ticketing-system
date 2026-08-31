@@ -1,48 +1,624 @@
-import React from "react";
+import React, {
+    useCallback,
+    useEffect,
+    useState
+} from "react";
 import { useNavigate } from "react-router-dom";
+
+const API_URL = "http://localhost:5000/api";
 
 const Trips = () => {
     const navigate = useNavigate();
 
     // =========================================================
     // AVAILABLE TRIPS
+    //
+    // These are the fixed ferry schedules.
+    //
+    // Capacity values are loaded from MongoDB through the
+    // PUBLIC payment capacity endpoint:
+    //
+    // GET /api/payment/capacity?date=YYYY-MM-DD
+    //
+    // Passenger capacity:
+    // 100 per ferry
+    //
+    // Motorcycle capacity:
+    // 10 per ferry
     // =========================================================
 
-    const availableTrips = [
+    const [availableTrips, setAvailableTrips] =
+    useState([
         {
-            id: "MV-ISLAND-PRINCESS",
-            vesselName: "MV Island Princess",
-            departureTime: "6:00 AM",
-            passengers: 45,
-            passengerCapacity: 50,
-            vehicles: 8,
+            id: "MV Felipe III",
+            vesselName: "MV Felipe III",
+            departureTime: "3:30 AM",
+            time: "03:30",
+
+            passengers: 0,
+            passengerCapacity: 100,
+
+            vehicles: 0,
             vehicleCapacity: 10,
+
+            passengerRemaining: 100,
+            vehicleRemaining: 10
         },
         {
-            id: "MV-SEA-EXPLORER",
-            vesselName: "MV Sea Explorer",
+            id: "MV FastCraft",
+            vesselName: "MV FastCraft",
             departureTime: "8:00 AM",
-            passengers: 32,
-            passengerCapacity: 50,
-            vehicles: 5,
+            time: "08:00",
+
+            passengers: 0,
+            passengerCapacity: 100,
+
+            vehicles: 0,
             vehicleCapacity: 10,
+
+            passengerRemaining: 100,
+            vehicleRemaining: 10
         },
-    ];
+        {
+            id: "MV Halili",
+            vesselName: "MV Halili",
+            departureTime: "9:00 AM",
+            time: "09:00",
+
+            passengers: 0,
+            passengerCapacity: 100,
+
+            vehicles: 0,
+            vehicleCapacity: 10,
+
+            passengerRemaining: 100,
+            vehicleRemaining: 10
+        }
+    ]);
+
+    const [capacityLoading, setCapacityLoading] =
+        useState(true);
+
+    const [capacityError, setCapacityError] =
+        useState("");
+
+    // =========================================================
+    // TODAY
+    //
+    // IMPORTANT:
+    // Use the user's LOCAL date instead of UTC date.
+    //
+    // This prevents the Philippines timezone from accidentally
+    // requesting yesterday/tomorrow around midnight.
+    // =========================================================
+
+    const getToday = () => {
+        const now = new Date();
+
+        const year = now.getFullYear();
+
+        const month = String(
+            now.getMonth() + 1
+        ).padStart(2, "0");
+
+        const day = String(
+            now.getDate()
+        ).padStart(2, "0");
+
+        return `${year}-${month}-${day}`;
+    };
+
+    // =========================================================
+    // SAFE JSON RESPONSE
+    // =========================================================
+
+    const readResponse = async (response) => {
+        const contentType =
+            response.headers.get(
+                "content-type"
+            ) || "";
+
+        if (
+            contentType.includes(
+                "application/json"
+            )
+        ) {
+            return await response.json();
+        }
+
+        const text =
+            await response.text();
+
+        console.error(
+            "Server returned non-JSON response:",
+            text
+        );
+
+        throw new Error(
+            `Server returned an invalid response (${response.status}).`
+        );
+    };
+
+    // =========================================================
+    // LOAD REAL-TIME CAPACITY
+    //
+    // IMPORTANT FIX:
+    //
+    // OLD:
+    // /api/bookings/capacity
+    //
+    // NEW:
+    // /api/payment/capacity
+    //
+    // The payment capacity route is public and does not require
+    // an admin authentication token.
+    //
+    // This allows normal tourists/users to see live capacity.
+    // =========================================================
+
+    const loadCapacities = useCallback(
+        async () => {
+            try {
+                setCapacityLoading(true);
+
+                setCapacityError("");
+
+                const today =
+                    getToday();
+
+                // =================================================
+                // PUBLIC CAPACITY ENDPOINT
+                // =================================================
+
+                const response =
+                await fetch(
+                    `${API_URL}/bookings/capacity?date=${encodeURIComponent(
+                        today
+                    )}`,
+                        {
+                            method: "GET",
+
+                            headers: {
+                                Accept:
+                                    "application/json"
+                            },
+
+                            cache: "no-store"
+                        }
+                    );
+
+                const data =
+                    await readResponse(
+                        response
+                    );
+
+                if (!response.ok) {
+                    throw new Error(
+                        data?.message ||
+                        "Unable to load ferry capacity."
+                    );
+                }
+
+                // =================================================
+                // VALIDATE SERVER RESPONSE
+                // =================================================
+
+                if (
+                    !Array.isArray(
+                        data?.capacities
+                    )
+                ) {
+                    throw new Error(
+                        "Invalid capacity response from server."
+                    );
+                }
+
+                // =================================================
+                // UPDATE TRIPS
+                // =================================================
+
+                setAvailableTrips(
+                    previousTrips =>
+                        previousTrips.map(
+                            trip => {
+                                const latest =
+                                    data.capacities.find(
+                                        item =>
+                                            item.id ===
+                                            trip.id
+                                    );
+
+                                // If the server did not return
+                                // this ferry, keep the existing
+                                // information.
+                                if (!latest) {
+                                    return trip;
+                                }
+
+                                const passengers =
+                                    Math.max(
+                                        0,
+                                        Number(
+                                            latest.passengers
+                                        ) || 0
+                                    );
+
+                                const passengerCapacity =
+                                    Math.max(
+                                        0,
+                                        Number(
+                                            latest.passengerCapacity
+                                        ) || 100
+                                    );
+
+                                const vehicles =
+                                    Math.max(
+                                        0,
+                                        Number(
+                                            latest.vehicles
+                                        ) || 0
+                                    );
+
+                                const vehicleCapacity =
+                                    Math.max(
+                                        0,
+                                        Number(
+                                            latest.vehicleCapacity
+                                        ) || 10
+                                    );
+
+                                const passengerRemaining =
+                                    Math.max(
+                                        0,
+                                        passengerCapacity -
+                                            passengers
+                                    );
+
+                                const vehicleRemaining =
+                                    Math.max(
+                                        0,
+                                        vehicleCapacity -
+                                            vehicles
+                                    );
+
+                                return {
+                                    ...trip,
+
+                                    passengers,
+
+                                    passengerCapacity,
+
+                                    passengerRemaining,
+
+                                    vehicles,
+
+                                    vehicleCapacity,
+
+                                    vehicleRemaining
+                                };
+                            }
+                        )
+                );
+
+                return data.capacities;
+
+            } catch (error) {
+
+                console.error(
+                    "Ferry capacity error:",
+                    error
+                );
+
+                setCapacityError(
+                    error?.message ||
+                    "Unable to load latest ferry capacity."
+                );
+
+                return null;
+
+            } finally {
+
+                setCapacityLoading(false);
+            }
+        },
+        []
+    );
+
+    // =========================================================
+    // INITIAL LOAD + REAL-TIME POLLING
+    //
+    // Capacity refreshes every 5 seconds.
+    // =========================================================
+
+    useEffect(() => {
+
+        loadCapacities();
+
+        const interval =
+            window.setInterval(
+                () => {
+                    loadCapacities();
+                },
+                5000
+            );
+
+        return () => {
+            window.clearInterval(
+                interval
+            );
+        };
+
+    }, [loadCapacities]);
 
     // =========================================================
     // SELECT TRIP
+    //
+    // Before allowing the user to continue:
+    //
+    // 1. Refresh capacity one last time.
+    // 2. Get the latest server value.
+    // 3. Check passenger availability.
+    // 4. Save the latest capacity information.
+    //
+    // IMPORTANT:
+    // We do NOT block the trip just because motorcycles are full.
+    //
+    // Why?
+    //
+    // A passenger-only booking can still use the ferry even when
+    // all motorcycle slots have already been used.
+    //
+    // The motorcycle selection/booking page should handle the
+    // motorcycle-specific slot check.
     // =========================================================
 
-    const selectTrip = (trip) => {
-        // Save selected vessel/trip
+    const selectTrip = async (trip) => {
+
+        const latest =
+            await loadCapacities();
+
+        // =====================================================
+        // CAPACITY COULD NOT BE CHECKED
+        // =====================================================
+
+        if (!latest) {
+
+            alert(
+                "Unable to check the latest ferry capacity. Please try again."
+            );
+
+            return;
+        }
+
+        // =====================================================
+        // GET LATEST SELECTED FERRY
+        // =====================================================
+
+        const latestTrip =
+            latest.find(
+                item =>
+                    item.id ===
+                    trip.id
+            );
+
+        if (!latestTrip) {
+
+            alert(
+                "Unable to find the latest information for this ferry. Please refresh the page and try again."
+            );
+
+            return;
+        }
+
+        // =====================================================
+        // LATEST PASSENGER CAPACITY
+        // =====================================================
+
+        const latestPassengers =
+            Math.max(
+                0,
+                Number(
+                    latestTrip.passengers
+                ) || 0
+            );
+
+        const latestPassengerCapacity =
+            Math.max(
+                0,
+                Number(
+                    latestTrip.passengerCapacity
+                ) || 100
+            );
+
+        const latestPassengerRemaining =
+            Math.max(
+                0,
+                latestPassengerCapacity -
+                    latestPassengers
+            );
+
+        // =====================================================
+        // CHECK PASSENGER CAPACITY
+        // =====================================================
+
+        if (
+            latestPassengerRemaining <= 0
+        ) {
+
+            alert(
+                "This ferry is already full for passengers. Please choose another ferry."
+            );
+
+            return;
+        }
+
+        // =====================================================
+        // LATEST MOTORCYCLE CAPACITY
+        // =====================================================
+
+        const latestVehicles =
+            Math.max(
+                0,
+                Number(
+                    latestTrip.vehicles
+                ) || 0
+            );
+
+        const latestVehicleCapacity =
+            Math.max(
+                0,
+                Number(
+                    latestTrip.vehicleCapacity
+                ) || 10
+            );
+
+        const latestVehicleRemaining =
+            Math.max(
+                0,
+                latestVehicleCapacity -
+                    latestVehicles
+            );
+
+        // =====================================================
+        // PREPARE TRIP
+        // =====================================================
+
+        const tripToSave = {
+
+            ...trip,
+
+            // -----------------------------------------------
+            // FERRY INFORMATION
+            // -----------------------------------------------
+
+            id:
+                latestTrip.id ||
+                trip.id,
+
+            vesselName:
+                latestTrip.vesselName ||
+                trip.vesselName,
+
+            departureTime:
+                latestTrip.departureTime ||
+                trip.departureTime,
+
+            time:
+                latestTrip.time ||
+                trip.time,
+
+            // -----------------------------------------------
+            // PASSENGER CAPACITY
+            // -----------------------------------------------
+
+            passengers:
+                latestPassengers,
+
+            passengerCapacity:
+                latestPassengerCapacity,
+
+            passengerRemaining:
+                latestPassengerRemaining,
+
+            // -----------------------------------------------
+            // MOTORCYCLE CAPACITY
+            // -----------------------------------------------
+
+            vehicles:
+                latestVehicles,
+
+            vehicleCapacity:
+                latestVehicleCapacity,
+
+            vehicleRemaining:
+                latestVehicleRemaining
+        };
+
+        // =====================================================
+        // SAVE SELECTED TRIP
+        // =====================================================
+
         sessionStorage.setItem(
             "selectedTrip",
-            JSON.stringify(trip)
+            JSON.stringify(
+                tripToSave
+            )
         );
 
-        // Go to booking page
-        navigate("/book-trip");
+        // =====================================================
+        // KEEP EXISTING selectedFerry COMPATIBILITY
+        //
+        // This is important because your existing booking flow
+        // may still read selectedFerry.
+        // =====================================================
+
+        sessionStorage.setItem(
+            "selectedFerry",
+            JSON.stringify({
+                ...tripToSave,
+
+                ferryName:
+                    tripToSave.vesselName,
+
+                vesselName:
+                    tripToSave.vesselName,
+
+                departureTime:
+                    tripToSave.departureTime
+            })
+        );
+
+        // =====================================================
+        // ALSO SAVE THE LATEST CAPACITY
+        //
+        // This gives the next page access to the latest server
+        // capacity immediately.
+        // =====================================================
+
+        sessionStorage.setItem(
+            "selectedTripCapacity",
+            JSON.stringify({
+                ferryId:
+                    tripToSave.id,
+
+                vesselName:
+                    tripToSave.vesselName,
+
+                date:
+                    getToday(),
+
+                passengers:
+                    tripToSave.passengers,
+
+                passengerCapacity:
+                    tripToSave.passengerCapacity,
+
+                passengerRemaining:
+                    tripToSave.passengerRemaining,
+
+                vehicles:
+                    tripToSave.vehicles,
+
+                vehicleCapacity:
+                    tripToSave.vehicleCapacity,
+
+                vehicleRemaining:
+                    tripToSave.vehicleRemaining
+            })
+        );
+
+        // =====================================================
+        // GO TO BOOKING PAGE
+        // =====================================================
+
+        navigate(
+            "/book-trip"
+        );
     };
+
+    // =========================================================
+    // RETURN
+    // =========================================================
 
     return (
         <>
@@ -206,12 +782,6 @@ const Trips = () => {
                         );
 
                     gap: 22px;
-
-                    /*
-                       Makes the two selection cards
-                       occupy much more of the available
-                       horizontal space.
-                    */
                 }
 
                 /* =================================================
@@ -431,6 +1001,82 @@ const Trips = () => {
                 }
 
                 /* =================================================
+                   LIVE CAPACITY STATUS
+                ================================================= */
+
+                .capacity-live-status {
+                    display: flex;
+
+                    align-items: center;
+
+                    gap: 8px;
+
+                    margin:
+                        0
+                        0
+                        18px;
+
+                    padding:
+                        10px
+                        13px;
+
+                    border:
+                        1px solid
+                        #dcefe4;
+
+                    border-radius:
+                        10px;
+
+                    background:
+                        #f6fff9;
+
+                    color:
+                        #4f7b61;
+
+                    font-size:
+                        10px;
+                }
+
+                .capacity-live-status.error {
+                    border-color:
+                        #ffd3d3;
+
+                    background:
+                        #fff7f7;
+
+                    color:
+                        #b33b3b;
+                }
+
+                .live-dot {
+                    color:
+                        #15945b;
+
+                    font-size:
+                        9px;
+                }
+
+                .capacity-live-status.error
+                .live-dot {
+                    color:
+                        #d33b3b;
+                }
+
+                .capacity-remaining {
+                    display:
+                        block;
+
+                    margin-top:
+                        3px;
+
+                    color:
+                        #999999;
+
+                    font-size:
+                        9px;
+                }
+
+                /* =================================================
                    SELECT BUTTON
                 ================================================= */
 
@@ -583,7 +1229,6 @@ const Trips = () => {
                     .trip-card {
                         min-height: 290px;
                     }
-
                 }
 
                 /* =================================================
@@ -658,6 +1303,16 @@ const Trips = () => {
                             0;
                     }
 
+                    .capacity-live-status {
+                        font-size:
+                            9px;
+                    }
+
+                    .capacity-remaining {
+                        font-size:
+                            8px;
+                    }
+
                     .capacity-icon {
                         width: 38px;
                         height: 38px;
@@ -678,7 +1333,6 @@ const Trips = () => {
 
                         font-size: 11px;
                     }
-
                 }
 
                 /* =================================================
@@ -712,7 +1366,6 @@ const Trips = () => {
                         grid-template-columns:
                             1fr;
                     }
-
                 }
 
             `}</style>
@@ -731,7 +1384,9 @@ const Trips = () => {
                             type="button"
                             className="trips-back-button"
                             onClick={() =>
-                                navigate("/dashboard")
+                                navigate(
+                                    "/dashboard"
+                                )
                             }
                             aria-label="Back to dashboard"
                         >
@@ -753,7 +1408,6 @@ const Trips = () => {
 
                     </header>
 
-
                     {/* =================================================
                         TITLE
                     ================================================= */}
@@ -762,6 +1416,38 @@ const Trips = () => {
                         Available Ferries
                     </h2>
 
+                    {/* =================================================
+                        LIVE CAPACITY STATUS
+                    ================================================= */}
+
+                    <div
+                        className={
+                            `capacity-live-status ${
+                                capacityError
+                                    ? "error"
+                                    : ""
+                            }`
+                        }
+                    >
+
+                        <span className="live-dot">
+                            ●
+                        </span>
+
+                        <span>
+
+                            {capacityLoading
+                                ? "Loading latest ferry capacity..."
+
+                                : capacityError
+                                    ? `Capacity update unavailable: ${capacityError}`
+
+                                    : "Live capacity • Updated automatically every 5 seconds"
+                            }
+
+                        </span>
+
+                    </div>
 
                     {/* =================================================
                         TRIPS
@@ -769,117 +1455,219 @@ const Trips = () => {
 
                     <div className="trips-list">
 
-                        {availableTrips.map((trip) => (
+                        {availableTrips.map(
+                            (trip) => {
 
-                            <article
-                                className="trip-card"
-                                key={trip.id}
-                                onClick={() =>
-                                    selectTrip(trip)
-                                }
-                            >
+                                const passengerUsed =
+                                    Number(
+                                        trip.passengers
+                                    ) || 0;
 
-                                {/* CARD HEADER */}
+                                const passengerLimit =
+                                    Number(
+                                        trip.passengerCapacity
+                                    ) || 100;
 
-                                <div className="trip-card-header">
+                                const motorcycleUsed =
+                                    Number(
+                                        trip.vehicles
+                                    ) || 0;
 
-                                    <div className="vessel-info">
+                                const motorcycleLimit =
+                                    Number(
+                                        trip.vehicleCapacity
+                                    ) || 10;
 
-                                        <div className="vessel-icon">
-                                            ⛴️
-                                        </div>
+                                const passengerRemaining =
+                                    Math.max(
+                                        0,
+                                        passengerLimit -
+                                            passengerUsed
+                                    );
 
-                                        <div>
+                                const motorcycleRemaining =
+                                    Math.max(
+                                        0,
+                                        motorcycleLimit -
+                                            motorcycleUsed
+                                    );
 
-                                            <h3 className="vessel-name">
-                                                {trip.vesselName}
-                                            </h3>
+                                const passengerFull =
+                                    passengerRemaining <= 0;
 
-                                            <p className="vessel-route">
-                                                Iloilo → Guimaras
-                                            </p>
+                                return (
+                                    <article
+                                        className="trip-card"
+                                        key={trip.id}
+                                        onClick={() =>
+                                            selectTrip(
+                                                trip
+                                            )
+                                        }
+                                    >
 
-                                        </div>
+                                        {/* =================================================
+                                            CARD HEADER
+                                        ================================================= */}
 
-                                    </div>
+                                        <div className="trip-card-header">
 
-                                    <div className="departure-time">
-                                        {trip.departureTime}
-                                    </div>
+                                            <div className="vessel-info">
 
-                                </div>
+                                                <div className="vessel-icon">
+                                                    ⛴️
+                                                </div>
 
+                                                <div>
 
-                                {/* CAPACITY */}
+                                                    <h3 className="vessel-name">
+                                                        {trip.vesselName}
+                                                    </h3>
 
-                                <div className="trip-capacity">
+                                                    <p className="vessel-route">
+                                                        Iloilo → Guimaras
+                                                    </p>
 
-                                    <div className="capacity-item">
+                                                </div>
 
-                                        <div className="capacity-icon">
-                                            👤
-                                        </div>
+                                            </div>
 
-                                        <div>
-
-                                            <span className="capacity-label">
-                                                Passengers
-                                            </span>
-
-                                            <span className="capacity-value">
-                                                {trip.passengers}/
-                                                {trip.passengerCapacity}
-                                            </span>
-
-                                        </div>
-
-                                    </div>
-
-
-                                    <div className="capacity-item">
-
-                                        <div className="capacity-icon">
-                                            🚗
-                                        </div>
-
-                                        <div>
-
-                                            <span className="capacity-label">
-                                                Vehicles
-                                            </span>
-
-                                            <span className="capacity-value">
-                                                {trip.vehicles}/
-                                                {trip.vehicleCapacity}
-                                            </span>
+                                            <div className="departure-time">
+                                                {trip.departureTime}
+                                            </div>
 
                                         </div>
 
-                                    </div>
+                                        {/* =================================================
+                                            CAPACITY
+                                        ================================================= */}
 
-                                </div>
+                                        <div className="trip-capacity">
 
+                                            {/* =============================================
+                                                PASSENGERS
+                                            ============================================= */}
 
-                                {/* SELECT */}
+                                            <div className="capacity-item">
 
-                                <button
-                                    type="button"
-                                    className="select-trip-button"
-                                    onClick={(event) => {
-                                        event.stopPropagation();
+                                                <div className="capacity-icon">
+                                                    👤
+                                                </div>
 
-                                        selectTrip(trip);
-                                    }}
-                                >
-                                    Select This Trip
-                                </button>
+                                                <div>
 
-                            </article>
+                                                    <span className="capacity-label">
+                                                        Passengers
+                                                    </span>
 
-                        ))}
+                                                    <span className="capacity-value">
+                                                        {passengerUsed}/
+                                                        {passengerLimit}
+                                                    </span>
+
+                                                    <span className="capacity-remaining">
+                                                        {passengerRemaining}{" "}
+                                                        passenger{" "}
+                                                        {passengerRemaining === 1
+                                                            ? "slot"
+                                                            : "slots"}{" "}
+                                                        left
+                                                    </span>
+
+                                                </div>
+
+                                            </div>
+
+                                            {/* =============================================
+                                                MOTORCYCLES
+                                            ============================================= */}
+
+                                            <div className="capacity-item">
+
+                                                <div className="capacity-icon">
+                                                    🏍️
+                                                </div>
+
+                                                <div>
+
+                                                    <span className="capacity-label">
+                                                        Motorcycles
+                                                    </span>
+
+                                                    <span className="capacity-value">
+                                                        {motorcycleUsed}/
+                                                        {motorcycleLimit}
+                                                    </span>
+
+                                                    <span className="capacity-remaining">
+                                                        {motorcycleRemaining}{" "}
+                                                        motorcycle{" "}
+                                                        {motorcycleRemaining === 1
+                                                            ? "slot"
+                                                            : "slots"}{" "}
+                                                        left
+                                                    </span>
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                        {/* =================================================
+                                            SELECT BUTTON
+                                        ================================================= */}
+
+                                        <button
+                                            type="button"
+                                            className="select-trip-button"
+                                            disabled={
+                                                passengerFull
+                                            }
+                                            onClick={(
+                                                event
+                                            ) => {
+
+                                                event.stopPropagation();
+
+                                                if (
+                                                    passengerFull
+                                                ) {
+                                                    alert(
+                                                        "This ferry is already full for passengers. Please choose another ferry."
+                                                    );
+
+                                                    return;
+                                                }
+
+                                                selectTrip(
+                                                    trip
+                                                );
+                                            }}
+                                            style={
+                                                passengerFull
+                                                    ? {
+                                                        opacity:
+                                                            0.55,
+                                                        cursor:
+                                                            "not-allowed"
+                                                    }
+                                                    : undefined
+                                            }
+                                        >
+
+                                            {passengerFull
+                                                ? "Passenger Capacity Full"
+                                                : "Select This Trip"}
+
+                                        </button>
+
+                                    </article>
+                                );
+                            }
+                        )}
 
                     </div>
-
 
                     {/* =================================================
                         INFORMATION

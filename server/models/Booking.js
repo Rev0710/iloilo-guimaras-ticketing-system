@@ -66,6 +66,29 @@ const bookingSchema = new mongoose.Schema(
         // SCHEDULE
         // =========================
 
+        // Ferry identity is stored with the booking so capacity
+        // can always be assigned to the exact selected vessel.
+
+        ferryId: {
+            type: String,
+            default: ""
+        },
+
+        ferryName: {
+            type: String,
+            default: ""
+        },
+
+        vesselName: {
+            type: String,
+            default: ""
+        },
+
+        departureTime: {
+            type: String,
+            default: ""
+        },
+
         date: {
             type: String,
             required: true
@@ -145,58 +168,58 @@ const bookingSchema = new mongoose.Schema(
             default: null
         },
 
-       // =========================
-// PAYMENT
-// =========================
+        // =========================
+        // PAYMENT
+        // =========================
 
-paymentMethod: {
-    type: String,
-    required: true,
-    default: "Maya / QRPh"
-},
+        paymentMethod: {
+            type: String,
+            required: true,
+            default: "Maya / QRPh"
+        },
 
-paymentStatus: {
-    type: String,
-    enum: [
-        "PENDING VERIFICATION",
-        "VERIFIED",
-        "REJECTED"
-    ],
-    default: "PENDING VERIFICATION"
-},
+        paymentStatus: {
+            type: String,
+            enum: [
+                "PENDING VERIFICATION",
+                "VERIFIED",
+                "REJECTED"
+            ],
+            default: "PENDING VERIFICATION"
+        },
 
-// =========================
-// BOARDING
-// =========================
+        // =========================
+        // BOARDING
+        // =========================
 
-boardingStatus: {
-    type: String,
-    enum: [
-        "NOT BOARDED",
-        "ON BOARD",
-        "REJECTED"
-    ],
-    default: "NOT BOARDED"
-},
+        boardingStatus: {
+            type: String,
+            enum: [
+                "NOT BOARDED",
+                "ON BOARD",
+                "REJECTED"
+            ],
+            default: "NOT BOARDED"
+        },
 
-boardedAt: {
-    type: Date,
-    default: null
-},
+        boardedAt: {
+            type: Date,
+            default: null
+        },
 
-// =========================
-// BOOKING STATUS
-// =========================
+        // =========================
+        // BOOKING STATUS
+        // =========================
 
-status: {
-    type: String,
-    enum: [
-        "PENDING PAYMENT VERIFICATION",
-        "CONFIRMED",
-        "CANCELLED"
-    ],
-    default: "PENDING PAYMENT VERIFICATION"
-},
+        status: {
+            type: String,
+            enum: [
+                "PENDING PAYMENT VERIFICATION",
+                "CONFIRMED",
+                "CANCELLED"
+            ],
+            default: "PENDING PAYMENT VERIFICATION"
+        },
 
         // =========================
         // PAYMENT PROOF
@@ -207,7 +230,6 @@ status: {
             required: true
         }
     },
-    
 
     {
         timestamps: true

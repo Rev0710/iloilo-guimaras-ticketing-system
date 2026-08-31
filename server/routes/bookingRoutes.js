@@ -21,7 +21,9 @@ const {
 
     rejectPayment,
 
-    getBookingStatistics
+    getBookingStatistics,
+
+    getBookingCapacity
 
 } = require("../controllers/bookingController");
 
@@ -37,6 +39,26 @@ const {
 router.get(
     "/reference/:bookingReference",
     getBookingByReference
+);
+
+
+// =====================================================
+// PUBLIC FERRY CAPACITY
+// =====================================================
+//
+// Used by Trips.jsx to retrieve the latest passenger
+// and motorcycle capacity for each ferry.
+//
+// IMPORTANT:
+// This route is intentionally PUBLIC because tourists
+// need to see the available slots before booking.
+//
+// DO NOT add adminAuth here.
+//
+
+router.get(
+    "/capacity",
+    getBookingCapacity
 );
 
 
