@@ -344,6 +344,42 @@ const AdminDashboard = () => {
     };
 
     // =========================================================
+    // BOOKING STATUS DISPLAY
+    // =========================================================
+
+    const getBookingDisplayStatus = (booking) => {
+        const boardingStatus =
+            String(booking?.boardingStatus || "")
+                .trim()
+                .toUpperCase();
+
+        if (boardingStatus === "REJECTED") {
+            return {
+                label: "Rejected",
+                className: "rejected"
+            };
+        }
+
+        if (boardingStatus === "ON BOARD") {
+            return {
+                label: "Onboard",
+                className: "onboard"
+            };
+        }
+
+        return {
+            label: booking?.status || "—",
+            className:
+                String(booking?.status || "")
+                    .toLowerCase()
+                    .includes("confirm")
+                    ? "confirmed"
+                    : ""
+        };
+    };
+
+
+    // =========================================================
     // SEARCH BOOKING BY REFERENCE
     // =========================================================
 
@@ -1975,9 +2011,18 @@ const AdminDashboard = () => {
                                                 <span className="eyebrow">BOOKING INFORMATION</span>
                                                 <h4>{bookingSearchResult.bookingReference || "—"}</h4>
                                             </div>
-                                            <div className={`admin-booking-status-pill ${String(bookingSearchResult.status || "").toLowerCase().includes("confirm") ? "confirmed" : ""}`}>
-                                                {bookingSearchResult.status || "—"}
-                                            </div>
+                                            {(() => {
+                                                const displayStatus =
+                                                    getBookingDisplayStatus(
+                                                        bookingSearchResult
+                                                    );
+
+                                                return (
+                                                    <div className={`admin-booking-status-pill ${displayStatus.className}`}>
+                                                        {displayStatus.label}
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
 
                                         <div className="admin-booking-info-grid">
@@ -1996,7 +2041,7 @@ const AdminDashboard = () => {
                                             <div><span>Payment Status</span><strong>{bookingSearchResult.paymentStatus || "—"}</strong></div>
                                             <div><span>Required Amount</span><strong>₱{Number(bookingSearchResult.requiredAmount || 0).toLocaleString()}</strong></div>
                                             <div><span>Total Paid</span><strong>{bookingSearchResult.totalPaid == null ? "—" : `₱${Number(bookingSearchResult.totalPaid).toLocaleString()}`}</strong></div>
-                                            <div><span>Boarding Status</span><strong>{bookingSearchResult.boardingStatus || "—"}</strong></div>
+                                            <div><span>Boarding Status</span><strong>{getBookingDisplayStatus(bookingSearchResult).label}</strong></div>
                                         </div>
 
                                         {bookingSearchResult.paymentProof?.url && (
@@ -7686,6 +7731,8 @@ const AdminDashboard = () => {
 .admin-booking-result-heading h4 { margin: 5px 0 0; color: #222222; font-size: 15px; }
 .admin-booking-status-pill { padding: 6px 9px; border-radius: 20px; background: #fff4dc; color: #9a6500; font-size: 8px; font-weight: 800; text-align: center; }
 .admin-booking-status-pill.confirmed { background: #e9f8ef; color: #16804a; }
+.admin-booking-status-pill.onboard { background: #e9f8ef; color: #16804a; }
+.admin-booking-status-pill.rejected { background: #fee2e2; color: #b91c1c; }
 .admin-booking-info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .admin-booking-info-grid > div { padding: 10px; background: #ffffff; border: 1px solid #eeeeee; border-radius: 7px; }
 .admin-booking-info-grid span { display: block; margin-bottom: 4px; color: #888888; font-size: 8px; }

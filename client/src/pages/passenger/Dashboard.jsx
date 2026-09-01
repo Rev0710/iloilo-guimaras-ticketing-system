@@ -15,6 +15,13 @@ import {
 } from "react-icons/fa";
 
 
+// =========================================================
+// API
+// =========================================================
+const API_URL =
+    "http://localhost:5000";
+
+
 const Dashboard = () => {
 
     const navigate = useNavigate();
@@ -125,7 +132,7 @@ const Dashboard = () => {
     // LOAD ALL BOOKINGS
     // =========================================================
 
-    const loadBookings = () => {
+    const loadBookings = async () => {
 
         try {
 
@@ -247,6 +254,76 @@ const Dashboard = () => {
                 }
 
             }
+
+
+            // =================================================
+            // REFRESH BOOKINGS FROM MONGODB
+            // =================================================
+            // Staff boarding decisions are made on a different
+            // device, so the dashboard must not rely only on
+            // sessionStorage for the latest booking status.
+            // Existing local data is kept if the API is unavailable.
+
+            const refreshedBookings =
+                await Promise.all(
+                    allBookings.map(
+                        async (localBooking) => {
+                            const bookingReference =
+                                localBooking?.bookingReference;
+
+                            if (!bookingReference) {
+                                return localBooking;
+                            }
+
+                            try {
+                                const response =
+                                    await fetch(
+                                        `${API_URL}/api/payment/booking/${encodeURIComponent(
+                                            bookingReference
+                                        )}`,
+                                        {
+                                            headers: {
+                                                Authorization: `Bearer ${
+                                                    localStorage.getItem("token") ||
+                                                    sessionStorage.getItem("token") ||
+                                                    ""
+                                                }`,
+                                                Accept: "application/json"
+                                            }
+                                        }
+                                    );
+
+                                if (!response.ok) {
+                                    return localBooking;
+                                }
+
+                                const data =
+                                    await response.json();
+
+                                if (
+                                    data?.success &&
+                                    data?.booking
+                                ) {
+                                    return {
+                                        ...localBooking,
+                                        ...data.booking
+                                    };
+                                }
+
+                            } catch (refreshError) {
+                                console.warn(
+                                    `Unable to refresh dashboard booking ${bookingReference}:`,
+                                    refreshError
+                                );
+                            }
+
+                            return localBooking;
+                        }
+                    )
+                );
+
+            allBookings =
+                refreshedBookings;
 
 
             // =================================================
@@ -1212,6 +1289,17 @@ const Dashboard = () => {
 
                     font-weight:
                         700;
+
+                }
+
+
+                .booking-status.rejected {
+
+                    background:
+                        #fee2e2;
+
+                    color:
+                        #b91c1c;
 
                 }
 
@@ -2459,10 +2547,16 @@ const Dashboard = () => {
                                     ) => {
 
                                         const status =
-                                            (
-                                                booking.status ||
-                                                "PENDING"
-                                            ).toUpperCase();
+                                            String(
+                                                booking?.boardingStatus ||
+                                                ""
+                                            ).toUpperCase() ===
+                                            "REJECTED"
+                                                ? "REJECTED"
+                                                : (
+                                                    booking.status ||
+                                                    "PENDING"
+                                                ).toUpperCase();
 
                                         return (
 
@@ -2525,12 +2619,31 @@ const Dashboard = () => {
 
 
                                                     <span
-                                                        className="booking-status"
+                                                        className={`booking-status ${status === "REJECTED" ? "rejected" : ""}`}
                                                     >
                                                         {status}
                                                     </span>
 
                                                 </div>
+
+                                                {status ===
+                                                    "REJECTED" &&
+                                                    booking.rejectionReason && (
+                                                    <div
+                                                        style={{
+                                                            marginTop: "8px",
+                                                            padding: "8px 10px",
+                                                            background: "#fef2f2",
+                                                            borderRadius: "8px",
+                                                            color: "#991b1b",
+                                                            fontSize: "11px",
+                                                            lineHeight: "1.4"
+                                                        }}
+                                                    >
+                                                        <strong>Rejected:</strong>{" "}
+                                                        {booking.rejectionReason}
+                                                    </div>
+                                                )}
 
 
                                                 <div

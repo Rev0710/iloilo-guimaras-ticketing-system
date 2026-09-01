@@ -12,6 +12,31 @@ const MayaPayment = () => {
     const API_URL = "http://localhost:5000";
 
     // =========================================================
+    // AUTHENTICATION TOKEN
+    // =========================================================
+    //
+    // Login stores the normal passenger JWT in sessionStorage
+    // when "Remember me" is OFF, and localStorage when it is ON.
+    // The protected create-booking endpoint needs that JWT.
+    // This helper supports both storage locations without
+    // changing the existing booking/payment logic.
+    //
+
+    const getAuthToken = () => {
+
+        return (
+            localStorage.getItem("token") ||
+            sessionStorage.getItem("token") ||
+            localStorage.getItem("authToken") ||
+            sessionStorage.getItem("authToken") ||
+            localStorage.getItem("accessToken") ||
+            sessionStorage.getItem("accessToken") ||
+            ""
+        );
+
+    };
+
+    // =========================================================
     // GUIMARASGO LOGO
     // =========================================================
 
@@ -265,13 +290,10 @@ const MayaPayment = () => {
     // =========================================================
 
     const passengers =
-        Math.min(
-            5,
-            Math.max(
-                1,
-                Number(
-                    normalizedTrip.passengers || 1
-                )
+        Math.max(
+            1,
+            Number(
+                normalizedTrip.passengers || 1
             )
         );
 
@@ -798,10 +820,28 @@ const MayaPayment = () => {
                         {
                             method: "POST",
 
-                            headers: {
-                                "Content-Type":
-                                    "application/json"
-                            },
+                            headers: (() => {
+
+                                const token =
+                                    getAuthToken();
+
+                                if (!token) {
+
+                                    throw new Error(
+                                        "Authentication required. Please log in again before submitting the payment."
+                                    );
+
+                                }
+
+                                return {
+                                    "Content-Type":
+                                        "application/json",
+
+                                    "Authorization":
+                                        `Bearer ${token}`
+                                };
+
+                            })(),
 
                             body:
                                 JSON.stringify(

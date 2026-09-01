@@ -288,6 +288,24 @@ const bookingSchema = new mongoose.Schema(
             default: null
         },
 
+        // =========================
+        // STAFF REJECTION
+        // =========================
+        // Stores the reason provided by staff when boarding is rejected.
+        // Existing bookings remain compatible because these fields are optional.
+
+        rejectionReason: {
+            type: String,
+            default: "",
+            trim: true,
+            maxlength: 500
+        },
+
+        rejectedAt: {
+            type: Date,
+            default: null
+        },
+
 
         // =========================
         // BOOKING STATUS

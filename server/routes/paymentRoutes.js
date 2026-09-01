@@ -4,6 +4,7 @@ const path = require("path");
 const fs = require("fs");
 
 const Booking = require("../models/Booking");
+const protect = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -184,6 +185,7 @@ router.post(
 
 router.post(
     "/create-booking",
+    protect,
     async (req, res) => {
 
         try {
@@ -208,15 +210,6 @@ router.post(
                 date,
 
                 time,
-
-                // Selected ferry identity.
-                ferryId,
-
-                ferryName,
-
-                vesselName,
-
-                departureTime,
 
                 passengerName,
 
@@ -277,55 +270,6 @@ router.post(
             }
 
             // =================================================
-            // MINIMUM ADVANCE BOOKING RULE
-            // =================================================
-            // Online booking must be made at least one calendar day
-            // before the selected trip date.
-            // =================================================
-
-            const getManilaDate = () => {
-                const parts = new Intl.DateTimeFormat("en-CA", {
-                    timeZone: "Asia/Manila",
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit"
-                }).formatToParts(new Date());
-
-                const values = {};
-                parts.forEach((part) => {
-                    if (part.type !== "literal") {
-                        values[part.type] = part.value;
-                    }
-                });
-
-                return `${values.year}-${values.month}-${values.day}`;
-            };
-
-            const todayManila = getManilaDate();
-            const tomorrowDate = new Date(
-                `${todayManila}T00:00:00+08:00`
-            );
-            tomorrowDate.setDate(
-                tomorrowDate.getDate() + 1
-            );
-
-            const minimumBookingDate =
-                new Intl.DateTimeFormat("en-CA", {
-                    timeZone: "Asia/Manila",
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit"
-                }).format(tomorrowDate);
-
-            if (date < minimumBookingDate) {
-                return res.status(400).json({
-                    success: false,
-                    message:
-                        "Online booking must be made at least 1 day before the selected trip."
-                });
-            }
-
-            // =================================================
             // CHECK DUPLICATE BOOKING REFERENCE
             // =================================================
 
@@ -352,6 +296,10 @@ router.post(
             const booking =
                 new Booking({
 
+                    // IMPORTANT: never trust a userId sent by the client.
+                    // The authenticated JWT is the source of ownership.
+                    userId: req.user.userId,
+
                     bookingReference,
 
                     origin,
@@ -361,24 +309,6 @@ router.post(
                     date,
 
                     time,
-
-                    // Preserve the exact ferry selected by the passenger.
-                    ferryId:
-                        ferryId || "",
-
-                    ferryName:
-                        ferryName ||
-                        vesselName ||
-                        "",
-
-                    vesselName:
-                        vesselName ||
-                        ferryName ||
-                        "",
-
-                    departureTime:
-                        departureTime ||
-                        "",
 
                     passengerName,
 
@@ -489,6 +419,7 @@ router.post(
 
 router.get(
     "/booking/:bookingReference",
+    protect,
     async (req, res) => {
 
         try {
@@ -496,7 +427,8 @@ router.get(
             const booking =
                 await Booking.findOne({
                     bookingReference:
-                        req.params.bookingReference
+                        req.params.bookingReference,
+                    userId: req.user.userId
                 });
 
             if (!booking) {

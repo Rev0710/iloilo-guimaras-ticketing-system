@@ -35,14 +35,26 @@ const register = async (req, res) => {
         } = req.body;
 
         if (
-            !fullName ||
-            !email ||
-            !phoneNumber ||
+            typeof fullName !== "string" ||
+            typeof email !== "string" ||
+            typeof phoneNumber !== "string" ||
+            typeof password !== "string" ||
+            !fullName.trim() ||
+            !email.trim() ||
+            !phoneNumber.trim() ||
             !password
         ) {
             return res.status(400).json({
                 message:
                     "Please complete all required fields."
+            });
+        }
+
+        // Password length validation
+        if (password.length < 8) {
+            return res.status(400).json({
+                message:
+                    "Password must contain at least 8 characters."
             });
         }
 
@@ -84,7 +96,7 @@ const register = async (req, res) => {
                 hashedPassword
         });
 
-        res.status(201).json({
+        return res.status(201).json({
             message:
                 "Account created successfully.",
 
@@ -103,7 +115,7 @@ const register = async (req, res) => {
             error
         );
 
-        res.status(500).json({
+        return res.status(500).json({
             message:
                 "Server error during registration."
         });
@@ -123,21 +135,41 @@ const login = async (req, res) => {
             password
         } = req.body;
 
-        if (!email || !password) {
+        // ========================================
+        // BASIC VALIDATION
+        // ========================================
+
+        if (
+            typeof email !== "string" ||
+            typeof password !== "string" ||
+            !email.trim() ||
+            !password
+        ) {
             return res.status(400).json({
                 message:
                     "Email and password are required."
             });
         }
 
+        // ========================================
+        // NORMALIZE EMAIL
+        // ========================================
+
         const normalizedEmail =
             email.trim().toLowerCase();
 
-        // Find user
+        // ========================================
+        // FIND USER
+        // ========================================
+
         const user =
             await User.findOne({
                 email: normalizedEmail
             });
+
+        // ========================================
+        // USER NOT FOUND
+        // ========================================
 
         if (!user) {
             return res.status(401).json({
@@ -146,35 +178,73 @@ const login = async (req, res) => {
             });
         }
 
-        // Compare password with MongoDB hash
-        let passwordMatch = false;
+        // ========================================
+        // PASSWORD VALIDATION
+        // ========================================
 
-if (user) {
-    passwordMatch = await bcrypt.compare(
-        password,
-        user.password
-    );
-}
+        if (
+            typeof user.password !== "string" ||
+            !user.password
+        ) {
+            return res.status(401).json({
+                message:
+                    "Invalid email or password."
+            });
+        }
 
-console.log("========== LOGIN DEBUG ==========");
-console.log("Email:", normalizedEmail);
-console.log("User found:", !!user);
+        // ========================================
+        // MAKE SURE PASSWORD IS A BCRYPT HASH
+        // ========================================
 
-if (user) {
-    console.log("Stored password exists:", !!user.password);
-    console.log(
-        "Stored password starts with:",
-        user.password.substring(0, 7)
-    );
-}
+        const isBcryptHash =
+            /^\$2[aby]\$\d{2}\$/.test(
+                user.password
+            );
 
-console.log("Password match:", passwordMatch);
-console.log("=================================");
-        // Create JWT
+        if (!isBcryptHash) {
+            console.error(
+                `Login rejected: password for ${normalizedEmail} is not stored as a bcrypt hash.`
+            );
+
+            return res.status(401).json({
+                message:
+                    "Invalid email or password."
+            });
+        }
+
+        // ========================================
+        // COMPARE PASSWORD
+        // ========================================
+
+        const passwordMatch =
+            await bcrypt.compare(
+                password,
+                user.password
+            );
+
+        // ========================================
+        // REJECT WRONG PASSWORD
+        // ========================================
+
+        if (!passwordMatch) {
+            return res.status(401).json({
+                message:
+                    "Invalid email or password."
+            });
+        }
+
+        // ========================================
+        // CREATE JWT
+        // ========================================
+
         const token =
             createToken(user);
 
-        res.status(200).json({
+        // ========================================
+        // LOGIN SUCCESS
+        // ========================================
+
+        return res.status(200).json({
             message:
                 "Login successful.",
 
@@ -196,7 +266,7 @@ console.log("=================================");
             error
         );
 
-        res.status(500).json({
+        return res.status(500).json({
             message:
                 "Server error during login."
         });
@@ -225,7 +295,7 @@ const getMe = async (req, res) => {
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             user: {
                 id: user._id,
                 fullName: user.fullName,
@@ -242,7 +312,7 @@ const getMe = async (req, res) => {
             error
         );
 
-        res.status(500).json({
+        return res.status(500).json({
             message:
                 "Server error while getting user information."
         });
@@ -268,9 +338,12 @@ const updateProfile = async (req, res) => {
 
         // Validation
         if (
-            !fullName ||
-            !email ||
-            !phoneNumber
+            typeof fullName !== "string" ||
+            typeof email !== "string" ||
+            typeof phoneNumber !== "string" ||
+            !fullName.trim() ||
+            !email.trim() ||
+            !phoneNumber.trim()
         ) {
             return res.status(400).json({
                 message:
@@ -300,23 +373,23 @@ const updateProfile = async (req, res) => {
 
         // Update MongoDB
         const user =
-    await User.findByIdAndUpdate(
-        userId,
-        {
-            fullName:
-                fullName.trim(),
+            await User.findByIdAndUpdate(
+                userId,
+                {
+                    fullName:
+                        fullName.trim(),
 
-            email:
-                normalizedEmail,
+                    email:
+                        normalizedEmail,
 
-            phoneNumber:
-                phoneNumber.trim()
-        },
-        {
-            returnDocument: "after",
-            runValidators: true
-        }
-    );
+                    phoneNumber:
+                        phoneNumber.trim()
+                },
+                {
+                    returnDocument: "after",
+                    runValidators: true
+                }
+            );
 
         if (!user) {
             return res.status(404).json({
@@ -325,13 +398,12 @@ const updateProfile = async (req, res) => {
             });
         }
 
-        // IMPORTANT:
         // Generate a new token because email
         // may have changed.
         const token =
             createToken(user);
 
-        res.status(200).json({
+        return res.status(200).json({
             message:
                 "Profile updated successfully.",
 
@@ -353,7 +425,7 @@ const updateProfile = async (req, res) => {
             error
         );
 
-        res.status(500).json({
+        return res.status(500).json({
             message:
                 "Server error while updating profile."
         });
@@ -378,6 +450,8 @@ const changePassword = async (req, res) => {
 
         // Validation
         if (
+            typeof currentPassword !== "string" ||
+            typeof newPassword !== "string" ||
             !currentPassword ||
             !newPassword
         ) {
@@ -402,6 +476,20 @@ const changePassword = async (req, res) => {
             return res.status(404).json({
                 message:
                     "User account not found."
+            });
+        }
+
+        // Make sure stored password is bcrypt
+        const isBcryptHash =
+            typeof user.password === "string" &&
+            /^\$2[aby]\$\d{2}\$/.test(
+                user.password
+            );
+
+        if (!isBcryptHash) {
+            return res.status(401).json({
+                message:
+                    "Password verification failed."
             });
         }
 
@@ -450,7 +538,7 @@ const changePassword = async (req, res) => {
         const token =
             createToken(user);
 
-        res.status(200).json({
+        return res.status(200).json({
             message:
                 "Password updated successfully.",
 
@@ -464,9 +552,9 @@ const changePassword = async (req, res) => {
             error
         );
 
-        res.status(500).json({
+        return res.status(500).json({
             message:
-                "Server error while changing password."
+                "Server error during password change."
         });
     }
 };

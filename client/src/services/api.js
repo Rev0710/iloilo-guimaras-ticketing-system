@@ -57,6 +57,9 @@ api.interceptors.request.use(
         const userToken =
             localStorage.getItem(
                 "token"
+            ) ||
+            sessionStorage.getItem(
+                "token"
             );
 
 
@@ -124,6 +127,9 @@ api.interceptors.response.use(
             const userToken =
                 localStorage.getItem(
                     "token"
+                ) ||
+                sessionStorage.getItem(
+                    "token"
                 );
 
 
@@ -190,6 +196,14 @@ api.interceptors.response.use(
                 );
 
                 localStorage.removeItem(
+                    "user"
+                );
+
+                sessionStorage.removeItem(
+                    "token"
+                );
+
+                sessionStorage.removeItem(
                     "user"
                 );
 

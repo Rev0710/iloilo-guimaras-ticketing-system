@@ -239,6 +239,28 @@ const rejectBoarding = async (req, res) => {
     try {
 
         const { id } = req.params;
+        const { reason } = req.body || {};
+
+
+        // -----------------------------------------------------
+        // Validate rejection reason
+        // -----------------------------------------------------
+
+        if (typeof reason !== "string" || !reason.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "A rejection reason is required."
+            });
+        }
+
+        const trimmedReason = reason.trim();
+
+        if (trimmedReason.length > 500) {
+            return res.status(400).json({
+                success: false,
+                message: "Rejection reason must not exceed 500 characters."
+            });
+        }
 
 
         // -----------------------------------------------------
@@ -294,6 +316,17 @@ const rejectBoarding = async (req, res) => {
 
         booking.boardingStatus =
             "REJECTED";
+
+        // Keep the administrator's payment status unchanged.
+        // Staff rejection is a separate boarding decision.
+        booking.status =
+            "CANCELLED";
+
+        booking.rejectionReason =
+            trimmedReason;
+
+        booking.rejectedAt =
+            new Date();
 
 
         await booking.save();

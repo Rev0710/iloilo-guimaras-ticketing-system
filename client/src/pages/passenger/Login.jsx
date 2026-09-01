@@ -76,6 +76,28 @@ const Login = () => {
             }
 
             // =====================================================
+            // CLEAR ANY PREVIOUS PASSENGER SESSION
+            // =====================================================
+            // This prevents account A's token/cache from being reused
+            // when account B logs in on the same browser.
+            // =====================================================
+
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            sessionStorage.removeItem("token");
+            sessionStorage.removeItem("user");
+
+            // Old client-side booking cache must never be carried
+            // into another passenger account. MongoDB is now the
+            // source of truth for the logged-in user's bookings.
+            sessionStorage.removeItem("allBookings");
+            sessionStorage.removeItem("recentBookings");
+            sessionStorage.removeItem("confirmedBooking");
+            sessionStorage.removeItem("latestBooking");
+            sessionStorage.removeItem("paymentDetails");
+            sessionStorage.removeItem("paymentStatus");
+
+            // =====================================================
             // SAVE JWT TOKEN
             // =====================================================
 

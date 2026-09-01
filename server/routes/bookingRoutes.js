@@ -5,6 +5,12 @@ const router = express.Router();
 const adminAuth =
     require("../middleware/adminAuth");
 
+const protect =
+    require("../middleware/authMiddleware");
+
+const Booking =
+    require("../models/Booking");
+
 const {
 
     getAllBookings,
@@ -31,6 +37,43 @@ const {
 
 
 // =====================================================
+// AUTHENTICATED PASSENGER BOOKINGS
+// =====================================================
+// Only bookings belonging to the logged-in passenger are returned.
+// =====================================================
+
+router.get(
+    "/my",
+    protect,
+    async (req, res) => {
+        try {
+            const bookings =
+                await Booking.find({
+                    userId: req.user.userId
+                }).sort({
+                    createdAt: -1
+                });
+
+            return res.status(200).json({
+                success: true,
+                bookings
+            });
+        } catch (error) {
+            console.error(
+                "Get my bookings error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message: "Unable to retrieve your bookings."
+            });
+        }
+    }
+);
+
+
+// =====================================================
 // PUBLIC TOURIST BOOKING LOOKUP
 // =====================================================
 //
@@ -40,7 +83,38 @@ const {
 
 router.get(
     "/reference/:bookingReference",
-    getBookingByReference
+    protect,
+    async (req, res) => {
+        try {
+            const booking =
+                await Booking.findOne({
+                    bookingReference:
+                        req.params.bookingReference
+                });
+
+            if (!booking) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Booking not found."
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                booking
+            });
+        } catch (error) {
+            console.error(
+                "Get passenger booking error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message: "Unable to retrieve booking."
+            });
+        }
+    }
 );
 
 

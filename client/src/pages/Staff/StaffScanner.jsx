@@ -87,6 +87,32 @@ function extractBookingReference(qrText) {
 
 
 // =========================================================
+// BOARDING STATUS LABEL
+// =========================================================
+
+function getBoardingStatusLabel(status) {
+    const normalizedStatus =
+        String(status || "")
+            .trim()
+            .toUpperCase();
+
+    if (normalizedStatus === "ON BOARD") {
+        return "Onboard";
+    }
+
+    if (normalizedStatus === "REJECTED") {
+        return "Rejected";
+    }
+
+    if (normalizedStatus === "NOT BOARDED") {
+        return "Not Boarded";
+    }
+
+    return status || "N/A";
+}
+
+
+// =========================================================
 // STAFF SCANNER
 // =========================================================
 
@@ -125,6 +151,20 @@ function StaffScanner() {
 
     const [loadingBooking, setLoadingBooking] =
         useState(false);
+
+    // =====================================================
+    // REJECTION REASON
+    // =====================================================
+    const [showRejectModal, setShowRejectModal] =
+        useState(false);
+
+    const [rejectReason, setRejectReason] =
+        useState(
+            "Payment has not been verified by admin."
+        );
+
+    const [customRejectReason, setCustomRejectReason] =
+        useState("");
 
 
     // =========================================================
@@ -612,7 +652,7 @@ function StaffScanner() {
     // REJECT PASSENGER BOARDING
     // =========================================================
 
-    const rejectBoarding = async () => {
+    const openRejectModal = () => {
 
         if (!booking?._id) {
             setError(
@@ -630,23 +670,79 @@ function StaffScanner() {
             return;
         }
 
-        const confirmed = window.confirm(
-            `Are you sure you want to reject boarding for ${booking.passengerName || "this passenger"}?`
-        );
+        setError("");
+        setMessage("");
 
-        if (!confirmed) {
+        // If admin has not verified the payment yet,
+        // make that the default rejection reason.
+        if (booking.paymentStatus !== "VERIFIED") {
+            setRejectReason(
+                "Payment has not been verified by admin."
+            );
+        } else {
+            setRejectReason(
+                "Passenger identity could not be verified."
+            );
+        }
+
+        setCustomRejectReason("");
+        setShowRejectModal(true);
+    };
+
+
+    const closeRejectModal = () => {
+        if (loadingBooking) {
+            return;
+        }
+
+        setShowRejectModal(false);
+        setCustomRejectReason("");
+    };
+
+
+    const confirmRejectBoarding = async () => {
+
+        if (!booking?._id) {
+            setError(
+                "Booking information is missing."
+            );
+
+            return;
+        }
+
+        if (booking.boardingStatus === "ON BOARD") {
+            setError(
+                "This passenger has already boarded and cannot be rejected."
+            );
+
+            setShowRejectModal(false);
+            return;
+        }
+
+        const finalReason =
+            rejectReason === "Other"
+                ? customRejectReason.trim()
+                : rejectReason.trim();
+
+        if (!finalReason) {
+            setError(
+                "Please select or enter a reason for rejecting this passenger."
+            );
+
             return;
         }
 
         try {
-
             setLoadingBooking(true);
             setError("");
             setMessage("");
 
             const response =
                 await api.put(
-                    `/staff/bookings/${booking._id}/reject`
+                    `/staff/bookings/${booking._id}/reject`,
+                    {
+                        reason: finalReason
+                    }
                 );
 
             if (response.data?.booking) {
@@ -654,6 +750,9 @@ function StaffScanner() {
                     response.data.booking
                 );
             }
+
+            setShowRejectModal(false);
+            setCustomRejectReason("");
 
             setMessage(
                 response.data?.message ||
@@ -673,11 +772,9 @@ function StaffScanner() {
             );
 
         } finally {
-
             setLoadingBooking(false);
         }
     };
-
 
     // =========================================================
     // CLEANUP CAMERA
@@ -1331,11 +1428,37 @@ function StaffScanner() {
                                 <InfoRow
                                     label="Boarding Status"
                                     value={
-                                        booking.boardingStatus
+                                        getBoardingStatusLabel(
+                                            booking.boardingStatus
+                                        )
                                     }
                                 />
 
                             </div>
+
+
+                            {/* =================================================
+                                STAFF REJECTION REASON
+                            ================================================= */}
+
+                            {booking.boardingStatus ===
+                                "REJECTED" &&
+                                booking.rejectionReason && (
+                                    <div
+                                        style={{
+                                            marginTop: "15px",
+                                            background: "#fef2f2",
+                                            color: "#991b1b",
+                                            padding: "12px",
+                                            borderRadius: "8px",
+                                            fontSize: "14px",
+                                            lineHeight: "1.5"
+                                        }}
+                                    >
+                                        <strong>Rejection Reason:</strong>{" "}
+                                        {booking.rejectionReason}
+                                    </div>
+                                )}
 
 
                             {/* =================================================
@@ -1406,7 +1529,7 @@ function StaffScanner() {
 
                                         <button
                                             onClick={
-                                                rejectBoarding
+                                                openRejectModal
                                             }
                                             disabled={
                                                 loadingBooking
@@ -1601,6 +1724,182 @@ function StaffScanner() {
                 </div>
 
             </div>
+
+
+            {/* =========================================================
+                REJECTION REASON MODAL
+            ========================================================= */}
+
+            {showRejectModal && (
+                <div
+                    style={{
+                        position: "fixed",
+                        inset: 0,
+                        background: "rgba(0,0,0,0.45)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "20px",
+                        zIndex: 9999
+                    }}
+                >
+                    <div
+                        style={{
+                            width: "100%",
+                            maxWidth: "500px",
+                            background: "#ffffff",
+                            borderRadius: "16px",
+                            padding: "24px",
+                            boxShadow: "0 20px 50px rgba(0,0,0,0.20)"
+                        }}
+                    >
+                        <h2
+                            style={{
+                                marginTop: 0,
+                                marginBottom: "8px",
+                                color: "#111827"
+                            }}
+                        >
+                            Reject Boarding
+                        </h2>
+
+                        <p
+                            style={{
+                                marginTop: 0,
+                                color: "#6b7280",
+                                fontSize: "14px",
+                                lineHeight: "1.5"
+                            }}
+                        >
+                            Select a reason before rejecting this passenger. The reason will be saved with booking reference{" "}
+                            <strong>{booking?.bookingReference || "N/A"}</strong> and shown to the passenger.
+                        </p>
+
+                        <label
+                            style={{
+                                display: "block",
+                                marginBottom: "7px",
+                                color: "#374151",
+                                fontWeight: "600",
+                                fontSize: "14px"
+                            }}
+                        >
+                            Reason for rejection
+                        </label>
+
+                        <select
+                            value={rejectReason}
+                            onChange={(event) =>
+                                setRejectReason(event.target.value)
+                            }
+                            disabled={loadingBooking}
+                            style={{
+                                width: "100%",
+                                padding: "12px",
+                                border: "1px solid #d1d5db",
+                                borderRadius: "8px",
+                                background: "#ffffff",
+                                color: "#111827",
+                                fontSize: "14px",
+                                marginBottom: "12px"
+                            }}
+                        >
+                            <option value="Payment has not been verified by admin.">
+                                Payment has not been verified by admin
+                            </option>
+                            <option value="Passenger identity could not be verified.">
+                                Passenger identity could not be verified
+                            </option>
+                            <option value="Booking information does not match the passenger.">
+                                Booking information does not match the passenger
+                            </option>
+                            <option value="Invalid or unreadable boarding ticket.">
+                                Invalid or unreadable boarding ticket
+                            </option>
+                            <option value="Booking is not confirmed.">
+                                Booking is not confirmed
+                            </option>
+                            <option value="Other">
+                                Other
+                            </option>
+                        </select>
+
+                        {rejectReason === "Other" && (
+                            <textarea
+                                value={customRejectReason}
+                                onChange={(event) =>
+                                    setCustomRejectReason(event.target.value)
+                                }
+                                disabled={loadingBooking}
+                                placeholder="Enter the reason..."
+                                rows={4}
+                                maxLength={500}
+                                style={{
+                                    width: "100%",
+                                    resize: "vertical",
+                                    padding: "12px",
+                                    border: "1px solid #d1d5db",
+                                    borderRadius: "8px",
+                                    fontFamily: "inherit",
+                                    fontSize: "14px",
+                                    marginBottom: "15px",
+                                    boxSizing: "border-box"
+                                }}
+                            />
+                        )}
+
+                        <div
+                            style={{
+                                display: "flex",
+                                gap: "10px",
+                                justifyContent: "flex-end"
+                            }}
+                        >
+                            <button
+                                type="button"
+                                onClick={closeRejectModal}
+                                disabled={loadingBooking}
+                                style={{
+                                    padding: "11px 16px",
+                                    border: "1px solid #d1d5db",
+                                    borderRadius: "8px",
+                                    background: "#ffffff",
+                                    color: "#374151",
+                                    fontWeight: "600",
+                                    cursor: loadingBooking
+                                        ? "not-allowed"
+                                        : "pointer"
+                                }}
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={confirmRejectBoarding}
+                                disabled={loadingBooking}
+                                style={{
+                                    padding: "11px 16px",
+                                    border: "none",
+                                    borderRadius: "8px",
+                                    background: loadingBooking
+                                        ? "#fca5a5"
+                                        : "#dc2626",
+                                    color: "#ffffff",
+                                    fontWeight: "600",
+                                    cursor: loadingBooking
+                                        ? "not-allowed"
+                                        : "pointer"
+                                }}
+                            >
+                                {loadingBooking
+                                    ? "Rejecting..."
+                                    : "Confirm Rejection"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
 
             {/* =================================================

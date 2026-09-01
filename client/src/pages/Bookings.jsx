@@ -55,6 +55,62 @@ const Bookings = () => {
 
 
         /*
+         * Staff rejection must take priority over payment status.
+         * A booking can have a VERIFIED payment and still be rejected
+         * for boarding after the passenger is checked at the terminal.
+         */
+
+        const boardingStatus =
+            String(
+                booking?.boardingStatus ||
+                ""
+            ).toUpperCase();
+
+        if (
+            boardingStatus ===
+            "REJECTED"
+        ) {
+            return "REJECTED";
+        }
+
+        /*
+         * Staff boarding confirmation must also take priority
+         * over the general booking/payment status.
+         *
+         * A booking can have VERIFIED payment and still be
+         * explicitly marked ON BOARD by staff.
+         */
+        if (
+            boardingStatus ===
+            "ON BOARD"
+        ) {
+            return "ON BOARD";
+        }
+
+
+        /*
+         * A passenger cancellation must remain cancelled
+         * even if the payment was previously verified.
+         */
+        if (
+            status ===
+            "CANCELLED" ||
+            status ===
+            "CANCELED"
+        ) {
+            return "CANCELLED";
+        }
+
+
+        if (
+            paymentStatus ===
+            "REJECTED"
+        ) {
+            return "CANCELLED";
+        }
+
+
+        /*
          * VERIFIED payment means the booking
          * has been successfully confirmed.
          */
@@ -83,24 +139,6 @@ const Bookings = () => {
         }
 
 
-        if (
-            status ===
-            "CANCELLED" ||
-            status ===
-            "CANCELED"
-        ) {
-            return "CANCELLED";
-        }
-
-
-        if (
-            paymentStatus ===
-            "REJECTED"
-        ) {
-            return "CANCELLED";
-        }
-
-
         return (
             status ||
             "PENDING"
@@ -124,6 +162,21 @@ const Bookings = () => {
                 booking?.paymentStatus ||
                 ""
             ).toUpperCase();
+
+
+        if (
+            status ===
+            "REJECTED"
+        ) {
+            return "Rejected";
+        }
+
+        if (
+            status ===
+            "ON BOARD"
+        ) {
+            return "Onboard";
+        }
 
 
         if (
@@ -168,6 +221,21 @@ const Bookings = () => {
                 booking?.paymentStatus ||
                 ""
             ).toUpperCase();
+
+
+        if (
+            status ===
+            "REJECTED"
+        ) {
+            return "status-rejected";
+        }
+
+        if (
+            status ===
+            "ON BOARD"
+        ) {
+            return "status-paid";
+        }
 
 
         if (
@@ -413,9 +481,19 @@ const Bookings = () => {
                                             try {
                                                 const response =
                                                     await fetch(
-                                                        `${API_URL}/api/payment/booking/${encodeURIComponent(
+                                                        `${API_URL}/api/bookings/reference/${encodeURIComponent(
                                                             bookingReference
-                                                        )}`
+                                                        )}`,
+                                                        {
+                                                            headers: {
+                                                                Authorization: `Bearer ${
+                                                                    localStorage.getItem("token") ||
+                                                                    sessionStorage.getItem("token") ||
+                                                                    ""
+                                                                }`,
+                                                                Accept: "application/json"
+                                                            }
+                                                        }
                                                     );
                                         if (
                                             !response.ok
@@ -995,7 +1073,11 @@ const Bookings = () => {
                             getBookingStatus(
                                 booking
                             ) ===
-                            "CANCELLED"
+                            "CANCELLED" ||
+                            getBookingStatus(
+                                booking
+                            ) ===
+                            "REJECTED"
                         );
 
                     }
@@ -1101,7 +1183,11 @@ const Bookings = () => {
                                 getBookingStatus(
                                     booking
                                 ) !==
-                                "CANCELLED"
+                                "CANCELLED" &&
+                                getBookingStatus(
+                                    booking
+                                ) !==
+                                "REJECTED"
                             );
 
                         }
@@ -1156,7 +1242,11 @@ const Bookings = () => {
                                             getBookingStatus(
                                                 booking
                                             ) !==
-                                            "CANCELLED"
+                                            "CANCELLED" &&
+                                            getBookingStatus(
+                                                booking
+                                            ) !==
+                                            "REJECTED"
                                         );
 
                                     }
@@ -1206,11 +1296,16 @@ const Bookings = () => {
                             );
 
 
-                        if (
+                        const currentStatus =
                             getBookingStatus(
                                 currentBooking
-                            ) ===
-                            "CANCELLED"
+                            );
+
+                        if (
+                            currentStatus ===
+                                "CANCELLED" ||
+                            currentStatus ===
+                                "REJECTED"
                         ) {
 
                             sessionStorage.removeItem(
@@ -1348,7 +1443,9 @@ const Bookings = () => {
 
                     return (
                         status ===
-                        "CANCELLED"
+                        "CANCELLED" ||
+                        status ===
+                        "REJECTED"
                     );
 
                 }
@@ -2232,6 +2329,16 @@ const Bookings = () => {
 
                     color:
                         #d9534f;
+
+                }
+
+                .status-rejected {
+
+                    background:
+                        #fee2e2;
+
+                    color:
+                        #b91c1c;
 
                 }
 
@@ -3563,6 +3670,37 @@ const Bookings = () => {
 
 
                                             {/* =================================================
+                                                STAFF REJECTION NOTICE
+                                            ================================================= */}
+
+                                            {status ===
+                                                "REJECTED" &&
+                                                booking.rejectionReason && (
+                                                <div
+                                                    style={{
+                                                        marginTop: "15px",
+                                                        padding: "12px 14px",
+                                                        background: "#fef2f2",
+                                                        border: "1px solid #fecaca",
+                                                        borderRadius: "10px",
+                                                        color: "#991b1b",
+                                                        fontSize: "12px",
+                                                        lineHeight: "1.5"
+                                                    }}
+                                                >
+                                                    <strong>Boarding Rejected</strong>
+                                                    <div
+                                                        style={{
+                                                            marginTop: "4px"
+                                                        }}
+                                                    >
+                                                        Reason: {booking.rejectionReason}
+                                                    </div>
+                                                </div>
+                                            )}
+
+
+                                            {/* =================================================
                                                 BOTTOM
                                             ================================================= */}
 
@@ -3608,6 +3746,10 @@ const Bookings = () => {
 
                                                     {status !==
                                                         "CANCELLED" &&
+                                                        status !==
+                                                            "REJECTED" &&
+                                                        status !==
+                                                            "ON BOARD" &&
                                                         status !==
                                                             "CONFIRMED" &&
                                                         status !==
