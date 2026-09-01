@@ -211,7 +211,12 @@ const getPendingPayments = async (req, res) => {
         const bookings =
             await Booking.find({
                 paymentStatus:
-                    "PENDING VERIFICATION"
+                    "PENDING VERIFICATION",
+
+                boardingStatus: {
+                    $ne:
+                        "REJECTED"
+                }
             })
             .sort({
                 createdAt: -1
@@ -248,7 +253,12 @@ const getVerifiedPayments = async (req, res) => {
         const bookings =
             await Booking.find({
                 paymentStatus:
-                    "VERIFIED"
+                    "VERIFIED",
+
+                boardingStatus: {
+                    $ne:
+                        "REJECTED"
+                }
             })
             .sort({
                 updatedAt: -1
@@ -1112,24 +1122,16 @@ const getBookingCapacity = async (req, res) => {
                         ) === true;
 
 
-                    // Passenger capacity closes the ferry for all online
-                    // passenger bookings. Motorcycle capacity does NOT.
-                    // A ferry with 10/10 motorcycles can still accept
-                    // passenger-only bookings while passenger slots remain.
-                    const passengerFull =
-                        passengers >=
-                        PASSENGER_CAPACITY;
-
-                    const motorcycleFull =
-                        vehicles >=
-                        MOTORCYCLE_CAPACITY;
-
                     const automaticallyFull =
-                        passengerFull;
+                        passengers >=
+                            PASSENGER_CAPACITY ||
+                        vehicles >=
+                            MOTORCYCLE_CAPACITY;
+
 
                     const bookingClosed =
                         manualClosed ||
-                        passengerFull;
+                        automaticallyFull;
 
 
                     // =================================================
@@ -1182,12 +1184,6 @@ const getBookingCapacity = async (req, res) => {
 
                         automaticallyFull:
                             automaticallyFull,
-
-                        passengerFull:
-                            passengerFull,
-
-                        motorcycleFull:
-                            motorcycleFull,
 
                         bookingClosed:
                             bookingClosed
@@ -1456,7 +1452,12 @@ const getBookingStatistics = async (req, res) => {
             await Booking.countDocuments({
 
                 paymentStatus:
-                    "PENDING VERIFICATION"
+                    "PENDING VERIFICATION",
+
+                boardingStatus: {
+                    $ne:
+                        "REJECTED"
+                }
 
             });
 
@@ -1465,7 +1466,12 @@ const getBookingStatistics = async (req, res) => {
             await Booking.countDocuments({
 
                 paymentStatus:
-                    "VERIFIED"
+                    "VERIFIED",
+
+                boardingStatus: {
+                    $ne:
+                        "REJECTED"
+                }
 
             });
 
@@ -1473,8 +1479,16 @@ const getBookingStatistics = async (req, res) => {
         const rejectedPayments =
             await Booking.countDocuments({
 
-                paymentStatus:
-                    "REJECTED"
+                $or: [
+                    {
+                        paymentStatus:
+                            "REJECTED"
+                    },
+                    {
+                        boardingStatus:
+                            "REJECTED"
+                    }
+                ]
 
             });
 
