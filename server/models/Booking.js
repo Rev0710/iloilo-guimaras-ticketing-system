@@ -37,6 +37,57 @@ const paymentProofSchema = new mongoose.Schema(
     }
 );
 
+
+// =========================================================
+// PASSENGER DETAILS
+// =========================================================
+// Stores the complete list of passengers included in one
+// booking. This allows the Admin to see the names, ages,
+// and genders of the passenger's companions.
+//
+// Example:
+//
+// passengerDetails: [
+//     {
+//         name: "Katarina",
+//         age: 22,
+//         gender: "Female"
+//     },
+//     {
+//         name: "Maria Santos",
+//         age: 21,
+//         gender: "Female"
+//     }
+// ]
+//
+// =========================================================
+
+const passengerDetailsSchema = new mongoose.Schema(
+    {
+        name: {
+            type: String,
+            required: true,
+            trim: true
+        },
+
+        age: {
+            type: Number,
+            required: true,
+            min: 0
+        },
+
+        gender: {
+            type: String,
+            required: true,
+            trim: true
+        }
+    },
+    {
+        _id: false
+    }
+);
+
+
 const bookingSchema = new mongoose.Schema(
     {
         bookingReference: {
@@ -45,6 +96,7 @@ const bookingSchema = new mongoose.Schema(
             unique: true,
             trim: true
         },
+
 
         // =========================
         // ROUTE
@@ -61,6 +113,7 @@ const bookingSchema = new mongoose.Schema(
             required: true,
             trim: true
         },
+
 
         // =========================
         // SCHEDULE
@@ -99,8 +152,9 @@ const bookingSchema = new mongoose.Schema(
             required: true
         },
 
+
         // =========================
-        // PASSENGER
+        // PRIMARY PASSENGER
         // =========================
 
         passengerName: {
@@ -125,6 +179,30 @@ const bookingSchema = new mongoose.Schema(
             min: 1
         },
 
+
+        // =====================================================
+        // COMPLETE PASSENGER LIST
+        // =====================================================
+        // This stores ALL passengers included in this booking.
+        //
+        // The first passenger normally corresponds to:
+        // passengerName
+        // passengerAge
+        // passengerGender
+        //
+        // The remaining entries are the passenger's friends/
+        // companions.
+        //
+        // default: [] is intentional so existing bookings
+        // without this field will continue to work.
+        // =====================================================
+
+        passengerDetails: {
+            type: [passengerDetailsSchema],
+            default: []
+        },
+
+
         // =========================
         // VEHICLE
         // =========================
@@ -138,6 +216,7 @@ const bookingSchema = new mongoose.Schema(
             type: String,
             default: ""
         },
+
 
         // =========================
         // FARE
@@ -168,6 +247,7 @@ const bookingSchema = new mongoose.Schema(
             default: null
         },
 
+
         // =========================
         // PAYMENT
         // =========================
@@ -188,6 +268,7 @@ const bookingSchema = new mongoose.Schema(
             default: "PENDING VERIFICATION"
         },
 
+
         // =========================
         // BOARDING
         // =========================
@@ -207,6 +288,7 @@ const bookingSchema = new mongoose.Schema(
             default: null
         },
 
+
         // =========================
         // BOOKING STATUS
         // =========================
@@ -221,6 +303,7 @@ const bookingSchema = new mongoose.Schema(
             default: "PENDING PAYMENT VERIFICATION"
         },
 
+
         // =========================
         // PAYMENT PROOF
         // =========================
@@ -231,10 +314,16 @@ const bookingSchema = new mongoose.Schema(
         }
     },
 
+
+    // =========================
+    // TIMESTAMPS
+    // =========================
+
     {
         timestamps: true
     }
 );
+
 
 module.exports = mongoose.model(
     "Booking",

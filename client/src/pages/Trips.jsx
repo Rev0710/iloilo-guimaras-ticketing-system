@@ -42,7 +42,9 @@ const Trips = () => {
             vehicleCapacity: 10,
 
             passengerRemaining: 100,
-            vehicleRemaining: 10
+            vehicleRemaining: 10,
+            manualClosed: false,
+            bookingClosed: false
         },
         {
             id: "MV FastCraft",
@@ -57,7 +59,9 @@ const Trips = () => {
             vehicleCapacity: 10,
 
             passengerRemaining: 100,
-            vehicleRemaining: 10
+            vehicleRemaining: 10,
+            manualClosed: false,
+            bookingClosed: false
         },
         {
             id: "MV Halili",
@@ -72,7 +76,9 @@ const Trips = () => {
             vehicleCapacity: 10,
 
             passengerRemaining: 100,
-            vehicleRemaining: 10
+            vehicleRemaining: 10,
+            manualClosed: false,
+            bookingClosed: false
         }
     ]);
 
@@ -107,6 +113,77 @@ const Trips = () => {
 
         return `${year}-${month}-${day}`;
     };
+
+    // =========================================================
+    // BOOKING DATE USED FOR CAPACITY
+    //
+    // Trips must use the date of the trip being booked, not
+    // automatically use today's date. The booking date is saved
+    // in sessionStorage by BookTrip as tripDetails.date.
+    //
+    // Priority:
+    // 1. URL ?date=YYYY-MM-DD (if supplied)
+    // 2. tripDetails.date
+    // 3. confirmedBooking.date
+    // 4. latestBooking.date
+    // 5. tomorrow (earliest normal booking date)
+    // =========================================================
+
+    const getCapacityDate = () => {
+        const params = new URLSearchParams(
+            window.location.search
+        );
+
+        const urlDate = params.get("date");
+
+        if (/^\d{4}-\d{2}-\d{2}$/.test(urlDate || "")) {
+            return urlDate;
+        }
+
+        const getStoredDate = (key) => {
+            try {
+                const raw = sessionStorage.getItem(key);
+
+                if (!raw) {
+                    return "";
+                }
+
+                const parsed = JSON.parse(raw);
+                const storedDate = parsed?.date;
+
+                return /^\d{4}-\d{2}-\d{2}$/.test(
+                    storedDate || ""
+                )
+                    ? storedDate
+                    : "";
+            } catch (error) {
+                return "";
+            }
+        };
+
+        return (
+            getStoredDate("tripDetails") ||
+            getStoredDate("confirmedBooking") ||
+            getStoredDate("latestBooking") ||
+            (() => {
+                const tomorrow = new Date();
+                tomorrow.setDate(
+                    tomorrow.getDate() + 1
+                );
+
+                const year = tomorrow.getFullYear();
+                const month = String(
+                    tomorrow.getMonth() + 1
+                ).padStart(2, "0");
+                const day = String(
+                    tomorrow.getDate()
+                ).padStart(2, "0");
+
+                return `${year}-${month}-${day}`;
+            })()
+        );
+    };
+
 
     // =========================================================
     // SAFE JSON RESPONSE
@@ -163,17 +240,21 @@ const Trips = () => {
 
                 setCapacityError("");
 
-                const today =
-                    getToday();
+                const capacityDate =
+                    getCapacityDate();
 
                 // =================================================
                 // PUBLIC CAPACITY ENDPOINT
+                // =================================================
+                // IMPORTANT: use the selected/booking date instead
+                // of today's date. This makes tomorrow's confirmed
+                // booking appear in the correct ferry capacity.
                 // =================================================
 
                 const response =
                 await fetch(
                     `${API_URL}/bookings/capacity?date=${encodeURIComponent(
-                        today
+                        capacityDate
                     )}`,
                         {
                             method: "GET",
@@ -294,7 +375,15 @@ const Trips = () => {
 
                                     vehicleCapacity,
 
-                                    vehicleRemaining
+                                    vehicleRemaining,
+
+                                    manualClosed: Boolean(
+                                        latest.manualClosed
+                                    ),
+
+                                    bookingClosed: Boolean(
+                                        latest.bookingClosed
+                                    )
                                 };
                             }
                         )
@@ -405,6 +494,23 @@ const Trips = () => {
 
             alert(
                 "Unable to find the latest information for this ferry. Please refresh the page and try again."
+            );
+
+            return;
+        }
+
+        // =====================================================
+        // CHECK FERRY ONLINE BOOKING STATUS
+        // =====================================================
+
+        if (
+            latestTrip.manualClosed ||
+            latestTrip.bookingClosed
+        ) {
+            alert(
+                latestTrip.manualClosed
+                    ? "Online booking for this ferry is currently closed by the administrator. Please choose another ferry."
+                    : "This ferry is already full for passengers. Please choose another ferry."
             );
 
             return;
@@ -531,7 +637,13 @@ const Trips = () => {
                 latestVehicleCapacity,
 
             vehicleRemaining:
-                latestVehicleRemaining
+                latestVehicleRemaining,
+
+            manualClosed:
+                Boolean(latestTrip.manualClosed),
+
+            bookingClosed:
+                Boolean(latestTrip.bookingClosed)
         };
 
         // =====================================================
@@ -585,7 +697,7 @@ const Trips = () => {
                     tripToSave.vesselName,
 
                 date:
-                    getToday(),
+                    getCapacityDate(),
 
                 passengers:
                     tripToSave.passengers,
@@ -603,7 +715,13 @@ const Trips = () => {
                     tripToSave.vehicleCapacity,
 
                 vehicleRemaining:
-                    tripToSave.vehicleRemaining
+                    tripToSave.vehicleRemaining,
+
+                manualClosed:
+                    tripToSave.manualClosed,
+
+                bookingClosed:
+                    tripToSave.bookingClosed
             })
         );
 
@@ -1495,9 +1613,18 @@ const Trips = () => {
                                 const passengerFull =
                                     passengerRemaining <= 0;
 
+                                const manualClosed =
+                                    Boolean(trip.manualClosed);
+
+                                const bookingClosed =
+                                    manualClosed || passengerFull;
+
+                                const motorcycleFull =
+                                    motorcycleRemaining <= 0;
+
                                 return (
                                     <article
-                                        className="trip-card"
+                                        className={`trip-card ${bookingClosed ? "trip-card-closed" : ""}`}
                                         key={trip.id}
                                         onClick={() =>
                                             selectTrip(
@@ -1614,6 +1741,20 @@ const Trips = () => {
 
                                         </div>
 
+                                        {motorcycleFull && !bookingClosed && (
+                                            <div className="trip-capacity-notice">
+                                                Motorcycle capacity is full. Passenger-only booking is still available.
+                                            </div>
+                                        )}
+
+                                        {bookingClosed && (
+                                            <div className="trip-capacity-notice trip-capacity-notice-closed">
+                                                {manualClosed
+                                                    ? "Online booking is currently closed by the administrator."
+                                                    : "Passenger capacity is full for this ferry."}
+                                            </div>
+                                        )}
+
                                         {/* =================================================
                                             SELECT BUTTON
                                         ================================================= */}
@@ -1622,7 +1763,7 @@ const Trips = () => {
                                             type="button"
                                             className="select-trip-button"
                                             disabled={
-                                                passengerFull
+                                                bookingClosed
                                             }
                                             onClick={(
                                                 event
@@ -1631,10 +1772,12 @@ const Trips = () => {
                                                 event.stopPropagation();
 
                                                 if (
-                                                    passengerFull
+                                                    bookingClosed
                                                 ) {
                                                     alert(
-                                                        "This ferry is already full for passengers. Please choose another ferry."
+                                                        manualClosed
+                                                            ? "Online booking for this ferry is currently closed by the administrator. Please choose another ferry."
+                                                            : "This ferry is already full for passengers. Please choose another ferry."
                                                     );
 
                                                     return;
@@ -1645,7 +1788,7 @@ const Trips = () => {
                                                 );
                                             }}
                                             style={
-                                                passengerFull
+                                                bookingClosed
                                                     ? {
                                                         opacity:
                                                             0.55,
@@ -1656,9 +1799,11 @@ const Trips = () => {
                                             }
                                         >
 
-                                            {passengerFull
-                                                ? "Passenger Capacity Full"
-                                                : "Select This Trip"}
+                                            {manualClosed
+                                                ? "Online Booking Closed"
+                                                : passengerFull
+                                                    ? "Passenger Capacity Full"
+                                                    : "Select This Trip"}
 
                                         </button>
 

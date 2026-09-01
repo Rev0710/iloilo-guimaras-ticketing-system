@@ -1,4 +1,171 @@
 const Booking = require("../models/Booking");
+const FerryClosure = require("../models/FerryClosure");
+
+// =========================================================
+// FERRY ONLINE BOOKING CLOSURE
+// =========================================================
+// Uses the existing FerryClosure model.
+// Booking records are not modified when an Admin closes a ferry.
+// =========================================================
+
+const normalizeFerryId = (value) =>
+    String(value || "").trim().toLowerCase();
+
+const setFerryBookingStatus = async (req, res) => {
+    try {
+        const {
+            ferryId,
+            ferryName,
+            date,
+            closed
+        } = req.body || {};
+
+        const normalizedFerryId =
+            String(ferryId || "").trim();
+
+        const normalizedFerryName =
+            String(
+                ferryName ||
+                ferryId ||
+                ""
+            ).trim();
+
+        const requestedDate =
+            String(
+                date ||
+                new Date().toISOString().split("T")[0]
+            ).trim();
+
+        if (!normalizedFerryId) {
+            return res.status(400).json({
+                success: false,
+                message: "Ferry ID is required."
+            });
+        }
+
+        if (!normalizedFerryName) {
+            return res.status(400).json({
+                success: false,
+                message: "Ferry name is required."
+            });
+        }
+
+        if (
+            !/^\d{4}-\d{2}-\d{2}$/.test(
+                requestedDate
+            )
+        ) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "A valid booking date is required (YYYY-MM-DD)."
+            });
+        }
+
+        const shouldClose =
+            closed === true ||
+            closed === "true";
+
+        // =====================================================
+        // CLOSE ONLINE BOOKING
+        // =====================================================
+
+        if (shouldClose) {
+            const closure =
+                await FerryClosure.findOneAndUpdate(
+                    {
+                        ferryId:
+                            normalizedFerryId,
+
+                        date:
+                            requestedDate
+                    },
+                    {
+                        $set: {
+                            ferryId:
+                                normalizedFerryId,
+
+                            ferryName:
+                                normalizedFerryName,
+
+                            date:
+                                requestedDate,
+
+                            isClosed:
+                                true,
+
+                            closedAt:
+                                new Date()
+                        }
+                    },
+                    {
+                        new: true,
+                        upsert: true,
+                        setDefaultsOnInsert: true
+                    }
+                );
+
+            return res.status(200).json({
+                success: true,
+
+                message:
+                    "Online booking closed for this ferry.",
+
+                closure
+            });
+        }
+
+        // =====================================================
+        // REOPEN ONLINE BOOKING
+        // =====================================================
+        //
+        // Delete the manual closure record.
+        // This keeps the ferry open and does not touch bookings.
+        //
+        // =====================================================
+
+        await FerryClosure.deleteOne({
+            ferryId:
+                normalizedFerryId,
+
+            date:
+                requestedDate
+        });
+
+        return res.status(200).json({
+            success: true,
+
+            message:
+                "Online booking reopened for this ferry.",
+
+            ferryId:
+                normalizedFerryId,
+
+            ferryName:
+                normalizedFerryName,
+
+            date:
+                requestedDate,
+
+            closed:
+                false
+        });
+
+    } catch (error) {
+        console.error(
+            "Set ferry booking status error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+
+            message:
+                "Unable to update ferry online booking status."
+        });
+    }
+};
+
 
 // =========================================================
 // GET ALL BOOKINGS FOR ADMIN
@@ -405,6 +572,41 @@ const getBookingCapacity = async (req, res) => {
 
 
         // =====================================================
+        // MANUAL ADMIN FERRY CLOSURES
+        // =====================================================
+        //
+        // IMPORTANT:
+        //
+        // FerryClosure uses "isClosed".
+        //
+        // Do NOT use "closed" here.
+        //
+        // =====================================================
+
+        const manualClosures =
+            await FerryClosure.find({
+                date:
+                    requestedDate,
+
+                isClosed:
+                    true
+            }).lean();
+
+
+        const manualClosureMap =
+            new Map(
+                manualClosures.map(
+                    (closure) => [
+                        normalizeFerryId(
+                            closure.ferryId
+                        ),
+                        true
+                    ]
+                )
+            );
+
+
+        // =====================================================
         // FERRY SCHEDULE
         // =====================================================
         //
@@ -488,6 +690,7 @@ const getBookingCapacity = async (req, res) => {
 
         const bookings =
             await Booking.find({
+
                 date:
                     requestedDate,
 
@@ -897,12 +1100,44 @@ const getBookingCapacity = async (req, res) => {
                         );
 
 
+                    // =====================================================
+                    // BOOKING STATUS
+                    // =====================================================
+
+                    const manualClosed =
+                        manualClosureMap.get(
+                            normalizeFerryId(
+                                ferry.id
+                            )
+                        ) === true;
+
+
+                    // Passenger capacity closes the ferry for all online
+                    // passenger bookings. Motorcycle capacity does NOT.
+                    // A ferry with 10/10 motorcycles can still accept
+                    // passenger-only bookings while passenger slots remain.
+                    const passengerFull =
+                        passengers >=
+                        PASSENGER_CAPACITY;
+
+                    const motorcycleFull =
+                        vehicles >=
+                        MOTORCYCLE_CAPACITY;
+
+                    const automaticallyFull =
+                        passengerFull;
+
+                    const bookingClosed =
+                        manualClosed ||
+                        passengerFull;
+
+
                     // =================================================
                     // DEBUG FERRY RESULT
                     // =================================================
 
                     console.log(
-                        `${ferry.vesselName} => ${passengers}/${PASSENGER_CAPACITY} passengers | ${vehicles}/${MOTORCYCLE_CAPACITY} motorcycles`
+                        `${ferry.vesselName} => ${passengers}/${PASSENGER_CAPACITY} passengers | ${vehicles}/${MOTORCYCLE_CAPACITY} motorcycles | manualClosed=${manualClosed} | automaticallyFull=${automaticallyFull}`
                     );
 
 
@@ -940,8 +1175,22 @@ const getBookingCapacity = async (req, res) => {
                             MOTORCYCLE_CAPACITY,
 
                         vehicleRemaining:
-                            vehicleRemaining
+                            vehicleRemaining,
 
+                        manualClosed:
+                            manualClosed,
+
+                        automaticallyFull:
+                            automaticallyFull,
+
+                        passengerFull:
+                            passengerFull,
+
+                        motorcycleFull:
+                            motorcycleFull,
+
+                        bookingClosed:
+                            bookingClosed
                     };
                 }
             );
@@ -1205,22 +1454,28 @@ const getBookingStatistics = async (req, res) => {
 
         const pendingPayments =
             await Booking.countDocuments({
+
                 paymentStatus:
                     "PENDING VERIFICATION"
+
             });
 
 
         const verifiedPayments =
             await Booking.countDocuments({
+
                 paymentStatus:
                     "VERIFIED"
+
             });
 
 
         const rejectedPayments =
             await Booking.countDocuments({
+
                 paymentStatus:
                     "REJECTED"
+
             });
 
 
@@ -1279,6 +1534,8 @@ module.exports = {
     getBookingById,
 
     getBookingByReference,
+
+    setFerryBookingStatus,
 
     verifyPayment,
 

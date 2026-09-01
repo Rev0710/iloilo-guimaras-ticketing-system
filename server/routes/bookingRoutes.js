@@ -17,6 +17,8 @@ const {
 
     getBookingByReference,
 
+    setFerryBookingStatus,
+
     verifyPayment,
 
     rejectPayment,
@@ -51,7 +53,7 @@ router.get(
 //
 // IMPORTANT:
 // This route is intentionally PUBLIC because tourists
-// need to see the available slots before booking.
+// need to see available capacity before booking.
 //
 // DO NOT add adminAuth here.
 //
@@ -96,6 +98,31 @@ router.get(
 
 
 // =====================================================
+// ADMIN SEARCH BOOKING BY REFERENCE
+// =====================================================
+//
+// Example:
+//
+// GET
+// /api/bookings/search/reference/GG-123456
+//
+// IMPORTANT:
+//
+// We use the existing getBookingByReference controller
+// instead of creating a duplicate controller function.
+//
+// adminAuth is still applied, so only administrators
+// can use this search endpoint.
+//
+
+router.get(
+    "/search/reference/:bookingReference",
+    adminAuth,
+    getBookingByReference
+);
+
+
+// =====================================================
 // ADMIN ALL BOOKINGS
 // =====================================================
 
@@ -105,6 +132,17 @@ router.get(
     getAllBookings
 );
 
+
+
+// =====================================================
+// ADMIN FERRY ONLINE BOOKING CONTROL
+// =====================================================
+
+router.put(
+    "/ferry-closure",
+    adminAuth,
+    setFerryBookingStatus
+);
 
 // =====================================================
 // ADMIN SINGLE BOOKING
@@ -138,5 +176,9 @@ router.put(
     rejectPayment
 );
 
+
+// =====================================================
+// EXPORT
+// =====================================================
 
 module.exports = router;

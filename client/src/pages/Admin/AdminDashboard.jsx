@@ -37,6 +37,38 @@ const AdminDashboard = () => {
     });
 
     // =========================================================
+    // FERRY CAPACITY
+    // =========================================================
+
+    const [ferryCapacities, setFerryCapacities] =
+        useState([]);
+
+    const [capacityLoading, setCapacityLoading] =
+        useState(true);
+
+    const [capacityError, setCapacityError] =
+        useState("");
+
+    // =========================================================
+    // BOOKING SEARCH + FERRY CONTROL
+    // =========================================================
+
+    const [bookingSearchReference, setBookingSearchReference] =
+        useState("");
+
+    const [bookingSearchResult, setBookingSearchResult] =
+        useState(null);
+
+    const [bookingSearchLoading, setBookingSearchLoading] =
+        useState(false);
+
+    const [bookingSearchError, setBookingSearchError] =
+        useState("");
+
+    const [ferryActionLoading, setFerryActionLoading] =
+        useState(null);
+
+    // =========================================================
     // PAYMENT DATA
     // =========================================================
 
@@ -81,6 +113,19 @@ const AdminDashboard = () => {
 
     const [confirmAction, setConfirmAction] =
         useState(null);
+
+    // =========================================================
+    // FERRY BOOKING CONFIRMATION MODAL
+    // =========================================================
+
+    const [showFerryConfirmModal, setShowFerryConfirmModal] =
+        useState(false);
+
+    const [selectedFerryAction, setSelectedFerryAction] =
+        useState(null);
+
+    const [ferryConfirmLoading, setFerryConfirmLoading] =
+        useState(false);
 
     const [showLogoutModal, setShowLogoutModal] =
     useState(false);
@@ -240,6 +285,255 @@ const AdminDashboard = () => {
         loadAdmin();
 
     }, [navigate]);
+
+    // =========================================================
+    // GET TODAY'S LOCAL DATE
+    // =========================================================
+
+    const getToday = () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, "0");
+        const day = String(now.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    };
+
+    // =========================================================
+    // LOAD LIVE FERRY CAPACITY
+    // =========================================================
+
+    const loadFerryCapacities = async () => {
+        try {
+            setCapacityLoading(true);
+            setCapacityError("");
+
+            const response = await fetch(
+                `${API_URL}/bookings/capacity?date=${getToday()}`,
+                {
+                    method: "GET",
+                    headers: {
+                        Accept: "application/json"
+                    }
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.message ||
+                    "Unable to load ferry capacity."
+                );
+            }
+
+            setFerryCapacities(
+                Array.isArray(data.capacities)
+                    ? data.capacities
+                    : []
+            );
+
+        } catch (error) {
+            console.error("Ferry capacity loading error:", error);
+            setCapacityError(
+                error.message ||
+                "Unable to load ferry capacity."
+            );
+        } finally {
+            setCapacityLoading(false);
+        }
+    };
+
+    // =========================================================
+    // SEARCH BOOKING BY REFERENCE
+    // =========================================================
+
+    const handleBookingSearch = async (event) => {
+        event?.preventDefault();
+
+        const reference = String(bookingSearchReference || "").trim();
+
+        if (!reference) {
+            setBookingSearchResult(null);
+            setBookingSearchError("Please enter a booking reference number.");
+            return;
+        }
+
+        const token = localStorage.getItem("adminToken");
+        if (!token) {
+            showNotification("Admin session expired.", "error");
+            return;
+        }
+
+        try {
+            setBookingSearchLoading(true);
+            setBookingSearchError("");
+            setBookingSearchResult(null);
+
+            const response = await fetch(
+                `${API_URL}/bookings/search/reference/${encodeURIComponent(reference)}`,
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json"
+                    },
+                    cache: "no-store"
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data?.message || "Booking not found.");
+            }
+
+            if (!data?.booking) {
+                throw new Error("Booking information was not returned by the server.");
+            }
+
+            setBookingSearchResult(data.booking);
+        } catch (error) {
+            console.error("Booking reference search error:", error);
+            setBookingSearchError(
+                error.message || "Unable to search booking reference."
+            );
+        } finally {
+            setBookingSearchLoading(false);
+        }
+    };
+
+    // =========================================================
+    // CLOSE / REOPEN ONE FERRY FOR ONLINE BOOKING
+    // =========================================================
+
+    const handleFerryBookingToggle = (ferry) => {
+        const token = localStorage.getItem("adminToken");
+
+        if (!token) {
+            showNotification("Admin session expired.", "error");
+            return;
+        }
+
+        const ferryId = ferry?.id || ferry?.vesselName;
+
+        if (!ferryId) {
+            showNotification("Ferry information is missing.", "error");
+            return;
+        }
+
+        const currentlyClosed = Boolean(ferry.manualClosed);
+
+        // Use the existing Admin modal style instead of the browser confirm().
+        setSelectedFerryAction({
+            ferry,
+            ferryId,
+            currentlyClosed
+        });
+
+        setShowFerryConfirmModal(true);
+    };
+
+    const closeFerryConfirmModal = () => {
+        if (ferryConfirmLoading) {
+            return;
+        }
+
+        setShowFerryConfirmModal(false);
+        setSelectedFerryAction(null);
+    };
+
+    const executeFerryBookingToggle = async () => {
+        const token = localStorage.getItem("adminToken");
+
+        if (!token) {
+            closeFerryConfirmModal();
+            showNotification("Admin session expired.", "error");
+            return;
+        }
+
+        if (!selectedFerryAction) {
+            return;
+        }
+
+        const {
+            ferry,
+            ferryId,
+            currentlyClosed
+        } = selectedFerryAction;
+
+        const actionKey = `${ferryId}-${getToday()}`;
+
+        try {
+            setFerryConfirmLoading(true);
+            setFerryActionLoading(actionKey);
+
+            const response = await fetch(
+                `${API_URL}/bookings/ferry-closure`,
+                {
+                    method: "PUT",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                        Accept: "application/json"
+                    },
+                    body: JSON.stringify({
+                        ferryId,
+                        date: getToday(),
+                        closed: !currentlyClosed
+                    })
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data?.message ||
+                    "Unable to update ferry online booking status."
+                );
+            }
+
+            closeFerryConfirmModal();
+
+            showNotification(
+                data?.message ||
+                (currentlyClosed
+                    ? "Online booking reopened."
+                    : "Online booking closed."),
+                "success"
+            );
+
+            await loadFerryCapacities();
+        } catch (error) {
+            console.error(
+                "Ferry booking status error:",
+                error
+            );
+
+            showNotification(
+                error.message ||
+                "Unable to update ferry online booking status.",
+                "error"
+            );
+        } finally {
+            setFerryConfirmLoading(false);
+            setFerryActionLoading(null);
+        }
+    };
+
+    // =========================================================
+    // INITIAL + AUTOMATIC CAPACITY REFRESH
+    // =========================================================
+
+    useEffect(() => {
+        loadFerryCapacities();
+
+        const interval = setInterval(() => {
+            loadFerryCapacities();
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, []);
 
     // =========================================================
     // LOAD DASHBOARD STATISTICS
@@ -1636,6 +1930,203 @@ const AdminDashboard = () => {
 
                                 </button>
 
+                            </div>
+
+
+                            {/* =================================================
+                                BOOKING REFERENCE SEARCH
+                            ================================================= */}
+
+                            <div className="admin-booking-search-card">
+                                <div className="admin-booking-search-header">
+                                    <div>
+                                        <span className="eyebrow">BOOKING LOOKUP</span>
+                                        <h3>Search Booking Reference</h3>
+                                        <p>Find the complete booking information for any passenger.</p>
+                                    </div>
+                                </div>
+
+                                <form className="admin-booking-search-form" onSubmit={handleBookingSearch}>
+                                    <input
+                                        type="text"
+                                        value={bookingSearchReference}
+                                        onChange={(event) => {
+                                            setBookingSearchReference(event.target.value);
+                                            if (bookingSearchError) setBookingSearchError("");
+                                        }}
+                                        placeholder="Enter booking reference number..."
+                                        aria-label="Booking reference number"
+                                    />
+                                    <button type="submit" disabled={bookingSearchLoading}>
+                                        {bookingSearchLoading ? "Searching..." : "Search"}
+                                    </button>
+                                </form>
+
+                                {bookingSearchError && (
+                                    <div className="admin-booking-search-error">
+                                        {bookingSearchError}
+                                    </div>
+                                )}
+
+                                {bookingSearchResult && (
+                                    <div className="admin-booking-result">
+                                        <div className="admin-booking-result-heading">
+                                            <div>
+                                                <span className="eyebrow">BOOKING INFORMATION</span>
+                                                <h4>{bookingSearchResult.bookingReference || "—"}</h4>
+                                            </div>
+                                            <div className={`admin-booking-status-pill ${String(bookingSearchResult.status || "").toLowerCase().includes("confirm") ? "confirmed" : ""}`}>
+                                                {bookingSearchResult.status || "—"}
+                                            </div>
+                                        </div>
+
+                                        <div className="admin-booking-info-grid">
+                                            <div><span>Passenger Name</span><strong>{bookingSearchResult.passengerName || "—"}</strong></div>
+                                            <div><span>Passenger Age</span><strong>{bookingSearchResult.passengerAge ?? "—"}</strong></div>
+                                            <div><span>Passenger Gender</span><strong>{bookingSearchResult.passengerGender || "—"}</strong></div>
+                                            <div><span>Passengers</span><strong>{bookingSearchResult.passengers ?? "—"}</strong></div>
+                                            <div><span>Origin</span><strong>{bookingSearchResult.origin || "—"}</strong></div>
+                                            <div><span>Destination</span><strong>{bookingSearchResult.destination || "—"}</strong></div>
+                                            <div><span>Ferry</span><strong>{bookingSearchResult.vesselName || bookingSearchResult.ferryName || bookingSearchResult.ferryId || "—"}</strong></div>
+                                            <div><span>Departure Time</span><strong>{bookingSearchResult.departureTime || bookingSearchResult.time || "—"}</strong></div>
+                                            <div><span>Date</span><strong>{bookingSearchResult.date || "—"}</strong></div>
+                                            <div><span>Vehicle</span><strong>{bookingSearchResult.vehicleType || "—"}</strong></div>
+                                            <div><span>Plate Number</span><strong>{bookingSearchResult.plateNumber || "—"}</strong></div>
+                                            <div><span>Payment Method</span><strong>{bookingSearchResult.paymentMethod || "—"}</strong></div>
+                                            <div><span>Payment Status</span><strong>{bookingSearchResult.paymentStatus || "—"}</strong></div>
+                                            <div><span>Required Amount</span><strong>₱{Number(bookingSearchResult.requiredAmount || 0).toLocaleString()}</strong></div>
+                                            <div><span>Total Paid</span><strong>{bookingSearchResult.totalPaid == null ? "—" : `₱${Number(bookingSearchResult.totalPaid).toLocaleString()}`}</strong></div>
+                                            <div><span>Boarding Status</span><strong>{bookingSearchResult.boardingStatus || "—"}</strong></div>
+                                        </div>
+
+                                        {bookingSearchResult.paymentProof?.url && (
+                                            <a className="admin-booking-proof-link" href={bookingSearchResult.paymentProof.url} target="_blank" rel="noreferrer">
+                                                View Payment Proof
+                                            </a>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+
+
+                            {/* =================================================
+                                LIVE FERRY CAPACITY
+                            ================================================= */}
+
+                            <div className="admin-capacity-card">
+                                <div className="admin-capacity-header">
+                                    <div>
+                                        <span className="eyebrow">
+                                            LIVE MONITORING
+                                        </span>
+                                        <h3>Ferry Capacity</h3>
+                                        <p>
+                                            Monitor passenger and motorcycle capacity for each ferry.
+                                        </p>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        className="refresh-button"
+                                        onClick={loadFerryCapacities}
+                                        disabled={capacityLoading}
+                                    >
+                                        {capacityLoading ? "Refreshing..." : "↻ Refresh"}
+                                    </button>
+                                </div>
+
+                                {capacityError && (
+                                    <div className="admin-capacity-error">
+                                        {capacityError}
+                                    </div>
+                                )}
+
+                                {!capacityError && ferryCapacities.length === 0 && capacityLoading && (
+                                    <div className="admin-capacity-empty">
+                                        Loading ferry capacity...
+                                    </div>
+                                )}
+
+                                {!capacityError && ferryCapacities.length > 0 && (
+                                    <div className="admin-capacity-grid">
+                                        {ferryCapacities.map((ferry) => {
+                                            const passengers = Number(ferry.passengers) || 0;
+                                            const passengerLimit = Number(ferry.passengerCapacity) || 100;
+                                            const passengerRemaining = Math.max(0, passengerLimit - passengers);
+                                            const motorcycles = Number(ferry.vehicles) || 0;
+                                            const motorcycleLimit = Number(ferry.vehicleCapacity) || 10;
+                                            const motorcycleRemaining = Math.max(0, motorcycleLimit - motorcycles);
+                                            const passengerFull = passengerRemaining <= 0;
+                                            const motorcycleFull = motorcycleRemaining <= 0;
+                                            const manualClosed = Boolean(ferry.manualClosed);
+                                            const bookingClosed = manualClosed || passengerFull;
+                                            const ferryActionKey = `${ferry.id || ferry.vesselName}-${getToday()}`;
+                                            const ferryActionBusy = ferryActionLoading === ferryActionKey;
+
+                                            return (
+                                                <div
+                                                    className={`admin-ferry-capacity-card ${bookingClosed ? "capacity-closed" : ""}`}
+                                                    key={ferry.id || ferry.vesselName}
+                                                >
+                                                    <div className="admin-ferry-capacity-top">
+                                                        <div>
+                                                            <strong>{ferry.vesselName || "Unknown Ferry"}</strong>
+                                                            <span>{ferry.departureTime || ferry.time || ""}</span>
+                                                        </div>
+
+                                                        <span className={`admin-capacity-status ${bookingClosed ? "closed" : "open"}`}>
+                                                            {bookingClosed ? "BOOKING CLOSED" : "BOOKING OPEN"}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="admin-capacity-metrics">
+                                                        <div className="admin-capacity-metric">
+                                                            <span>👤 Passengers</span>
+                                                            <strong>{passengers}/{passengerLimit}</strong>
+                                                            <small>
+                                                                {passengerRemaining} passenger {passengerRemaining === 1 ? "slot" : "slots"} left
+                                                            </small>
+                                                        </div>
+
+                                                        <div className="admin-capacity-metric">
+                                                            <span>🏍️ Motorcycles</span>
+                                                            <strong>{motorcycles}/{motorcycleLimit}</strong>
+                                                            <small>
+                                                                {motorcycleRemaining} motorcycle {motorcycleRemaining === 1 ? "slot" : "slots"} left
+                                                            </small>
+                                                        </div>
+                                                    </div>{bookingClosed && (
+                                                         <div className="admin-capacity-closed-message">
+                                                             {manualClosed
+                                                                 ? "Online booking manually closed by Admin."
+                                                                 : "Passenger capacity reached."}
+                                                         </div>
+                                                     )}
+
+                                                     {!bookingClosed && motorcycleFull && (
+                                                         <div className="admin-capacity-closed-message">
+                                                             Motorcycle capacity reached. Passenger-only booking remains available.
+                                                         </div>
+                                                     )}
+
+                                                    <button
+                                                        type="button"
+                                                        className={`admin-ferry-toggle-button ${manualClosed ? "reopen" : "close"}`}
+                                                        onClick={() => handleFerryBookingToggle(ferry)}
+                                                        disabled={ferryActionBusy}
+                                                    >
+                                                        {ferryActionBusy
+                                                            ? "Updating..."
+                                                            : manualClosed
+                                                                ? "↻ Reopen Online Booking"
+                                                                : "✕ Close Online Booking"}
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
 
 
@@ -7116,8 +7607,93 @@ const AdminDashboard = () => {
 
 }
 
+/* =========================================================
+   LIVE FERRY CAPACITY - ADMIN
+   ========================================================= */
 
-            `}</style>
+.admin-capacity-card {
+    width: 100%;
+    margin-bottom: 22px;
+    padding: 20px;
+    background: #ffffff;
+    border: 1px solid #e8e8e8;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.025);
+    box-sizing: border-box;
+}
+.admin-capacity-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 18px;
+}
+.admin-capacity-header h3 { margin: 0 0 5px; color: #222222; font-size: 19px; font-weight: 800; }
+.admin-capacity-header p { margin: 0; color: #888888; font-size: 10px; }
+.admin-capacity-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.admin-ferry-capacity-card { padding: 15px; background: #fafafa; border: 1px solid #e8e8e8; border-radius: 10px; }
+.admin-ferry-capacity-card.capacity-closed { background: #fff7f7; border-color: #f0caca; }
+.admin-ferry-capacity-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 15px; }
+.admin-ferry-capacity-top strong { display: block; color: #222222; font-size: 13px; line-height: 1.3; }
+.admin-ferry-capacity-top span { display: block; margin-top: 3px; color: #888888; font-size: 9px; }
+.admin-capacity-status { flex-shrink: 0; padding: 5px 7px; border-radius: 20px; font-size: 7px !important; font-weight: 800; }
+.admin-capacity-status.open { background: #e9f8ef; color: #16804a; }
+.admin-capacity-status.closed { background: #fff0f0; color: #d32f2f; }
+.admin-capacity-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.admin-capacity-metric { padding: 11px; background: #ffffff; border: 1px solid #eeeeee; border-radius: 8px; }
+.admin-capacity-metric span { display: block; margin-bottom: 5px; color: #777777; font-size: 8px; font-weight: 700; }
+.admin-capacity-metric strong { display: block; color: #222222; font-size: 18px; line-height: 1; }
+.admin-capacity-metric small { display: block; margin-top: 5px; color: #999999; font-size: 8px; line-height: 1.3; }
+.admin-capacity-closed-message { margin-top: 10px; padding: 8px 10px; border-radius: 7px; background: #fff0f0; color: #d32f2f; font-size: 8px; font-weight: 700; }
+.admin-capacity-error, .admin-capacity-empty { padding: 18px; border-radius: 9px; background: #fafafa; color: #888888; font-size: 10px; text-align: center; }
+.admin-capacity-error { background: #fff7f7; color: #d32f2f; }
+@media (max-width: 1000px) { .admin-capacity-grid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .admin-capacity-header { flex-direction: column; align-items: stretch; } .admin-capacity-header .refresh-button { width: 100%; } .admin-capacity-metrics { grid-template-columns: 1fr; } }
+
+
+
+.admin-ferry-toggle-button { width: 100%; margin-top: 10px; padding: 9px 11px; border: 1px solid transparent; border-radius: 8px; font-size: 9px; font-weight: 800; cursor: pointer; transition: 0.2s ease; }
+.admin-ferry-toggle-button.close { background: #fff0f0; color: #c62828; border-color: #f1caca; }
+.admin-ferry-toggle-button.reopen { background: #e9f8ef; color: #16804a; border-color: #c9ecd9; }
+.admin-ferry-toggle-button:disabled { opacity: 0.6; cursor: not-allowed; }
+.ferry-confirm-modal { max-width: 460px; }
+.ferry-confirm-modal .modal-booking {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 14px;
+}
+.ferry-confirm-modal .modal-booking span {
+    color: #888888;
+    font-size: 9px;
+    font-weight: 700;
+}
+.ferry-confirm-modal .modal-booking strong {
+    color: #222222;
+    font-size: 11px;
+    text-align: right;
+}
+.admin-booking-search-card { margin-top: 18px; padding: 18px; background: #ffffff; border: 1px solid #e8e8e8; border-radius: 12px; }
+.admin-booking-search-header h3 { margin: 5px 0; color: #222222; font-size: 19px; font-weight: 800; }
+.admin-booking-search-header p { margin: 0; color: #888888; font-size: 10px; }
+.admin-booking-search-form { display: grid; grid-template-columns: 1fr 120px; gap: 10px; margin-top: 15px; }
+.admin-booking-search-form input { min-width: 0; padding: 12px 13px; border: 1px solid #dddddd; border-radius: 8px; outline: none; font-size: 11px; }
+.admin-booking-search-form input:focus { border-color: #f2a65a; }
+.admin-booking-search-form button { border: 0; border-radius: 8px; background: #2f2f2f; color: #ffffff; font-size: 10px; font-weight: 800; cursor: pointer; }
+.admin-booking-search-form button:disabled { opacity: 0.6; cursor: not-allowed; }
+.admin-booking-search-error { margin-top: 10px; padding: 10px 12px; border-radius: 8px; background: #fff0f0; color: #c62828; font-size: 10px; font-weight: 700; }
+.admin-booking-result { margin-top: 15px; padding: 15px; background: #fafafa; border: 1px solid #eeeeee; border-radius: 10px; }
+.admin-booking-result-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.admin-booking-result-heading h4 { margin: 5px 0 0; color: #222222; font-size: 15px; }
+.admin-booking-status-pill { padding: 6px 9px; border-radius: 20px; background: #fff4dc; color: #9a6500; font-size: 8px; font-weight: 800; text-align: center; }
+.admin-booking-status-pill.confirmed { background: #e9f8ef; color: #16804a; }
+.admin-booking-info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.admin-booking-info-grid > div { padding: 10px; background: #ffffff; border: 1px solid #eeeeee; border-radius: 7px; }
+.admin-booking-info-grid span { display: block; margin-bottom: 4px; color: #888888; font-size: 8px; }
+.admin-booking-info-grid strong { display: block; color: #222222; font-size: 10px; word-break: break-word; }
+.admin-booking-proof-link { display: inline-block; margin-top: 12px; padding: 8px 11px; border-radius: 7px; background: #2f2f2f; color: #ffffff; text-decoration: none; font-size: 9px; font-weight: 800; }
+@media (max-width: 900px) { .admin-booking-info-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .admin-booking-search-form { grid-template-columns: 1fr; } .admin-booking-search-form button { min-height: 40px; } .admin-booking-info-grid { grid-template-columns: 1fr; } }
+`}</style>
 
         </main>
     );

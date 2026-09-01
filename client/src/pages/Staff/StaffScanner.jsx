@@ -5,9 +5,85 @@ import { Html5Qrcode } from "html5-qrcode";
 import api from "../../services/api";
 
 import {
-    getBookingReferenceFromQR,
-    isValidQR
+    getBookingReferenceFromQR
 } from "../../utils/qrUtils";
+
+
+// =========================================================
+// BOOKING REFERENCE PARSER
+// =========================================================
+// Supports the QR formats currently used by the ticketing system.
+// The QR can contain the reference as plain text, labeled text,
+// or JSON. We keep this local so the scanner can read older QR
+// tickets without changing the booking data.
+
+function extractBookingReference(qrText) {
+    const decodedQR = String(qrText || "").trim();
+
+    if (!decodedQR) {
+        return null;
+    }
+
+    // Use the existing utility first.
+    try {
+        const existingReference =
+            getBookingReferenceFromQR(decodedQR);
+
+        if (existingReference) {
+            return String(existingReference).trim();
+        }
+    } catch (error) {
+        console.warn("QR utility parser warning:", error);
+    }
+
+    // Booking Reference: GG-123456
+    const bookingReferenceMatch =
+        decodedQR.match(
+            /Booking\s*Reference\s*:\s*([A-Za-z0-9-]+)/i
+        );
+
+    if (bookingReferenceMatch?.[1]) {
+        return bookingReferenceMatch[1].trim();
+    }
+
+    // Reference: GG-123456
+    const referenceMatch =
+        decodedQR.match(
+            /Reference\s*:\s*([A-Za-z0-9-]+)/i
+        );
+
+    if (referenceMatch?.[1]) {
+        return referenceMatch[1].trim();
+    }
+
+    // JSON QR data.
+    try {
+        const parsedQR = JSON.parse(decodedQR);
+        const jsonReference =
+            parsedQR?.bookingReference ||
+            parsedQR?.booking_reference ||
+            parsedQR?.reference ||
+            parsedQR?.bookingRef ||
+            parsedQR?.bookingCode ||
+            null;
+
+        if (jsonReference) {
+            return String(jsonReference).trim();
+        }
+    } catch (error) {
+        // QR is not JSON. Continue with raw reference matching.
+    }
+
+    // Raw booking reference.
+    const rawReferenceMatch =
+        decodedQR.match(/\bGG-[A-Za-z0-9-]+\b/i);
+
+    if (rawReferenceMatch?.[0]) {
+        return rawReferenceMatch[0].trim();
+    }
+
+    return null;
+}
 
 
 // =========================================================
@@ -91,14 +167,25 @@ function StaffScanner() {
                 },
 
                 {
-                    fps: 10,
+                    // Faster frame checking helps detect QR codes shown from
+                    // a passenger's phone gallery more quickly.
+                    fps: 20,
 
+                    // Slightly larger detection area so the passenger does
+                    // not need to align the QR code as precisely.
                     qrbox: {
-                        width: 250,
-                        height: 250
+                        width: 350,
+                        height: 350
                     },
 
-                    aspectRatio: 1.0
+                    aspectRatio: 1.0,
+
+                    // Prefer the browser's native BarcodeDetector
+                    // when supported. The normal html5-qrcode
+                    // decoder remains the fallback.
+                    experimentalFeatures: {
+                        useBarCodeDetectorIfSupported: true
+                    }
                 },
 
                 async (decodedText) => {
@@ -125,6 +212,38 @@ function StaffScanner() {
 
             );
 
+
+            // =====================================================
+            // CAMERA FOCUS / QUALITY TUNING
+            // =====================================================
+            // Optional camera improvements. If the device/browser does
+            // not support a setting, the normal scanner still continues.
+            try {
+                const capabilities =
+                    scanner.getRunningTrackCapabilities();
+
+                const cameraConstraints = {
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    frameRate: { ideal: 30, max: 30 }
+                };
+
+                if (
+                    Array.isArray(capabilities?.focusMode) &&
+                    capabilities.focusMode.includes("continuous")
+                ) {
+                    cameraConstraints.focusMode = "continuous";
+                }
+
+                await scanner.applyVideoConstraints(
+                    cameraConstraints
+                );
+            } catch (cameraTuneError) {
+                console.warn(
+                    "Camera focus/quality tuning warning:",
+                    cameraTuneError
+                );
+            }
 
             scannerRunningRef.current =
                 true;
@@ -221,43 +340,43 @@ function StaffScanner() {
 
 
         // =====================================================
-        // VALIDATE QR
-        // =====================================================
-
-        if (!isValidQR(qrText)) {
-
-            setError(
-                "Invalid ferry ticket QR code."
-            );
-
-            processingQRRef.current =
-                false;
-
-            return;
-        }
-
-
-        // =====================================================
         // GET BOOKING REFERENCE
+        // =====================================================
+        //
+        // Your current passenger QR contains the booking reference
+        // as text in this format:
+        //
+        // Booking Reference:
+        // GG-xxxxxx
+        //
+        // We first use your existing QR utility. If that utility
+        // does not recognize this older/current QR format, we use
+        // a safe fallback parser so the existing QR code does not
+        // need to be regenerated.
+        //
         // =====================================================
 
         const bookingReference =
-            getBookingReferenceFromQR(
-                qrText
-            );
+            extractBookingReference(qrText);
 
-
+        // The scanner must have a booking reference before it
+        // attempts the staff booking lookup.
         if (!bookingReference) {
-
+            console.warn("QR decoded text:", qrText);
             setError(
-                "Unable to read the booking reference from the QR code."
+                "QR was detected, but no booking reference could be read. Please move the QR closer and try again."
             );
-
-            processingQRRef.current =
-                false;
-
+            processingQRRef.current = false;
             return;
         }
+
+        // =====================================================
+        // QR DETECTED
+        // =====================================================
+
+        setMessage(
+            `QR detected. Loading booking ${bookingReference}...`
+        );
 
 
         // =====================================================
@@ -480,6 +599,77 @@ function StaffScanner() {
             setError(
                 err.response?.data?.message ||
                 "Unable to update boarding status."
+            );
+
+        } finally {
+
+            setLoadingBooking(false);
+        }
+    };
+
+
+    // =========================================================
+    // REJECT PASSENGER BOARDING
+    // =========================================================
+
+    const rejectBoarding = async () => {
+
+        if (!booking?._id) {
+            setError(
+                "Booking information is missing."
+            );
+
+            return;
+        }
+
+        if (booking.boardingStatus === "ON BOARD") {
+            setError(
+                "This passenger has already boarded and cannot be rejected."
+            );
+
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `Are you sure you want to reject boarding for ${booking.passengerName || "this passenger"}?`
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+
+            setLoadingBooking(true);
+            setError("");
+            setMessage("");
+
+            const response =
+                await api.put(
+                    `/staff/bookings/${booking._id}/reject`
+                );
+
+            if (response.data?.booking) {
+                setBooking(
+                    response.data.booking
+                );
+            }
+
+            setMessage(
+                response.data?.message ||
+                "Passenger boarding has been rejected."
+            );
+
+        } catch (err) {
+
+            console.error(
+                "Reject boarding error:",
+                err
+            );
+
+            setError(
+                err.response?.data?.message ||
+                "Unable to reject passenger boarding."
             );
 
         } finally {
@@ -967,6 +1157,79 @@ function StaffScanner() {
 
 
                             {/* =================================================
+                                PASSENGER / COMPANIONS
+                            ================================================= */}
+
+                            {Array.isArray(booking.passengerDetails) &&
+                                booking.passengerDetails.length > 0 && (
+
+                                    <div
+                                        style={{
+                                            marginTop: "18px",
+                                            padding: "15px",
+                                            background: "#f9fafb",
+                                            borderRadius: "10px",
+                                            border: "1px solid #e5e7eb"
+                                        }}
+                                    >
+
+                                        <div
+                                            style={{
+                                                fontSize: "13px",
+                                                fontWeight: "700",
+                                                color: "#374151",
+                                                marginBottom: "10px"
+                                            }}
+                                        >
+                                            ALL PASSENGERS IN THIS BOOKING
+                                        </div>
+
+                                        {booking.passengerDetails.map(
+                                            (passenger, index) => (
+
+                                                <div
+                                                    key={`${booking._id || booking.bookingReference}-passenger-${index}`}
+                                                    style={{
+                                                        padding: "10px 0",
+                                                        borderBottom:
+                                                            index < booking.passengerDetails.length - 1
+                                                                ? "1px solid #e5e7eb"
+                                                                : "none"
+                                                    }}
+                                                >
+
+                                                    <div
+                                                        style={{
+                                                            fontWeight: "600",
+                                                            color: "#111827",
+                                                            marginBottom: "3px"
+                                                        }}
+                                                    >
+                                                        {index + 1}. {passenger?.name || "N/A"}
+                                                    </div>
+
+                                                    <div
+                                                        style={{
+                                                            fontSize: "13px",
+                                                            color: "#6b7280"
+                                                        }}
+                                                    >
+                                                        Age: {passenger?.age ?? "N/A"}
+                                                        {" • "}
+                                                        Gender: {passenger?.gender || "N/A"}
+                                                    </div>
+
+                                                </div>
+
+                                            )
+                                        )}
+
+                                    </div>
+
+                                )}
+
+
+                            {/* =================================================
                                 ROUTE
                             ================================================= */}
 
@@ -1128,6 +1391,45 @@ function StaffScanner() {
                                             {loadingBooking
                                                 ? "Processing..."
                                                 : "✓ Mark as Boarded"}
+                                        </button>
+
+                                    )}
+
+
+                                {/* =================================================
+                                    REJECT BOARDING
+                                ================================================= */}
+
+                                {booking.boardingStatus ===
+                                    "NOT BOARDED" &&
+                                    booking.boardingStatus !== "ON BOARD" && (
+
+                                        <button
+                                            onClick={
+                                                rejectBoarding
+                                            }
+                                            disabled={
+                                                loadingBooking
+                                            }
+                                            style={{
+                                                padding: "13px",
+                                                border: "1px solid #fecaca",
+                                                borderRadius: "8px",
+                                                background:
+                                                    loadingBooking
+                                                        ? "#fee2e2"
+                                                        : "#fef2f2",
+                                                color: "#b91c1c",
+                                                fontWeight: "600",
+                                                cursor:
+                                                    loadingBooking
+                                                        ? "not-allowed"
+                                                        : "pointer"
+                                            }}
+                                        >
+                                            {loadingBooking
+                                                ? "Processing..."
+                                                : "✕ Reject Boarding"}
                                         </button>
 
                                     )}

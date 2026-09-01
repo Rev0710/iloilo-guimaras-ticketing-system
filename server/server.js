@@ -130,6 +130,22 @@ app.use(
     bookingRoutes
 );
 
+// ===============================
+// FERRY CLOSURE
+// ===============================
+//
+// Ferry online booking availability
+// and Admin ferry closure control.
+//
+
+const ferryClosureRoutes =
+    require("./routes/ferryClosureRoutes");
+
+app.use(
+    "/api/ferry-closures",
+    ferryClosureRoutes
+);
+
 
 // ===============================
 // STAFF

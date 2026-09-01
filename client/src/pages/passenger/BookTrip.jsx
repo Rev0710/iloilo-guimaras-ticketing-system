@@ -778,16 +778,45 @@ const BookTrip = () => {
 
 
     // =====================================================
-    // TODAY
+    // PHILIPPINES LOCAL DATE + MINIMUM BOOKING DATE
+    // =====================================================
+    // Online booking starts one calendar day before travel.
+    // Use Manila time instead of UTC.
     // =====================================================
 
-    const today =
-        new Date()
-            .toISOString()
-            .split("T")[0];
+    const getManilaDate = (dateObject = new Date()) => {
+        const parts = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Asia/Manila",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit"
+        }).formatToParts(dateObject);
+
+        const values = {};
+        parts.forEach((part) => {
+            if (part.type !== "literal") {
+                values[part.type] = part.value;
+            }
+        });
+
+        return `${values.year}-${values.month}-${values.day}`;
+    };
+
+    const today = getManilaDate();
+
+    const tomorrowDate = new Date(
+        `${today}T00:00:00+08:00`
+    );
+
+    tomorrowDate.setDate(
+        tomorrowDate.getDate() + 1
+    );
+
+    const tomorrow = getManilaDate(
+        tomorrowDate
+    );
 
 
-    // =====================================================
     // FORMAT FERRY TIME FOR DISPLAY
     // =====================================================
 
@@ -867,7 +896,9 @@ const BookTrip = () => {
         const selectedString =
             `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
-        if (selected < new Date(`${today}T00:00:00`)) {
+        // Same-day booking is not allowed.
+        // Earliest selectable trip date is tomorrow.
+        if (selectedString < tomorrow) {
             return;
         }
 
@@ -948,7 +979,7 @@ const BookTrip = () => {
         const value =
             `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
-        return value < today;
+        return value < tomorrow;
     };
 
 
@@ -1013,6 +1044,18 @@ const BookTrip = () => {
 
             alert(
                 "Please complete all trip details."
+            );
+
+            return;
+        }
+
+        // =================================================
+        // MINIMUM ADVANCE BOOKING
+        // =================================================
+
+        if (date < tomorrow) {
+            alert(
+                "Online booking must be made at least 1 day before the selected trip. Please choose tomorrow or a later date."
             );
 
             return;
