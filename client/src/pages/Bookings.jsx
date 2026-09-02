@@ -803,28 +803,6 @@ const Bookings = () => {
         loadBookings
     ]);
 
-
-    // =========================================================
-    // AUTOMATIC STATUS REFRESH
-    // =========================================================
-    // Admin payment verification and Staff boarding happen on the
-    // backend. Refresh this page periodically so the passenger sees
-    // the latest MongoDB status without needing to leave the page.
-    // =========================================================
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            if (document.visibilityState === "visible") {
-                loadBookings();
-            }
-        }, 5000);
-
-        return () => clearInterval(interval);
-    }, [
-        loadBookings
-    ]);
-
-
     // =========================================================
     // VIEW BOOKING
     // =========================================================
@@ -2283,7 +2261,7 @@ const Bookings = () => {
                         15px;
 
                     padding:
-                        20px;
+                        24px;
 
                     box-shadow:
                         0
@@ -3206,7 +3184,7 @@ const Bookings = () => {
                     .history-card {
 
                         padding:
-                            16px;
+                            18px;
 
                     }
 

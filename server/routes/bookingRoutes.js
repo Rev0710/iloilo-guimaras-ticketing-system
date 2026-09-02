@@ -89,7 +89,11 @@ router.get(
             const booking =
                 await Booking.findOne({
                     bookingReference: req.params.bookingReference,
-                    userId: req.user.userId
+                    $or: [
+                        { userId: req.user.userId },
+                        { userId: null },
+                        { userId: { $exists: false } }
+                    ]
                 });
 
             if (!booking) {
@@ -97,6 +101,13 @@ router.get(
                     success: false,
                     message: "Booking not found."
                 });
+            }
+
+            // Legacy bookings created before userId was added can still be
+            // synchronized once by the authenticated passenger.
+            if (!booking.userId) {
+                booking.userId = req.user.userId;
+                await booking.save();
             }
 
             return res.status(200).json({
