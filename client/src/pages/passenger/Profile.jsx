@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL ||
+    "http://localhost:5000/api";
+
 const Profile = () => {
     const navigate = useNavigate();
 
@@ -194,7 +198,7 @@ useEffect(() => {
 
         const response =
             await fetch(
-                "http://localhost:5000/api/auth/profile",
+                `${API_BASE_URL}/auth/profile`,
                 {
                     method: "PUT",
 
@@ -310,7 +314,7 @@ useEffect(() => {
         );
 
         setModalMessage(
-            "Unable to connect to the server. Please make sure the backend is running."
+            "Unable to connect to the server. Please check your internet connection and try again."
         );
     }
 };
@@ -496,7 +500,7 @@ useEffect(() => {
 
         const response =
             await fetch(
-                "http://localhost:5000/api/auth/password",
+                `${API_BASE_URL}/auth/password`,
                 {
                     method: "PUT",
 
@@ -559,7 +563,7 @@ useEffect(() => {
         );
 
         setModalMessage(
-            "Unable to connect to the server. Please make sure the backend is running."
+            "Unable to connect to the server. Please check your internet connection and try again."
         );
     }
 };
