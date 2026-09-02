@@ -136,6 +136,23 @@ const BookTrip = () => {
 
 
     // =====================================================
+    // LOGGED-IN PASSENGER
+    // =====================================================
+    // Login stores the authenticated passenger in
+    // localStorage/sessionStorage under "user".
+    // =====================================================
+
+    const loggedInUser =
+        getStoredObject("user") ||
+        {};
+
+    const accountOwnerName =
+        loggedInUser.fullName ||
+        loggedInUser.name ||
+        "";
+
+
+    // =====================================================
     // FERRY INFORMATION
     // =====================================================
 
@@ -330,7 +347,10 @@ const BookTrip = () => {
             previousTrip.vehicleType ===
                 "No Motorcycle"
                 ? "noMotorcycle"
-                : "motorcycle"
+                : previousTrip.vehicleType ===
+                    "Motorcycle"
+                    ? "motorcycle"
+                    : ""
         );
 
 
@@ -497,7 +517,14 @@ const BookTrip = () => {
             else {
 
                 result.push(
-                    createPassenger()
+                    createPassenger(
+                        index === 0
+                            ? {
+                                name:
+                                    accountOwnerName
+                            }
+                            : {}
+                    )
                 );
             }
         }
@@ -595,6 +622,45 @@ const BookTrip = () => {
 
 
     // =====================================================
+    // SET MAXIMUM PASSENGERS
+    // =====================================================
+
+    const handlePassengerMax = () => {
+
+        if (
+            passengers >=
+            MAX_PASSENGERS
+        ) {
+            return;
+        }
+
+        setPassengerDetails(
+            (previous) => {
+
+                const updated = [
+                    ...previous
+                ];
+
+                while (
+                    updated.length <
+                    MAX_PASSENGERS
+                ) {
+                    updated.push(
+                        createPassenger()
+                    );
+                }
+
+                return updated;
+            }
+        );
+
+        setPassengerMode(
+            "withPassenger"
+        );
+    };
+
+
+    // =====================================================
     // DECREASE PASSENGERS
     // =====================================================
 
@@ -651,12 +717,24 @@ const BookTrip = () => {
         ) {
 
             setPassengerDetails(
-                (previous) => [
+                (previous) => {
 
-                    previous[0] ||
-                    createPassenger()
+                    const owner =
+                        previous[0] ||
+                        createPassenger({
+                            name:
+                                accountOwnerName
+                        });
 
-                ]
+                    return [
+                        {
+                            ...owner,
+                            name:
+                                owner.name ||
+                                accountOwnerName
+                        }
+                    ];
+                }
             );
 
             return;
@@ -780,8 +858,11 @@ const BookTrip = () => {
     // =====================================================
     // PHILIPPINES LOCAL DATE + MINIMUM BOOKING DATE
     // =====================================================
-    // Online booking starts one calendar day before travel.
-    // Use Manila time instead of UTC.
+    // Booking rules:
+    // - Motorcycle: at least 1 day before travel.
+    // - No motorcycle: same-day booking is allowed
+    //   when at least 3 hours remain before departure.
+    // Use Manila time for all comparisons.
     // =====================================================
 
     const getManilaDate = (dateObject = new Date()) => {
@@ -896,9 +977,27 @@ const BookTrip = () => {
         const selectedString =
             `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
-        // Same-day booking is not allowed.
-        // Earliest selectable trip date is tomorrow.
-        if (selectedString < tomorrow) {
+        // Vehicle selection controls the earliest
+        // allowed travel date:
+        // - Motorcycle: book at least 1 day before.
+        // - No motorcycle: same-day booking is allowed,
+        //   but only when the departure is at least
+        //   3 hours away.
+        if (!vehicleChoice) {
+            alert(
+                "Please select whether you are bringing a motorcycle before choosing your travel date."
+            );
+
+            return;
+        }
+
+        const earliestDate =
+            vehicleChoice ===
+                "motorcycle"
+                ? tomorrow
+                : today;
+
+        if (selectedString < earliestDate) {
             return;
         }
 
@@ -979,7 +1078,13 @@ const BookTrip = () => {
         const value =
             `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
-        return value < tomorrow;
+        const earliestDate =
+            vehicleChoice ===
+                "motorcycle"
+                ? tomorrow
+                : today;
+
+        return value < earliestDate;
     };
 
 
@@ -1050,15 +1155,131 @@ const BookTrip = () => {
         }
 
         // =================================================
-        // MINIMUM ADVANCE BOOKING
+        // VEHICLE SELECTION
         // =================================================
 
-        if (date < tomorrow) {
+        if (!vehicleChoice) {
             alert(
-                "Online booking must be made at least 1 day before the selected trip. Please choose tomorrow or a later date."
+                "Please select whether you are bringing a motorcycle before continuing."
             );
 
             return;
+        }
+
+
+        // =================================================
+        // ADVANCE BOOKING RULES
+        // =================================================
+        //
+        // MOTORCYCLE:
+        // Must be booked at least 1 day before the
+        // selected travel date.
+        //
+        // NO MOTORCYCLE:
+        // Same-day booking is allowed, but the booking
+        // must be made at least 3 hours before departure.
+        // =================================================
+
+        if (
+            vehicleChoice ===
+            "motorcycle"
+        ) {
+
+            if (date < tomorrow) {
+                alert(
+                    "Motorcycle bookings must be made at least 1 day before the selected trip. Please choose tomorrow or a later date."
+                );
+
+                return;
+            }
+
+        } else {
+
+            if (date < today) {
+                alert(
+                    "The selected travel date has already passed. Please choose today or a future date."
+                );
+
+                return;
+            }
+
+            if (date === today) {
+
+                const currentParts =
+                    new Intl.DateTimeFormat(
+                        "en-US",
+                        {
+                            timeZone:
+                                "Asia/Manila",
+                            hour:
+                                "2-digit",
+                            minute:
+                                "2-digit",
+                            hourCycle:
+                                "h23"
+                        }
+                    ).formatToParts(
+                        new Date()
+                    );
+
+                const currentHour =
+                    Number(
+                        currentParts.find(
+                            (part) =>
+                                part.type ===
+                                "hour"
+                        )?.value || 0
+                    );
+
+                const currentMinute =
+                    Number(
+                        currentParts.find(
+                            (part) =>
+                                part.type ===
+                                "minute"
+                        )?.value || 0
+                    );
+
+                const selectedNormalizedTime =
+                    normalizeTime(time);
+
+                const selectedTimeParts =
+                    selectedNormalizedTime
+                        .split(":");
+
+                const departureHour =
+                    Number(
+                        selectedTimeParts[0]
+                    );
+
+                const departureMinute =
+                    Number(
+                        selectedTimeParts[1]
+                    );
+
+                const currentMinutes =
+                    currentHour * 60 +
+                    currentMinute;
+
+                const departureMinutes =
+                    departureHour * 60 +
+                    departureMinute;
+
+                const minutesUntilDeparture =
+                    departureMinutes -
+                    currentMinutes;
+
+                if (
+                    minutesUntilDeparture <
+                    180
+                ) {
+                    alert(
+                        "Same-day passenger-only bookings must be made at least 3 hours before the ferry departure time. Please choose a later departure."
+                    );
+
+                    return;
+                }
+            }
         }
 
 
@@ -3453,6 +3674,78 @@ const BookTrip = () => {
                 }
 
 
+                .passenger-max-row {
+                    display:
+                        flex;
+
+                    justify-content:
+                        flex-end;
+
+                    margin-top:
+                        8px;
+                }
+
+
+                .passenger-max-button {
+                    min-width:
+                        92px;
+
+                    height:
+                        34px;
+
+                    padding:
+                        0 14px;
+
+                    border:
+                        1px solid #f2c6a3;
+
+                    border-radius:
+                        9px;
+
+                    background:
+                        #fff7f0;
+
+                    color:
+                        #f28c28;
+
+                    font-size:
+                        11px;
+
+                    font-weight:
+                        750;
+
+                    cursor:
+                        pointer;
+
+                    transition:
+                        0.2s ease;
+                }
+
+
+                .passenger-max-button:hover:not(:disabled) {
+                    background:
+                        #ffeddf;
+
+                    border-color:
+                        #f28c28;
+                }
+
+
+                .passenger-max-button:disabled {
+                    background:
+                        #f7f7f7;
+
+                    border-color:
+                        #e5e5e5;
+
+                    color:
+                        #c8c8c8;
+
+                    cursor:
+                        not-allowed;
+                }
+
+
                 .passenger-limit {
 
                     display:
@@ -4792,7 +5085,7 @@ const BookTrip = () => {
 
 
                         {/* =================================================
-                            02 - SCHEDULE
+                            02 - VEHICLE
                         ================================================= */}
 
                         <section
@@ -4807,6 +5100,256 @@ const BookTrip = () => {
                                     className="section-number"
                                 >
                                     02
+                                </span>
+
+
+                                <div>
+
+                                    <h2>
+                                        Vehicle
+                                    </h2>
+
+                                    <p>
+                                        Select whether you are
+                                        bringing a motorcycle.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+
+                            <div
+                                className="vehicle-choice"
+                            >
+
+
+                                {/* MOTORCYCLE */}
+
+                                <div
+                                    className={
+                                        `vehicle-choice-card ${
+                                            vehicleChoice ===
+                                            "motorcycle"
+                                                ? "active"
+                                                : ""
+                                        }`
+                                    }
+                                    onClick={() =>
+                                        handleVehicleChange(
+                                            "motorcycle"
+                                        )
+                                    }
+                                >
+
+                                    <div
+                                        className="vehicle-radio"
+                                    />
+
+
+                                    <div
+                                        className="vehicle-icon"
+                                    >
+                                        🏍️
+                                    </div>
+
+
+                                    <div
+                                        className="vehicle-content"
+                                    >
+
+                                        <strong>
+                                            Motorcycle
+                                        </strong>
+
+                                        <span>
+                                            Bringing a motorcycle
+                                            on the ferry.
+                                        </span>
+
+                                    </div>
+
+
+                                    <div
+                                        className="vehicle-limit-badge"
+                                    >
+                                        Max 3
+                                    </div>
+
+                                </div>
+
+
+                                {/* NO MOTORCYCLE */}
+
+                                <div
+                                    className={
+                                        `vehicle-choice-card ${
+                                            vehicleChoice ===
+                                            "noMotorcycle"
+                                                ? "active"
+                                                : ""
+                                        }`
+                                    }
+                                    onClick={() =>
+                                        handleVehicleChange(
+                                            "noMotorcycle"
+                                        )
+                                    }
+                                >
+
+                                    <div
+                                        className="vehicle-radio"
+                                    />
+
+
+                                    <div
+                                        className="vehicle-icon"
+                                    >
+                                        👥
+                                    </div>
+
+
+                                    <div
+                                        className="vehicle-content"
+                                    >
+
+                                        <strong>
+                                            No Motorcycle
+                                        </strong>
+
+                                        <span>
+                                            Travel with friends
+                                            without a vehicle.
+                                        </span>
+
+                                    </div>
+
+
+                                    <div
+                                        className="vehicle-limit-badge"
+                                    >
+                                        Max 10
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            {/* =================================================
+                                MOTORCYCLE DETAILS
+                            ================================================= */}
+
+                            {vehicleChoice ===
+                                "motorcycle" && (
+
+                                <>
+
+                                    <div
+                                        className="form-group"
+                                    >
+
+                                        <label>
+                                            Vehicle Type
+                                        </label>
+
+
+                                        <input
+                                            type="text"
+                                            value="Motorcycle"
+                                            disabled
+                                        />
+
+                                    </div>
+
+
+                                    <div
+                                        className="form-group"
+                                    >
+
+                                        <label
+                                            htmlFor="plateNumber"
+                                        >
+                                            Plate Number
+                                        </label>
+
+
+                                        <input
+                                            id="plateNumber"
+                                            type="text"
+                                            placeholder="Enter plate number"
+                                            value={
+                                                plateNumber
+                                            }
+                                            onChange={(
+                                                event
+                                            ) =>
+                                                setPlateNumber(
+                                                    event
+                                                        .target
+                                                        .value
+                                                )
+                                            }
+                                            maxLength={20}
+                                        />
+
+
+                                        <small
+                                            className="field-help"
+                                        >
+                                            Example:
+                                            ABC-1234
+                                        </small>
+
+                                    </div>
+
+                                </>
+
+                            )}
+
+
+                            {/* =================================================
+                                NO MOTORCYCLE MESSAGE
+                            ================================================= */}
+
+                            {vehicleChoice ===
+                                "noMotorcycle" && (
+
+                                <div
+                                    className="no-motorcycle-notice"
+                                >
+
+                                    <strong>
+                                        No Motorcycle selected.
+                                    </strong>
+                                    {" "}
+                                    You can add yourself and up
+                                    to 9 friends, for a maximum
+                                    of 10 passengers on this booking.
+
+                                </div>
+
+                            )}
+
+                        </section>
+
+
+                        {/* =================================================
+                            03 - SCHEDULE
+                        ================================================= */}
+
+                        <section
+                            className="form-section"
+                        >
+
+                            <div
+                                className="section-title"
+                            >
+
+                                <span
+                                    className="section-number"
+                                >
+                                    03
                                 </span>
 
 
@@ -5046,256 +5589,6 @@ const BookTrip = () => {
 
                                 </div>
                             </div>
-
-                        </section>
-
-
-                        {/* =================================================
-                            03 - VEHICLE
-                        ================================================= */}
-
-                        <section
-                            className="form-section"
-                        >
-
-                            <div
-                                className="section-title"
-                            >
-
-                                <span
-                                    className="section-number"
-                                >
-                                    03
-                                </span>
-
-
-                                <div>
-
-                                    <h2>
-                                        Vehicle
-                                    </h2>
-
-                                    <p>
-                                        Select whether you are
-                                        bringing a motorcycle.
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-
-                            <div
-                                className="vehicle-choice"
-                            >
-
-
-                                {/* MOTORCYCLE */}
-
-                                <div
-                                    className={
-                                        `vehicle-choice-card ${
-                                            vehicleChoice ===
-                                            "motorcycle"
-                                                ? "active"
-                                                : ""
-                                        }`
-                                    }
-                                    onClick={() =>
-                                        handleVehicleChange(
-                                            "motorcycle"
-                                        )
-                                    }
-                                >
-
-                                    <div
-                                        className="vehicle-radio"
-                                    />
-
-
-                                    <div
-                                        className="vehicle-icon"
-                                    >
-                                        🏍️
-                                    </div>
-
-
-                                    <div
-                                        className="vehicle-content"
-                                    >
-
-                                        <strong>
-                                            Motorcycle
-                                        </strong>
-
-                                        <span>
-                                            Bringing a motorcycle
-                                            on the ferry.
-                                        </span>
-
-                                    </div>
-
-
-                                    <div
-                                        className="vehicle-limit-badge"
-                                    >
-                                        Max 3
-                                    </div>
-
-                                </div>
-
-
-                                {/* NO MOTORCYCLE */}
-
-                                <div
-                                    className={
-                                        `vehicle-choice-card ${
-                                            vehicleChoice ===
-                                            "noMotorcycle"
-                                                ? "active"
-                                                : ""
-                                        }`
-                                    }
-                                    onClick={() =>
-                                        handleVehicleChange(
-                                            "noMotorcycle"
-                                        )
-                                    }
-                                >
-
-                                    <div
-                                        className="vehicle-radio"
-                                    />
-
-
-                                    <div
-                                        className="vehicle-icon"
-                                    >
-                                        👥
-                                    </div>
-
-
-                                    <div
-                                        className="vehicle-content"
-                                    >
-
-                                        <strong>
-                                            No Motorcycle
-                                        </strong>
-
-                                        <span>
-                                            Travel with friends
-                                            without a vehicle.
-                                        </span>
-
-                                    </div>
-
-
-                                    <div
-                                        className="vehicle-limit-badge"
-                                    >
-                                        Max 10
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-
-                            {/* =================================================
-                                MOTORCYCLE DETAILS
-                            ================================================= */}
-
-                            {vehicleChoice ===
-                                "motorcycle" && (
-
-                                <>
-
-                                    <div
-                                        className="form-group"
-                                    >
-
-                                        <label>
-                                            Vehicle Type
-                                        </label>
-
-
-                                        <input
-                                            type="text"
-                                            value="Motorcycle"
-                                            disabled
-                                        />
-
-                                    </div>
-
-
-                                    <div
-                                        className="form-group"
-                                    >
-
-                                        <label
-                                            htmlFor="plateNumber"
-                                        >
-                                            Plate Number
-                                        </label>
-
-
-                                        <input
-                                            id="plateNumber"
-                                            type="text"
-                                            placeholder="Enter plate number"
-                                            value={
-                                                plateNumber
-                                            }
-                                            onChange={(
-                                                event
-                                            ) =>
-                                                setPlateNumber(
-                                                    event
-                                                        .target
-                                                        .value
-                                                )
-                                            }
-                                            maxLength={20}
-                                        />
-
-
-                                        <small
-                                            className="field-help"
-                                        >
-                                            Example:
-                                            ABC-1234
-                                        </small>
-
-                                    </div>
-
-                                </>
-
-                            )}
-
-
-                            {/* =================================================
-                                NO MOTORCYCLE MESSAGE
-                            ================================================= */}
-
-                            {vehicleChoice ===
-                                "noMotorcycle" && (
-
-                                <div
-                                    className="no-motorcycle-notice"
-                                >
-
-                                    <strong>
-                                        No Motorcycle selected.
-                                    </strong>
-                                    {" "}
-                                    You can add yourself and up
-                                    to 9 friends, for a maximum
-                                    of 10 passengers on this booking.
-
-                                </div>
-
-                            )}
 
                         </section>
 
@@ -5786,6 +6079,23 @@ const BookTrip = () => {
                                         +
                                     </button>
 
+                                </div>
+
+
+                                <div className="passenger-max-row">
+                                    <button
+                                        type="button"
+                                        className="passenger-max-button"
+                                        onClick={
+                                            handlePassengerMax
+                                        }
+                                        disabled={
+                                            passengers >=
+                                            MAX_PASSENGERS
+                                        }
+                                    >
+                                        Max {MAX_PASSENGERS}
+                                    </button>
                                 </div>
 
 
