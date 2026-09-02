@@ -179,7 +179,7 @@ const Bookings = () => {
             status ===
             "ON BOARD"
         ) {
-            return "Onboard";
+            return "On Board";
         }
 
 
@@ -191,13 +191,19 @@ const Bookings = () => {
             status ===
             "COMPLETED"
         ) {
-            return "Paid";
+            return "Verified";
         }
 
 
         if (
             paymentStatus ===
-            "REJECTED" ||
+            "REJECTED"
+        ) {
+            return "Payment Rejected";
+        }
+
+
+        if (
             status ===
             "CANCELLED"
         ) {
@@ -793,6 +799,27 @@ const Bookings = () => {
 
         };
 
+    }, [
+        loadBookings
+    ]);
+
+
+    // =========================================================
+    // AUTOMATIC STATUS REFRESH
+    // =========================================================
+    // Admin payment verification and Staff boarding happen on the
+    // backend. Refresh this page periodically so the passenger sees
+    // the latest MongoDB status without needing to leave the page.
+    // =========================================================
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (document.visibilityState === "visible") {
+                loadBookings();
+            }
+        }, 5000);
+
+        return () => clearInterval(interval);
     }, [
         loadBookings
     ]);
@@ -3777,6 +3804,84 @@ const Bookings = () => {
 
                                                 </div>
 
+                                            </div>
+
+
+                                            {/* =================================================
+                                                LIVE BOOKING STATUS DETAILS
+                                            ================================================= */}
+
+                                            <div
+                                                style={{
+                                                    display: "grid",
+                                                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                                                    gap: "10px",
+                                                    marginTop: "15px"
+                                                }}
+                                            >
+                                                <div
+                                                    style={{
+                                                        padding: "10px 12px",
+                                                        border: "1px solid #e5e7eb",
+                                                        borderRadius: "10px",
+                                                        background: "#fafafa"
+                                                    }}
+                                                >
+                                                    <small
+                                                        style={{
+                                                            display: "block",
+                                                            color: "#777",
+                                                            marginBottom: "4px"
+                                                        }}
+                                                    >
+                                                        Payment Status
+                                                    </small>
+                                                    <strong>
+                                                        {String(
+                                                            booking.paymentStatus ||
+                                                            "PENDING VERIFICATION"
+                                                        ) === "VERIFIED"
+                                                            ? "Verified"
+                                                            : String(
+                                                                booking.paymentStatus ||
+                                                                "PENDING VERIFICATION"
+                                                            ) === "REJECTED"
+                                                                ? "Rejected"
+                                                                : "Pending Verification"}
+                                                    </strong>
+                                                </div>
+
+                                                <div
+                                                    style={{
+                                                        padding: "10px 12px",
+                                                        border: "1px solid #e5e7eb",
+                                                        borderRadius: "10px",
+                                                        background: "#fafafa"
+                                                    }}
+                                                >
+                                                    <small
+                                                        style={{
+                                                            display: "block",
+                                                            color: "#777",
+                                                            marginBottom: "4px"
+                                                        }}
+                                                    >
+                                                        Boarding Status
+                                                    </small>
+                                                    <strong>
+                                                        {String(
+                                                            booking.boardingStatus ||
+                                                            "NOT BOARDED"
+                                                        ) === "ON BOARD"
+                                                            ? "On Board"
+                                                            : String(
+                                                                booking.boardingStatus ||
+                                                                "NOT BOARDED"
+                                                            ) === "REJECTED"
+                                                                ? "Rejected"
+                                                                : "Not Boarded"}
+                                                    </strong>
+                                                </div>
                                             </div>
 
 

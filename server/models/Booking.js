@@ -90,6 +90,20 @@ const passengerDetailsSchema = new mongoose.Schema(
 
 const bookingSchema = new mongoose.Schema(
     {
+        // =========================================================
+        // PASSENGER ACCOUNT OWNERSHIP
+        // =========================================================
+        // The authenticated passenger ID is stored with each booking
+        // so the passenger can safely retrieve the latest MongoDB
+        // payment and boarding status for their own booking.
+        // Optional keeps older existing bookings compatible.
+        // =========================================================
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null
+        },
+
         bookingReference: {
             type: String,
             required: true,
