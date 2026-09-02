@@ -7,6 +7,7 @@ const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL ||
     "http://localhost:5000/api";
 
+
 const Register = () => {
     const navigate = useNavigate();
 
@@ -812,6 +813,67 @@ const Register = () => {
 
 
                 /* =====================================================
+                   REGISTRATION TYPE
+                ===================================================== */
+
+                .register-type-section {
+                    width: 100%;
+                    max-width: 440px;
+                    margin-bottom: 24px;
+                }
+
+                .register-type-title {
+                    margin: 0 0 10px;
+                    text-align: center;
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: #555;
+                }
+
+                .register-type-options {
+                    display: grid;
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                    gap: 10px;
+                }
+
+                .register-type-option {
+                    min-height: 78px;
+                    padding: 12px;
+                    border: 1px solid #dedede;
+                    border-radius: 9px;
+                    background: #ffffff;
+                    color: #222;
+                    text-align: left;
+                    cursor: pointer;
+                    transition: 0.2s ease;
+                }
+
+                .register-type-option:hover {
+                    border-color: #ff7818;
+                    transform: translateY(-1px);
+                }
+
+                .register-type-option-active {
+                    border-color: #ff7818;
+                    background: #fff7f1;
+                }
+
+                .register-type-option-title {
+                    display: block;
+                    margin-bottom: 5px;
+                    font-size: 14px;
+                    font-weight: 700;
+                }
+
+                .register-type-option-description {
+                    display: block;
+                    font-size: 11px;
+                    line-height: 1.4;
+                    color: #777;
+                }
+
+
+                /* =====================================================
                    LOGIN SECTION
                 ===================================================== */
 
@@ -1455,6 +1517,13 @@ const Register = () => {
                     }
                 }
 
+
+                @media (max-width: 560px) {
+                    .register-type-options {
+                        grid-template-columns: 1fr;
+                    }
+                }
+
             `}</style>
 
 
@@ -1522,6 +1591,50 @@ const Register = () => {
                         {/* =================================================
                            REGISTRATION FORM
                         ================================================= */}
+
+                        {/* =================================================
+                           REGISTRATION TYPE
+                        ================================================= */}
+
+                        <div className="register-type-section">
+                            <p className="register-type-title">
+                                Choose Account Type
+                            </p>
+
+                            <div className="register-type-options">
+
+                                <button
+                                    type="button"
+                                    className="register-type-option register-type-option-active"
+                                >
+                                    <span className="register-type-option-title">
+                                        Passenger
+                                    </span>
+
+                                    <span className="register-type-option-description">
+                                        Register to book ferry trips.
+                                    </span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className="register-type-option"
+                                    onClick={() =>
+                                        navigate("/admin-register")
+                                    }
+                                >
+                                    <span className="register-type-option-title">
+                                        Administrator
+                                    </span>
+
+                                    <span className="register-type-option-description">
+                                        Requires an Admin Registration Code.
+                                    </span>
+                                </button>
+
+                            </div>
+                        </div>
+
 
                         <form
                             className="register-form"

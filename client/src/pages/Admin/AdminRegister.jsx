@@ -82,7 +82,7 @@ const AdminRegister = () => {
             setTimeout(() => {
 
                 navigate(
-                    "/admin-login"
+                    "/login"
                 );
 
             }, 1200);
@@ -230,7 +230,7 @@ const AdminRegister = () => {
                         type="button"
                         onClick={() =>
                             navigate(
-                                "/admin-login"
+                                "/login"
                             )
                         }
                     >
