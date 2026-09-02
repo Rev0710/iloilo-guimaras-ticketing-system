@@ -441,15 +441,13 @@ const BookTrip = () => {
     // =====================================================
 
     const savedPassengerCount =
-        Number(
-            previousTrip.passengers ||
-            (
-                previousTrip.passengerMode ===
-                "solo"
-                    ? 1
-                    : 2
-            )
-        );
+        previousTrip.passengerMode ===
+            "solo"
+            ? 1
+            : Number(
+                previousTrip.passengers ||
+                1
+            );
 
 
     const initialPassengerCount =
