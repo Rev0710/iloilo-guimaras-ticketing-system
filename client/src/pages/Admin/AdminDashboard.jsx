@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL =
+    import.meta.env.VITE_API_BASE_URL ||
+    "http://localhost:5000/api";
+
+const API_ORIGIN = API_URL.replace(/\/api\/?$/, "");
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -1776,7 +1780,7 @@ const AdminDashboard = () => {
                 return proof;
             }
 
-            return `http://localhost:5000${proof}`;
+            return `${API_ORIGIN}${proof}`;
         }
 
         /*
@@ -1792,7 +1796,7 @@ const AdminDashboard = () => {
                 return proof.url;
             }
 
-            return `http://localhost:5000${proof.url}`;
+            return `${API_ORIGIN}${proof.url}`;
         }
 
         return null;

@@ -19,7 +19,11 @@ import {
 // API
 // =========================================================
 const API_URL =
-    "http://localhost:5000";
+    (import.meta.env.VITE_API_BASE_URL ||
+        "http://localhost:5000/api").replace(
+            /\/api\/?$/,
+            ""
+        );
 
 
 const Dashboard = () => {
@@ -354,7 +358,7 @@ const Dashboard = () => {
                             try {
                                 const response =
                                     await fetch(
-                                        `${API_URL}/api/bookings/reference/${encodeURIComponent(
+                                        `${API_URL}/api/payment/booking/${encodeURIComponent(
                                             bookingReference
                                         )}`,
                                         {
@@ -2645,16 +2649,10 @@ const Dashboard = () => {
                                             ).toUpperCase() ===
                                             "REJECTED"
                                                 ? "REJECTED"
-                                                : String(
-                                                    booking?.paymentStatus ||
-                                                    ""
-                                                ).toUpperCase() ===
-                                                "REJECTED"
-                                                    ? "REJECTED"
-                                                    : (
-                                                        booking.status ||
-                                                        "PENDING"
-                                                    ).toUpperCase();
+                                                : (
+                                                    booking.status ||
+                                                    "PENDING"
+                                                ).toUpperCase();
 
                                         return (
 

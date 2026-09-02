@@ -9,7 +9,12 @@ const MayaPayment = () => {
     // API
     // =========================================================
 
-    const API_URL = "http://localhost:5000";
+    const API_URL =
+        (import.meta.env.VITE_API_BASE_URL ||
+            "http://localhost:5000/api").replace(
+                /\/api\/?$/,
+                ""
+            );
 
     // =========================================================
     // AUTHENTICATION TOKEN
@@ -347,46 +352,9 @@ const MayaPayment = () => {
     const ppaFee =
         65;
 
-    /* =========================================================
-       VEHICLE FARE
-
-       Passenger-only bookings must NOT receive the motorcycle
-       fare. Keep the existing ₱150 motorcycle fare only when
-       the selected vehicle is actually a motorcycle.
-    ========================================================= */
-    const vehicleTypeValue =
-        String(
-            normalizedTrip.vehicleType ||
-            ""
-        )
-            .trim()
-            .toLowerCase();
-
-    const isNoMotorcycle =
-        vehicleTypeValue === "no motorcycle" ||
-        vehicleTypeValue === "nomotorcycle" ||
-        vehicleTypeValue === "no vehicle" ||
-        vehicleTypeValue === "none" ||
-        vehicleTypeValue === "passenger only" ||
-        vehicleTypeValue === "passenger-only" ||
-        vehicleTypeValue === "passenger" ||
-        vehicleTypeValue === "";
-
-    const isMotorcycle =
-        !isNoMotorcycle &&
-        (
-            vehicleTypeValue === "motorcycle" ||
-            vehicleTypeValue.includes("motorcycle")
-        );
-
-    const applicableMotorcycleFare =
-        isMotorcycle
-            ? motorcycleFare
-            : 0;
-
     const totalFare =
         passengerFare +
-        applicableMotorcycleFare +
+        motorcycleFare +
         ppaFee;
 
     // =========================================================
@@ -808,8 +776,7 @@ const MayaPayment = () => {
 
                 passengerFare,
 
-                motorcycleFare:
-                    applicableMotorcycleFare,
+                motorcycleFare,
 
                 ppaFee,
 
@@ -1018,26 +985,9 @@ const MayaPayment = () => {
             // STEP 4 — GET SAVED BOOKING
             // =================================================
 
-            const savedBooking = {
-                ...completedBooking,
-                ...(bookingResult.booking || {}),
-                ferryId:
-                    bookingResult.booking?.ferryId ||
-                    completedBooking.ferryId ||
-                    "",
-                ferryName:
-                    bookingResult.booking?.ferryName ||
-                    bookingResult.booking?.vesselName ||
-                    completedBooking.ferryName ||
-                    completedBooking.vesselName ||
-                    "",
-                vesselName:
-                    bookingResult.booking?.vesselName ||
-                    bookingResult.booking?.ferryName ||
-                    completedBooking.vesselName ||
-                    completedBooking.ferryName ||
-                    ""
-            };
+            const savedBooking =
+                bookingResult.booking ||
+                completedBooking;
 
             // =================================================
             // STEP 5 — SAVE PAYMENT STATUS
@@ -1532,6 +1482,10 @@ const MayaPayment = () => {
 
                             <strong className="maya-detail-value">
                                 {passengers}
+                                {" "}
+                                {passengers === 1
+                                    ? "Passenger"
+                                    : "Passengers"}
                             </strong>
 
                         </div>
