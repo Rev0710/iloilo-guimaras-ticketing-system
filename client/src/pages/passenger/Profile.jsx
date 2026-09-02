@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL ||
-    "http://localhost:5000/api";
-
 const Profile = () => {
     const navigate = useNavigate();
 
@@ -45,113 +41,38 @@ const Profile = () => {
 
 useEffect(() => {
 
-    const loadCurrentUser = async () => {
-        try {
-            const token =
-                localStorage.getItem("token") ||
-                sessionStorage.getItem("token");
+    try {
 
-            if (!token) {
-                return;
-            }
+        const savedUser =
+            localStorage.getItem("user") ||
+            sessionStorage.getItem("user");
 
-            const response = await fetch(
-                `${API_BASE_URL}/auth/me`,
-                {
-                    method: "GET",
-                    headers: {
-                        Authorization:
-                            `Bearer ${token}`
-                    }
-                }
-            );
-
-            const data = await response.json();
-
-            if (!response.ok || !data.user) {
-                throw new Error(
-                    data.message ||
-                    "Unable to load your account."
-                );
-            }
-
-            const serverUser = data.user;
-
-            setUser({
-                name:
-                    serverUser.fullName || "",
-                email:
-                    serverUser.email || "",
-                phone:
-                    serverUser.phoneNumber || ""
-            });
-
-            setNotifications(
-                serverUser.notificationsEnabled === true &&
-                "Notification" in window &&
-                Notification.permission === "granted"
-            );
-
-            const storage =
-                localStorage.getItem("token")
-                    ? localStorage
-                    : sessionStorage;
-
-            storage.setItem(
-                "user",
-                JSON.stringify({
-                    id: serverUser.id,
-                    fullName: serverUser.fullName,
-                    email: serverUser.email,
-                    phoneNumber: serverUser.phoneNumber,
-                    notificationsEnabled:
-                        serverUser.notificationsEnabled === true
-                })
-            );
-        } catch (error) {
-            console.error(
-                "Unable to load logged-in user from backend:",
-                error
-            );
-
-            // Existing local/session fallback.
-            try {
-                const savedUser =
-                    localStorage.getItem("user") ||
-                    sessionStorage.getItem("user");
-
-                if (!savedUser) {
-                    return;
-                }
-
-                const parsedUser = JSON.parse(savedUser);
-
-                setUser({
-                    name:
-                        parsedUser.fullName || "",
-                    email:
-                        parsedUser.email || "",
-                    phone:
-                        parsedUser.phoneNumber || ""
-                });
-
-                if (
-                    parsedUser.notificationsEnabled === true &&
-                    "Notification" in window &&
-                    Notification.permission === "granted"
-                ) {
-                    setNotifications(true);
-                }
-            } catch (fallbackError) {
-                console.error(
-                    "Unable to load saved user information:",
-                    fallbackError
-                );
-            }
+        if (!savedUser) {
+            return;
         }
-    };
 
-    loadCurrentUser();
+        const parsedUser =
+            JSON.parse(savedUser);
+
+        setUser({
+            name:
+                parsedUser.fullName || "",
+
+            email:
+                parsedUser.email || "",
+
+            phone:
+                parsedUser.phoneNumber || ""
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Unable to load logged-in user:",
+            error
+        );
+
+    }
 
 }, []);
 
@@ -171,6 +92,10 @@ useEffect(() => {
         confirmPassword: "",
     });
 
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
     // =========================================================
     // MESSAGE STATE
     // =========================================================
@@ -181,7 +106,17 @@ useEffect(() => {
     // CHECK NOTIFICATION PERMISSION
     // =========================================================
 
-        // =========================================================
+    useEffect(() => {
+        if ("Notification" in window) {
+            if (Notification.permission === "granted") {
+                setNotifications(true);
+            } else {
+                setNotifications(false);
+            }
+        }
+    }, []);
+
+    // =========================================================
     // CLOSE MODAL
     // =========================================================
 
@@ -259,7 +194,7 @@ useEffect(() => {
 
         const response =
             await fetch(
-                `${API_BASE_URL}/auth/profile`,
+                "http://localhost:5000/api/auth/profile",
                 {
                     method: "PUT",
 
@@ -326,9 +261,7 @@ useEffect(() => {
                 data.user.email,
 
             phoneNumber:
-                data.user.phoneNumber,
-            notificationsEnabled:
-                data.user.notificationsEnabled === true
+                data.user.phoneNumber
         };
 
         if (
@@ -402,297 +335,209 @@ useEffect(() => {
     // NOTIFICATIONS
     // =========================================================
 
-    const saveNotificationPreference = async (enabled) => {
-    const token =
-        localStorage.getItem("token") ||
-        sessionStorage.getItem("token");
-
-    if (!token) {
-        throw new Error(
-            "Your session has expired. Please log in again."
-        );
-    }
-
-    const response = await fetch(
-        `${API_BASE_URL}/auth/notifications`,
-        {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization:
-                    `Bearer ${token}`
-            },
-            body: JSON.stringify({ enabled })
-        }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(
-            data.message ||
-            "Unable to update notification preference."
-        );
-    }
-
-    const storage = localStorage.getItem("token")
-        ? localStorage
-        : sessionStorage;
-
-    const savedUser = storage.getItem("user");
-
-    if (savedUser) {
-        try {
-            const parsedUser = JSON.parse(savedUser);
-            parsedUser.notificationsEnabled =
-                data.user?.notificationsEnabled === true;
-            storage.setItem(
-                "user",
-                JSON.stringify(parsedUser)
-            );
-        } catch (error) {
-            console.error(
-                "Unable to update saved notification preference:",
-                error
-            );
-        }
-    }
-
-    return data;
-};
-
-const handleNotificationToggle = async () => {
-    if (!("Notification" in window)) {
-        setActiveModal("notificationUnavailable");
-        setModalMessage(
-            "Your current browser does not support web notifications."
-        );
-        return;
-    }
-
-    if (notifications) {
-        try {
-            await saveNotificationPreference(false);
-            setNotifications(false);
-            setActiveModal("notificationDisabled");
-            setModalMessage(
-                "Notifications have been turned off for your GuimarasGo account."
-            );
-        } catch (error) {
-            console.error(
-                "Notification preference error:",
-                error
-            );
+    const handleNotificationToggle = async () => {
+        if (!("Notification" in window)) {
             setActiveModal("notificationUnavailable");
-            setModalMessage(
-                error.message ||
-                "Unable to update notification preference."
-            );
-        }
-        return;
-    }
 
-    if (Notification.permission === "granted") {
+            setModalMessage(
+                "Your current browser does not support web notifications."
+            );
+
+            return;
+        }
+
+        // TURN OFF
+        if (notifications) {
+            setNotifications(false);
+
+            return;
+        }
+
+        // ALREADY ALLOWED
+        if (Notification.permission === "granted") {
+            setNotifications(true);
+
+            setActiveModal("notificationEnabled");
+
+            setModalMessage(
+                "Notifications are already allowed on this device."
+            );
+
+            return;
+        }
+
+        // BLOCKED
+        if (Notification.permission === "denied") {
+            setActiveModal("notificationBlocked");
+
+            setModalMessage(
+                "Notifications are currently blocked. Please allow notifications from your browser or device settings."
+            );
+
+            return;
+        }
+
+        // REQUEST DEVICE / BROWSER PERMISSION
         try {
-            await saveNotificationPreference(true);
-            setNotifications(true);
-            setActiveModal("notificationEnabled");
-            setModalMessage(
-                "Notifications are now allowed on this device and enabled for your GuimarasGo account."
-            );
-        } catch (error) {
-            console.error(
-                "Notification preference error:",
-                error
-            );
-            setNotifications(false);
-            setActiveModal("notificationUnavailable");
-            setModalMessage(
-                error.message ||
-                "Unable to update notification preference."
-            );
-        }
-        return;
-    }
+            const permission =
+                await Notification.requestPermission();
 
-    if (Notification.permission === "denied") {
-        setNotifications(false);
-        setActiveModal("notificationBlocked");
-        setModalMessage(
-            "Notifications are currently blocked by your browser or device. Please allow notifications for this website in your browser settings, then try again."
-        );
-        return;
-    }
+            if (permission === "granted") {
+                setNotifications(true);
 
-    try {
-        const permission =
-            await Notification.requestPermission();
+                setActiveModal("notificationEnabled");
 
-        if (permission === "granted") {
-            await saveNotificationPreference(true);
-            setNotifications(true);
-            setActiveModal("notificationEnabled");
-            setModalMessage(
-                "Notifications have been successfully enabled for your GuimarasGo account."
-            );
+                setModalMessage(
+                    "Notifications have been successfully enabled."
+                );
 
-            new Notification("GuimarasGo", {
-                body:
-                    "Notifications are now enabled. You can receive booking updates and alerts.",
-            });
-        } else {
-            setNotifications(false);
+                // Optional test notification
+                new Notification("GuimarasGo", {
+                    body:
+                        "Notifications are now enabled. You can receive booking updates and alerts.",
+                });
+            } else {
+                setNotifications(false);
 
-            try {
-                await saveNotificationPreference(false);
-            } catch (preferenceError) {
-                console.error(
-                    "Unable to save blocked notification preference:",
-                    preferenceError
+                setActiveModal("notificationDenied");
+
+                setModalMessage(
+                    "Notifications were not enabled. You can change this later in your browser or device settings."
                 );
             }
+        } catch (error) {
+            console.error(
+                "Notification permission error:",
+                error
+            );
 
-            setActiveModal("notificationDenied");
+            setNotifications(false);
+
+            setActiveModal("notificationUnavailable");
+
             setModalMessage(
-                "Notifications were not enabled. You can allow them later from your browser or device settings."
+                "We could not request notification permission from this device."
             );
         }
-    } catch (error) {
-        console.error(
-            "Notification permission error:",
-            error
-        );
-        setNotifications(false);
-        setActiveModal("notificationUnavailable");
-        setModalMessage(
-            error.message ||
-            "We could not request notification permission from this device."
-        );
-    }
-};
+    };
 
     // =========================================================
     // SETTINGS
     // =========================================================
 
     const handleSettings = () => {
-    setPasswordForm({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-    });
-    setModalMessage("");
-    setActiveModal("settings");
-};
+        setPasswordForm({
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: "",
+        });
 
-const passwordRequirements = {
-    minLength:
-        passwordForm.newPassword.length >= 8,
-    uppercase:
-        /[A-Z]/.test(passwordForm.newPassword),
-    lowercase:
-        /[a-z]/.test(passwordForm.newPassword),
-    number:
-        /\\d/.test(passwordForm.newPassword),
-    special:
-        /[^A-Za-z0-9]/.test(passwordForm.newPassword),
-};
+        setShowCurrentPassword(false);
+        setShowNewPassword(false);
+        setShowConfirmPassword(false);
 
-const isStrongPassword =
-    passwordRequirements.minLength &&
-    passwordRequirements.uppercase &&
-    passwordRequirements.lowercase &&
-    passwordRequirements.number &&
-    passwordRequirements.special;
+        setActiveModal("settings");
+    };
 
-const passwordsMatch =
-    passwordForm.newPassword.length > 0 &&
-    passwordForm.newPassword === passwordForm.confirmPassword;
-
-const canUpdatePassword =
-    Boolean(passwordForm.currentPassword) &&
-    isStrongPassword &&
-    passwordsMatch;
-
-const handleChangePassword = async (event) => {
+    const handleChangePassword = async (event) => {
     event.preventDefault();
-    setModalMessage("");
 
-    if (!passwordForm.currentPassword) {
+    if (
+        !passwordForm.currentPassword ||
+        !passwordForm.newPassword ||
+        !passwordForm.confirmPassword
+    ) {
         setModalMessage(
-            "Please enter your current password."
+            "Please complete all password fields."
         );
+
         return;
     }
 
-    if (!isStrongPassword) {
-        setModalMessage(
-            "Please complete all new password requirements before updating your password."
-        );
-        return;
-    }
-
-    if (!passwordsMatch) {
+    if (
+        passwordForm.newPassword !==
+        passwordForm.confirmPassword
+    ) {
         setModalMessage(
             "The new password and confirmation password do not match."
         );
+
+        return;
+    }
+
+    if (
+        passwordForm.newPassword.length < 8
+    ) {
+        setModalMessage(
+            "Your new password must contain at least 8 characters."
+        );
+
         return;
     }
 
     try {
+
         const token =
             localStorage.getItem("token") ||
             sessionStorage.getItem("token");
 
         if (!token) {
+
             setModalMessage(
                 "Your session has expired. Please log in again."
             );
+
             return;
         }
 
-        const response = await fetch(
-            `${API_BASE_URL}/auth/password`,
-            {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization:
-                        `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    currentPassword:
-                        passwordForm.currentPassword,
-                    newPassword:
-                        passwordForm.newPassword
-                })
-            }
-        );
+        // =====================================
+        // SEND PASSWORD CHANGE TO BACKEND
+        // =====================================
 
-        const data = await response.json();
+        const response =
+            await fetch(
+                "http://localhost:5000/api/auth/password",
+                {
+                    method: "PUT",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json",
+
+                        Authorization:
+                            `Bearer ${token}`
+                    },
+
+                    body: JSON.stringify({
+                        currentPassword:
+                            passwordForm.currentPassword,
+
+                        newPassword:
+                            passwordForm.newPassword
+                    })
+                }
+            );
+
+        const data =
+            await response.json();
+
+        // =====================================
+        // BACKEND ERROR
+        // =====================================
 
         if (!response.ok) {
+
             setModalMessage(
                 data.message ||
                 "Unable to update your password."
             );
+
             return;
         }
 
-        if (data.token) {
-            if (localStorage.getItem("token")) {
-                localStorage.setItem(
-                    "token",
-                    data.token
-                );
-            }
-            if (sessionStorage.getItem("token")) {
-                sessionStorage.setItem(
-                    "token",
-                    data.token
-                );
-            }
-        }
+        // =====================================
+        // SUCCESS
+        // =====================================
 
         setPasswordForm({
             currentPassword: "",
@@ -701,14 +546,18 @@ const handleChangePassword = async (event) => {
         });
 
         setActiveModal("success");
+
         setModalMessage(
             "Your password has been successfully updated. Your old password can no longer be used."
         );
+
     } catch (error) {
+
         console.error(
             "Password Update Error:",
             error
         );
+
         setModalMessage(
             "Unable to connect to the server. Please make sure the backend is running."
         );
@@ -2615,6 +2464,59 @@ textarea {
 
 
 /* =========================================================
+   PASSWORD INPUT + SHOW BUTTON
+========================================================= */
+
+.password-input-wrap {
+
+    position: relative;
+
+    width: 100%;
+}
+
+.password-input-wrap input {
+
+    padding-right: 62px;
+}
+
+.password-visibility-button {
+
+    position: absolute;
+
+    top: 50%;
+    right: 10px;
+
+    transform: translateY(-50%);
+
+    border: none;
+    background: transparent;
+
+    padding: 5px 4px;
+
+    color: #ff7417;
+
+    font-size: 10px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.password-visibility-button:hover {
+
+    color: #e85f08;
+}
+
+.password-visibility-button:focus-visible {
+
+    outline: 2px solid rgba(255, 116, 23, 0.35);
+    outline-offset: 2px;
+    border-radius: 5px;
+}
+
+
+/* =========================================================
    FORM GROUP
 ========================================================= */
 
@@ -3676,21 +3578,6 @@ textarea {
    PASSWORD REQUIREMENTS
 ========================================================= */
 
-.password-requirements .requirement-met {
-    color: #15803d;
-}
-
-.password-requirements .requirement-met span:first-child {
-    font-weight: 700;
-}
-
-.password-update-button:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-    transform: none !important;
-    box-shadow: none !important;
-}
-
 .password-requirements {
 
     display: flex;
@@ -3788,7 +3675,7 @@ textarea {
     border-radius: 7px;
 
     background:
-        #171717;
+        linear-gradient(135deg, #ff7417, #ff8a3d);
 
     color:
         #ffffff;
@@ -3809,7 +3696,7 @@ textarea {
 .password-update-button:hover {
 
     background:
-        #292929;
+        linear-gradient(135deg, #e8660c, #ff7417);
 
     transform:
         translateY(-1px);
@@ -4687,20 +4574,42 @@ textarea {
                         Current Password
                     </label>
 
-                    <input
-                        type="password"
-                        value={
-                            passwordForm.currentPassword
-                        }
-                        onChange={(event) =>
-                            setPasswordForm({
-                                ...passwordForm,
-                                currentPassword:
-                                    event.target.value,
-                            })
-                        }
-                        placeholder="Enter current password"
-                    />
+                    <div className="password-input-wrap">
+                        <input
+                            type={
+                                showCurrentPassword
+                                    ? "text"
+                                    : "password"
+                            }
+                            value={
+                                passwordForm.currentPassword
+                            }
+                            onChange={(event) =>
+                                setPasswordForm({
+                                    ...passwordForm,
+                                    currentPassword:
+                                        event.target.value,
+                                })
+                            }
+                            placeholder="Enter current password"
+                        />
+                        <button
+                            type="button"
+                            className="password-visibility-button"
+                            onClick={() =>
+                                setShowCurrentPassword(
+                                    !showCurrentPassword
+                                )
+                            }
+                            aria-label={
+                                showCurrentPassword
+                                    ? "Hide current password"
+                                    : "Show current password"
+                            }
+                        >
+                            {showCurrentPassword ? "Hide" : "Show"}
+                        </button>
+                    </div>
 
                 </div>
 
@@ -4713,20 +4622,42 @@ textarea {
                         New Password
                     </label>
 
-                    <input
-                        type="password"
-                        value={
-                            passwordForm.newPassword
-                        }
-                        onChange={(event) =>
-                            setPasswordForm({
-                                ...passwordForm,
-                                newPassword:
-                                    event.target.value,
-                            })
-                        }
-                        placeholder="Enter new password"
-                    />
+                    <div className="password-input-wrap">
+                        <input
+                            type={
+                                showNewPassword
+                                    ? "text"
+                                    : "password"
+                            }
+                            value={
+                                passwordForm.newPassword
+                            }
+                            onChange={(event) =>
+                                setPasswordForm({
+                                    ...passwordForm,
+                                    newPassword:
+                                        event.target.value,
+                                })
+                            }
+                            placeholder="Enter new password"
+                        />
+                        <button
+                            type="button"
+                            className="password-visibility-button"
+                            onClick={() =>
+                                setShowNewPassword(
+                                    !showNewPassword
+                                )
+                            }
+                            aria-label={
+                                showNewPassword
+                                    ? "Hide new password"
+                                    : "Show new password"
+                            }
+                        >
+                            {showNewPassword ? "Hide" : "Show"}
+                        </button>
+                    </div>
 
                 </div>
 
@@ -4777,11 +4708,11 @@ textarea {
 
                         {passwordForm.newPassword.length === 0
                             ? "Weak"
-                            : isStrongPassword
-                            ? "Strong"
-                            : passwordForm.newPassword.length >= 8
+                            : passwordForm.newPassword.length < 8
+                            ? "Weak"
+                            : passwordForm.newPassword.length < 12
                             ? "Medium"
-                            : "Weak"
+                            : "Strong"
                         }
                     </span>
 
@@ -4790,39 +4721,44 @@ textarea {
 
                     <div className="password-requirements">
 
-                        <div className={passwordRequirements.minLength ? "requirement-met" : ""}>
+                        <div>
                             <span>
-                                {passwordRequirements.minLength ? "✓" : "●"}
+                                ●
                             </span>
-                            <span>At least 8 characters</span>
+
+                            <span>
+                                At least 8 characters
+                            </span>
                         </div>
 
-                        <div className={passwordRequirements.uppercase ? "requirement-met" : ""}>
+                        <div>
                             <span>
-                                {passwordRequirements.uppercase ? "✓" : "●"}
+                                ●
                             </span>
-                            <span>One uppercase letter</span>
+
+                            <span>
+                                One uppercase letter
+                            </span>
                         </div>
 
-                        <div className={passwordRequirements.lowercase ? "requirement-met" : ""}>
+                        <div>
                             <span>
-                                {passwordRequirements.lowercase ? "✓" : "●"}
+                                ●
                             </span>
-                            <span>One lowercase letter</span>
+
+                            <span>
+                                One number
+                            </span>
                         </div>
 
-                        <div className={passwordRequirements.number ? "requirement-met" : ""}>
+                        <div>
                             <span>
-                                {passwordRequirements.number ? "✓" : "●"}
+                                ●
                             </span>
-                            <span>One number</span>
-                        </div>
 
-                        <div className={passwordRequirements.special ? "requirement-met" : ""}>
                             <span>
-                                {passwordRequirements.special ? "✓" : "●"}
+                                One special character
                             </span>
-                            <span>One special character</span>
                         </div>
 
                     </div>
@@ -4838,20 +4774,42 @@ textarea {
                         Confirm New Password
                     </label>
 
-                    <input
-                        type="password"
-                        value={
-                            passwordForm.confirmPassword
-                        }
-                        onChange={(event) =>
-                            setPasswordForm({
-                                ...passwordForm,
-                                confirmPassword:
-                                    event.target.value,
-                            })
-                        }
-                        placeholder="Confirm new password"
-                    />
+                    <div className="password-input-wrap">
+                        <input
+                            type={
+                                showConfirmPassword
+                                    ? "text"
+                                    : "password"
+                            }
+                            value={
+                                passwordForm.confirmPassword
+                            }
+                            onChange={(event) =>
+                                setPasswordForm({
+                                    ...passwordForm,
+                                    confirmPassword:
+                                        event.target.value,
+                                })
+                            }
+                            placeholder="Confirm new password"
+                        />
+                        <button
+                            type="button"
+                            className="password-visibility-button"
+                            onClick={() =>
+                                setShowConfirmPassword(
+                                    !showConfirmPassword
+                                )
+                            }
+                            aria-label={
+                                showConfirmPassword
+                                    ? "Hide confirm password"
+                                    : "Show confirm password"
+                            }
+                        >
+                            {showConfirmPassword ? "Hide" : "Show"}
+                        </button>
+                    </div>
 
                 </div>
 
@@ -4872,7 +4830,6 @@ textarea {
                 <button
                     type="submit"
                     className="password-update-button"
-                    disabled={!canUpdatePassword}
                 >
                     Update Password
                 </button>
@@ -5190,35 +5147,6 @@ textarea {
 
                 </div>
 
-            )}
-
-
-            {/* =========================================================
-               NOTIFICATION DISABLED
-            ========================================================= */}
-
-            {activeModal === "notificationDisabled" && (
-                <div
-                    className="profile-modal-overlay"
-                    onMouseDown={handleBackdropClick}
-                >
-                    <div className="profile-modal">
-                        <div className="confirmation-content">
-                            <div className="confirmation-icon logout-confirmation-icon">
-                                🔕
-                            </div>
-                            <h2>Notifications Disabled</h2>
-                            <p>{modalMessage}</p>
-                            <button
-                                type="button"
-                                className="modal-button primary"
-                                onClick={closeModal}
-                            >
-                                Got It
-                            </button>
-                        </div>
-                    </div>
-                </div>
             )}
 
 
