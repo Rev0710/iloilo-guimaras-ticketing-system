@@ -100,6 +100,47 @@ const MayaPayment = () => {
 
             ...trip,
 
+            /* =================================================
+               FERRY / VESSEL INFORMATION
+            ================================================= */
+
+            ferryId:
+                trip.ferryId ||
+                trip.selectedFerry?.id ||
+                trip.selectedTrip?.id ||
+                "",
+
+            ferryName:
+                trip.ferryName ||
+                trip.vesselName ||
+                trip.vessel ||
+                trip.ferry ||
+                trip.selectedFerry?.ferryName ||
+                trip.selectedFerry?.vesselName ||
+                trip.selectedTrip?.ferryName ||
+                trip.selectedTrip?.vesselName ||
+                "",
+
+            vesselName:
+                trip.vesselName ||
+                trip.ferryName ||
+                trip.vessel ||
+                trip.ferry ||
+                trip.selectedFerry?.vesselName ||
+                trip.selectedFerry?.ferryName ||
+                trip.selectedTrip?.vesselName ||
+                trip.selectedTrip?.ferryName ||
+                "",
+
+            departureTime:
+                trip.departureTime ||
+                trip.selectedFerry?.departureTime ||
+                trip.selectedFerry?.time ||
+                trip.selectedTrip?.departureTime ||
+                trip.selectedTrip?.time ||
+                trip.time ||
+                "",
+
             passengerName:
                 trip.passengerName ||
                 trip.name ||
@@ -306,9 +347,46 @@ const MayaPayment = () => {
     const ppaFee =
         65;
 
+    /* =========================================================
+       VEHICLE FARE
+
+       Passenger-only bookings must NOT receive the motorcycle
+       fare. Keep the existing ₱150 motorcycle fare only when
+       the selected vehicle is actually a motorcycle.
+    ========================================================= */
+    const vehicleTypeValue =
+        String(
+            normalizedTrip.vehicleType ||
+            ""
+        )
+            .trim()
+            .toLowerCase();
+
+    const isNoMotorcycle =
+        vehicleTypeValue === "no motorcycle" ||
+        vehicleTypeValue === "nomotorcycle" ||
+        vehicleTypeValue === "no vehicle" ||
+        vehicleTypeValue === "none" ||
+        vehicleTypeValue === "passenger only" ||
+        vehicleTypeValue === "passenger-only" ||
+        vehicleTypeValue === "passenger" ||
+        vehicleTypeValue === "";
+
+    const isMotorcycle =
+        !isNoMotorcycle &&
+        (
+            vehicleTypeValue === "motorcycle" ||
+            vehicleTypeValue.includes("motorcycle")
+        );
+
+    const applicableMotorcycleFare =
+        isMotorcycle
+            ? motorcycleFare
+            : 0;
+
     const totalFare =
         passengerFare +
-        motorcycleFare +
+        applicableMotorcycleFare +
         ppaFee;
 
     // =========================================================
@@ -730,7 +808,8 @@ const MayaPayment = () => {
 
                 passengerFare,
 
-                motorcycleFare,
+                motorcycleFare:
+                    applicableMotorcycleFare,
 
                 ppaFee,
 
@@ -939,9 +1018,26 @@ const MayaPayment = () => {
             // STEP 4 — GET SAVED BOOKING
             // =================================================
 
-            const savedBooking =
-                bookingResult.booking ||
-                completedBooking;
+            const savedBooking = {
+                ...completedBooking,
+                ...(bookingResult.booking || {}),
+                ferryId:
+                    bookingResult.booking?.ferryId ||
+                    completedBooking.ferryId ||
+                    "",
+                ferryName:
+                    bookingResult.booking?.ferryName ||
+                    bookingResult.booking?.vesselName ||
+                    completedBooking.ferryName ||
+                    completedBooking.vesselName ||
+                    "",
+                vesselName:
+                    bookingResult.booking?.vesselName ||
+                    bookingResult.booking?.ferryName ||
+                    completedBooking.vesselName ||
+                    completedBooking.ferryName ||
+                    ""
+            };
 
             // =================================================
             // STEP 5 — SAVE PAYMENT STATUS
@@ -1355,6 +1451,25 @@ const MayaPayment = () => {
 
 
                         {/* =================================================
+                            FERRY / VESSEL
+                        ================================================= */}
+
+                        <div className="maya-detail-item">
+
+                            <span className="maya-detail-label">
+                                Ferry / Vessel
+                            </span>
+
+                            <strong className="maya-detail-value">
+                                {normalizedTrip.vesselName ||
+                                    normalizedTrip.ferryName ||
+                                    "N/A"}
+                            </strong>
+
+                        </div>
+
+
+                        {/* =================================================
                             PASSENGER
                         ================================================= */}
 
@@ -1417,10 +1532,6 @@ const MayaPayment = () => {
 
                             <strong className="maya-detail-value">
                                 {passengers}
-                                {" "}
-                                {passengers === 1
-                                    ? "Passenger"
-                                    : "Passengers"}
                             </strong>
 
                         </div>

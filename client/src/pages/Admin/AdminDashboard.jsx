@@ -50,6 +50,17 @@ const AdminDashboard = () => {
         useState("");
 
     // =========================================================
+    // LIVE FERRY BOOKINGS
+    // =========================================================
+    // Loads the actual passenger bookings separately from the
+    // public capacity endpoint. This keeps booking details
+    // protected by the existing admin authentication.
+    // =========================================================
+
+    const [ferryBookings, setFerryBookings] =
+        useState([]);
+
+    // =========================================================
     // BOOKING SEARCH + FERRY CONTROL
     // =========================================================
 
@@ -298,6 +309,109 @@ const AdminDashboard = () => {
         return `${year}-${month}-${day}`;
     };
 
+
+    // =========================================================
+    // NORMALIZE BOOKING DATE
+    // =========================================================
+    // Keeps existing bookings visible even if an older booking
+    // was saved as MM/DD/YYYY instead of YYYY-MM-DD.
+    // =========================================================
+
+    const normalizeBookingDate = (value) => {
+        if (value === null || value === undefined || value === "") {
+            return "";
+        }
+
+        const text = String(value).trim();
+
+        const isoMatch = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+        if (isoMatch) {
+            return `${isoMatch[1]}-${String(isoMatch[2]).padStart(2, "0")}-${String(isoMatch[3]).padStart(2, "0")}`;
+        }
+
+        const slashMatch = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (slashMatch) {
+            return `${slashMatch[3]}-${String(slashMatch[1]).padStart(2, "0")}-${String(slashMatch[2]).padStart(2, "0")}`;
+        }
+
+        const dashMatch = text.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+        if (dashMatch) {
+            return `${dashMatch[3]}-${String(dashMatch[1]).padStart(2, "0")}-${String(dashMatch[2]).padStart(2, "0")}`;
+        }
+
+        return text;
+    };
+
+    // =========================================================
+    // GET FERRY / VESSEL DISPLAY NAME
+    // =========================================================
+    // Some older bookings were saved before ferryName /
+    // vesselName was persisted. In that case, use the saved
+    // ferry identity first and safely fall back to the
+    // scheduled departure time.
+    // =========================================================
+
+    const getBookingVesselName = (booking) => {
+        const directName =
+            booking?.vesselName ||
+            booking?.ferryName ||
+            booking?.vessel ||
+            booking?.ferry ||
+            booking?.ferryId ||
+            booking?.selectedFerry?.vesselName ||
+            booking?.selectedFerry?.ferryName ||
+            booking?.selectedTrip?.vesselName ||
+            booking?.selectedTrip?.ferryName;
+
+        if (directName) {
+            return directName;
+        }
+
+        const rawTime =
+            booking?.departureTime ||
+            booking?.time ||
+            booking?.tripTime ||
+            booking?.selectedFerry?.departureTime ||
+            booking?.selectedFerry?.time ||
+            booking?.selectedTrip?.departureTime ||
+            booking?.selectedTrip?.time ||
+            "";
+
+        const timeText = String(rawTime).trim().toUpperCase();
+        const match = timeText.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/);
+
+        let normalizedTime = timeText;
+
+        if (match) {
+            let hour = Number(match[1]);
+            const minute = match[2];
+            const period = match[3];
+
+            if (period === "AM" && hour === 12) {
+                hour = 0;
+            }
+
+            if (period === "PM" && hour !== 12) {
+                hour += 12;
+            }
+
+            normalizedTime =
+                `${String(hour).padStart(2, "0")}:${minute}`;
+        } else if (/^\d{1,2}:\d{2}$/.test(timeText)) {
+            const [hour, minute] = timeText.split(":");
+            normalizedTime =
+                `${String(Number(hour)).padStart(2, "0")}:${minute}`;
+        }
+
+        const ferryByTime = {
+            "03:30": "MV Felipe III",
+            "08:00": "MV FastCraft",
+            "09:00": "MV Halili"
+        };
+
+        return ferryByTime[normalizedTime] || "—";
+    };
+
     // =========================================================
     // LOAD LIVE FERRY CAPACITY
     // =========================================================
@@ -341,6 +455,145 @@ const AdminDashboard = () => {
         } finally {
             setCapacityLoading(false);
         }
+    };
+
+    // =========================================================
+    // LOAD TODAY'S BOOKINGS FOR FERRY CAPACITY
+    // =========================================================
+    // Uses the existing authenticated Admin bookings endpoint.
+    // This makes every booking created from the passenger side
+    // appear automatically in the corresponding ferry card.
+    // =========================================================
+
+    const loadFerryBookings = async () => {
+        const token = localStorage.getItem("adminToken");
+
+        if (!token) {
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `${API_URL}/bookings`,
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json"
+                    },
+                    cache: "no-store"
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data?.message ||
+                    "Unable to load ferry bookings."
+                );
+            }
+
+            const today = getToday();
+
+            setFerryBookings(
+                (Array.isArray(data.bookings)
+                    ? data.bookings
+                    : []
+                ).filter(
+                    booking =>
+                        normalizeBookingDate(
+                            booking?.date ||
+                            booking?.travelDate ||
+                            ""
+                        ) === today &&
+                        String(
+                            booking?.status ||
+                            ""
+                        ).toUpperCase() !== "CANCELLED" &&
+                        String(
+                            booking?.paymentStatus ||
+                            ""
+                        ).toUpperCase() !== "REJECTED"
+                )
+            );
+        } catch (error) {
+            console.error(
+                "Ferry booking loading error:",
+                error
+            );
+        }
+    };
+
+    // =========================================================
+    // MATCH BOOKINGS TO A FERRY
+    // =========================================================
+
+    const getFerryBookings = (ferry) => {
+        const normalize = value =>
+            String(value || "")
+                .trim()
+                .replace(/\s+/g, " ")
+                .toLowerCase();
+
+        const ferryId = normalize(
+            ferry?.id ||
+            ferry?.vesselName
+        );
+
+        const ferryName = normalize(
+            ferry?.vesselName
+        );
+
+        const ferryTime = normalize(
+            ferry?.time ||
+            ferry?.departureTime
+        );
+
+        return ferryBookings.filter(
+            booking => {
+                const bookingId = normalize(
+                    booking?.ferryId ||
+                    booking?.selectedFerry?.id ||
+                    booking?.selectedTrip?.id ||
+                    booking?.trip?.id
+                );
+
+                const bookingName = normalize(
+                    booking?.vesselName ||
+                    booking?.ferryName ||
+                    booking?.vessel ||
+                    booking?.ferry ||
+                    booking?.selectedFerry?.vesselName ||
+                    booking?.selectedFerry?.ferryName ||
+                    booking?.selectedTrip?.vesselName ||
+                    booking?.selectedTrip?.ferryName
+                );
+
+                const bookingTime = normalize(
+                    booking?.time ||
+                    booking?.departureTime ||
+                    booking?.tripTime ||
+                    booking?.selectedFerry?.time ||
+                    booking?.selectedFerry?.departureTime ||
+                    booking?.selectedTrip?.time ||
+                    booking?.selectedTrip?.departureTime
+                );
+
+                return (
+                    (bookingId !== "" &&
+                        bookingId === ferryId) ||
+                    (bookingName !== "" &&
+                        bookingName === ferryName) ||
+                    (
+                        bookingId === "" &&
+                        bookingName === "" &&
+                        bookingTime !== "" &&
+                        bookingTime === ferryTime
+                    )
+                );
+            }
+        );
     };
 
     // =========================================================
@@ -527,9 +780,11 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         loadFerryCapacities();
+        loadFerryBookings();
 
         const interval = setInterval(() => {
             loadFerryCapacities();
+            loadFerryBookings();
         }, 5000);
 
         return () => clearInterval(interval);
@@ -772,41 +1027,14 @@ const AdminDashboard = () => {
     };
 
     // =========================================================
-    // AUTOMATIC PAYMENT / BOARDING STATUS REFRESH
-    //
-    // Keeps the Admin Dashboard synchronized when Staff rejects
-    // or boards a passenger from the Staff Scanner.
+    // PAYMENT VERIFICATION REFRESH
     // =========================================================
-
-    useEffect(() => {
-
-        if (loading) {
-            return;
-        }
-
-        const interval =
-            setInterval(() => {
-
-                loadStatistics();
-
-                if (
-                    activeView ===
-                    "payments"
-                ) {
-                    loadAllPaymentLists();
-                }
-
-            }, 5000);
-
-        return () =>
-            clearInterval(
-                interval
-            );
-
-    }, [
-        loading,
-        activeView
-    ]);
+    // Payment verification is loaded when the Admin opens the
+    // Payment Verification view and when the existing manual
+    // Refresh button is used. It no longer refreshes every 5
+    // seconds, so the page does not visibly reload/update while
+    // the Admin is reviewing a payment.
+    // =========================================================
 
 
     // =========================================================
@@ -2050,7 +2278,7 @@ const AdminDashboard = () => {
                                             <div><span>Passengers</span><strong>{bookingSearchResult.passengers ?? "—"}</strong></div>
                                             <div><span>Origin</span><strong>{bookingSearchResult.origin || "—"}</strong></div>
                                             <div><span>Destination</span><strong>{bookingSearchResult.destination || "—"}</strong></div>
-                                            <div><span>Ferry</span><strong>{bookingSearchResult.vesselName || bookingSearchResult.ferryName || bookingSearchResult.ferryId || "—"}</strong></div>
+                                            <div><span>Ferry / Vessel</span><strong>{getBookingVesselName(bookingSearchResult)}</strong></div>
                                             <div><span>Departure Time</span><strong>{bookingSearchResult.departureTime || bookingSearchResult.time || "—"}</strong></div>
                                             <div><span>Date</span><strong>{bookingSearchResult.date || "—"}</strong></div>
                                             <div><span>Vehicle</span><strong>{bookingSearchResult.vehicleType || "—"}</strong></div>
@@ -2126,6 +2354,7 @@ const AdminDashboard = () => {
                                             const bookingClosed = manualClosed || passengerFull;
                                             const ferryActionKey = `${ferry.id || ferry.vesselName}-${getToday()}`;
                                             const ferryActionBusy = ferryActionLoading === ferryActionKey;
+                                            const bookingsForFerry = getFerryBookings(ferry);
 
                                             return (
                                                 <div
@@ -2159,7 +2388,94 @@ const AdminDashboard = () => {
                                                                 {motorcycleRemaining} motorcycle {motorcycleRemaining === 1 ? "slot" : "slots"} left
                                                             </small>
                                                         </div>
-                                                    </div>{bookingClosed && (
+                                                    </div>
+
+                                                    {/* =================================================
+                                                        PASSENGER BOOKINGS
+                                                    ================================================= */}
+                                                    <div className="admin-ferry-bookings-section">
+                                                        <div className="admin-ferry-bookings-heading">
+                                                            <span>Bookings Today</span>
+                                                            <strong>{bookingsForFerry.length}</strong>
+                                                        </div>
+
+                                                        {bookingsForFerry.length === 0 ? (
+                                                            <div className="admin-ferry-bookings-empty">
+                                                                No bookings for this ferry yet.
+                                                            </div>
+                                                        ) : (
+                                                            <div className="admin-ferry-bookings-list">
+                                                                {bookingsForFerry.map((booking) => {
+                                                                    const passengerCount =
+                                                                        Number(
+                                                                            booking?.passengers ||
+                                                                            booking?.numberOfPassengers ||
+                                                                            booking?.passengerCount ||
+                                                                            1
+                                                                        ) || 1;
+
+                                                                    const vehicle =
+                                                                        booking?.vehicleType ||
+                                                                        booking?.vehicle ||
+                                                                        "Passenger only";
+
+                                                                    const bookingStatus =
+                                                                        String(
+                                                                            booking?.paymentStatus ||
+                                                                            booking?.status ||
+                                                                            "PENDING"
+                                                                        ).toUpperCase();
+
+                                                                    return (
+                                                                        <div
+                                                                            className="admin-ferry-booking-row"
+                                                                            key={booking?._id || booking?.bookingReference}
+                                                                        >
+                                                                            <div className="admin-ferry-booking-main">
+                                                                                <strong>
+                                                                                    {booking?.bookingReference ||
+                                                                                        booking?.referenceNumber ||
+                                                                                        booking?._id ||
+                                                                                        "—"}
+                                                                                </strong>
+                                                                                <span>
+                                                                                    {booking?.passengerName ||
+                                                                                        booking?.fullName ||
+                                                                                        "Passenger"}
+                                                                                </span>
+                                                                            </div>
+
+                                                                            <div className="admin-ferry-booking-meta">
+                                                                                <span>
+                                                                                    {passengerCount}{" "}
+                                                                                    {passengerCount === 1
+                                                                                        ? "passenger"
+                                                                                        : "passengers"}
+                                                                                </span>
+                                                                                <span>
+                                                                                    {vehicle}
+                                                                                </span>
+                                                                                <span
+                                                                                    className={`admin-ferry-booking-status ${
+                                                                                        bookingStatus === "VERIFIED" ||
+                                                                                        bookingStatus === "CONFIRMED"
+                                                                                            ? "verified"
+                                                                                            : bookingStatus === "PENDING VERIFICATION"
+                                                                                                ? "pending"
+                                                                                                : "other"
+                                                                                    }`}
+                                                                                >
+                                                                                    {bookingStatus}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {bookingClosed && (
                                                          <div className="admin-capacity-closed-message">
                                                              {manualClosed
                                                                  ? "Online booking manually closed by Admin."
@@ -2757,6 +3073,19 @@ const AdminDashboard = () => {
                                                                     : payment.route ||
                                                                       "Iloilo → Guimaras"}
 
+                                                            </strong>
+
+                                                        </div>
+
+
+                                                        <div className="payment-detail">
+
+                                                            <span>
+                                                                Ferry / Vessel
+                                                            </span>
+
+                                                            <strong>
+                                                                {getBookingVesselName(payment)}
                                                             </strong>
 
                                                         </div>
@@ -7707,6 +8036,113 @@ const AdminDashboard = () => {
 .admin-capacity-metric span { display: block; margin-bottom: 5px; color: #777777; font-size: 8px; font-weight: 700; }
 .admin-capacity-metric strong { display: block; color: #222222; font-size: 18px; line-height: 1; }
 .admin-capacity-metric small { display: block; margin-top: 5px; color: #999999; font-size: 8px; line-height: 1.3; }
+
+.admin-ferry-bookings-section {
+    margin-top: 12px;
+    padding-top: 11px;
+    border-top: 1px solid #e8e8e8;
+}
+
+.admin-ferry-bookings-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+    color: #777777;
+    font-size: 8px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.admin-ferry-bookings-heading strong {
+    min-width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+    border-radius: 50%;
+    background: #fff0df;
+    color: #f28c28;
+    font-size: 8px;
+}
+
+.admin-ferry-bookings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 260px;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.admin-ferry-booking-row {
+    padding: 8px;
+    background: #ffffff;
+    border: 1px solid #eeeeee;
+    border-radius: 7px;
+}
+
+.admin-ferry-booking-main {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.admin-ferry-booking-main strong {
+    color: #333333;
+    font-size: 8px;
+}
+
+.admin-ferry-booking-main span {
+    color: #666666;
+    font-size: 8px;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+.admin-ferry-booking-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.admin-ferry-booking-meta > span {
+    padding: 3px 5px;
+    border-radius: 5px;
+    background: #f5f5f5;
+    color: #888888;
+    font-size: 7px;
+}
+
+.admin-ferry-booking-status.verified {
+    background: #e9f8ef;
+    color: #16804a;
+}
+
+.admin-ferry-booking-status.pending {
+    background: #fff4e6;
+    color: #f28c28;
+}
+
+.admin-ferry-booking-status.other {
+    background: #f2f2f2;
+    color: #666666;
+}
+
+.admin-ferry-bookings-empty {
+    padding: 9px;
+    border: 1px dashed #dddddd;
+    border-radius: 7px;
+    color: #999999;
+    font-size: 8px;
+    text-align: center;
+}
+
 .admin-capacity-closed-message { margin-top: 10px; padding: 8px 10px; border-radius: 7px; background: #fff0f0; color: #d32f2f; font-size: 8px; font-weight: 700; }
 .admin-capacity-error, .admin-capacity-empty { padding: 18px; border-radius: 9px; background: #fafafa; color: #888888; font-size: 10px; text-align: center; }
 .admin-capacity-error { background: #fff7f7; color: #d32f2f; }

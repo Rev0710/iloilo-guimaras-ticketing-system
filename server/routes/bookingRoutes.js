@@ -88,8 +88,8 @@ router.get(
         try {
             const booking =
                 await Booking.findOne({
-                    bookingReference:
-                        req.params.bookingReference
+                    bookingReference: req.params.bookingReference,
+                    userId: req.user.userId
                 });
 
             if (!booking) {

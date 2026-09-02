@@ -68,7 +68,64 @@ const Dashboard = () => {
     };
 
 
+    // =========================================================
+    // ACCOUNT-SPECIFIC BOOKING STORAGE
+    // =========================================================
+    // Keep booking history tied to the logged-in account instead of
+    // the current browser session. This lets bookings survive logout
+    // while preventing one account from seeing another account's history.
+    const getAccountBookingKey = () => {
+
+        const storedUser =
+            localStorage.getItem("username") ||
+            sessionStorage.getItem("username") ||
+            localStorage.getItem("email") ||
+            sessionStorage.getItem("email");
+
+        if (storedUser) {
+            return `guimarasgo_bookings_${String(storedUser).trim().toLowerCase()}`;
+        }
+
+        const rawUser =
+            sessionStorage.getItem("user") ||
+            localStorage.getItem("user") ||
+            sessionStorage.getItem("student") ||
+            localStorage.getItem("student");
+
+        if (rawUser) {
+            try {
+                const user = JSON.parse(rawUser);
+                const identifier =
+                    user?.email ||
+                    user?.username ||
+                    user?.userId ||
+                    user?._id ||
+                    user?.id;
+
+                if (identifier) {
+                    return `guimarasgo_bookings_${String(identifier).trim().toLowerCase()}`;
+                }
+            } catch (error) {
+                // Keep existing behavior if stored user data is not JSON.
+            }
+        }
+
+        return "guimarasgo_bookings_guest";
+    };
+
+
     const handleConfirmLogout = () => {
+
+        // The account-specific booking history is intentionally stored
+        // in localStorage and is NOT removed during logout.
+        // Only the active login/session data is cleared below.
+
+        // Clear the old session-only history so it cannot be
+        // accidentally shown to another account on this browser.
+        // The permanent account-specific history remains in localStorage.
+        sessionStorage.removeItem(
+            "allBookings"
+        );
 
         sessionStorage.removeItem(
             "username"
@@ -143,10 +200,29 @@ const Dashboard = () => {
             // MAIN BOOKING HISTORY
             // =================================================
 
-            const savedAllBookings =
-                sessionStorage.getItem(
-                    "allBookings"
+            const accountBookingKey =
+                getAccountBookingKey();
+
+            let savedAllBookings =
+                localStorage.getItem(
+                    accountBookingKey
                 );
+
+            // Migrate the current account's older session-only history
+            // once, so existing bookings are not lost.
+            if (!savedAllBookings) {
+                savedAllBookings =
+                    sessionStorage.getItem(
+                        "allBookings"
+                    );
+
+                if (savedAllBookings) {
+                    localStorage.setItem(
+                        accountBookingKey,
+                        savedAllBookings
+                    );
+                }
+            }
 
 
             if (savedAllBookings) {
@@ -278,7 +354,7 @@ const Dashboard = () => {
                             try {
                                 const response =
                                     await fetch(
-                                        `${API_URL}/api/payment/booking/${encodeURIComponent(
+                                        `${API_URL}/api/bookings/reference/${encodeURIComponent(
                                             bookingReference
                                         )}`,
                                         {
@@ -330,6 +406,15 @@ const Dashboard = () => {
             // SAVE COMPLETE HISTORY
             // =================================================
 
+            localStorage.setItem(
+                accountBookingKey,
+                JSON.stringify(
+                    allBookings
+                )
+            );
+
+            // Keep the existing sessionStorage copy for compatibility
+            // with the current dashboard flow.
             sessionStorage.setItem(
                 "allBookings",
                 JSON.stringify(
@@ -361,6 +446,13 @@ const Dashboard = () => {
             // =================================================
             // KEEP COMPATIBILITY
             // =================================================
+
+            localStorage.setItem(
+                `${accountBookingKey}_recent`,
+                JSON.stringify(
+                    recent
+                )
+            );
 
             sessionStorage.setItem(
                 "recentBookings",
@@ -2553,10 +2645,16 @@ const Dashboard = () => {
                                             ).toUpperCase() ===
                                             "REJECTED"
                                                 ? "REJECTED"
-                                                : (
-                                                    booking.status ||
-                                                    "PENDING"
-                                                ).toUpperCase();
+                                                : String(
+                                                    booking?.paymentStatus ||
+                                                    ""
+                                                ).toUpperCase() ===
+                                                "REJECTED"
+                                                    ? "REJECTED"
+                                                    : (
+                                                        booking.status ||
+                                                        "PENDING"
+                                                    ).toUpperCase();
 
                                         return (
 

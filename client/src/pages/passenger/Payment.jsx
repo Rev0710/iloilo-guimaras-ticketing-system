@@ -55,6 +55,51 @@ const Payment = () => {
 
             ...trip,
 
+            /* =================================================
+               FERRY / VESSEL INFORMATION
+
+               Preserve the exact ferry selected on the
+               passenger booking page all the way through
+               payment. Older trip objects are also supported.
+            ================================================= */
+
+            ferryId:
+                trip.ferryId ||
+                trip.selectedFerry?.id ||
+                trip.selectedTrip?.id ||
+                "",
+
+            ferryName:
+                trip.ferryName ||
+                trip.vesselName ||
+                trip.vessel ||
+                trip.ferry ||
+                trip.selectedFerry?.ferryName ||
+                trip.selectedFerry?.vesselName ||
+                trip.selectedTrip?.ferryName ||
+                trip.selectedTrip?.vesselName ||
+                "",
+
+            vesselName:
+                trip.vesselName ||
+                trip.ferryName ||
+                trip.vessel ||
+                trip.ferry ||
+                trip.selectedFerry?.vesselName ||
+                trip.selectedFerry?.ferryName ||
+                trip.selectedTrip?.vesselName ||
+                trip.selectedTrip?.ferryName ||
+                "",
+
+            departureTime:
+                trip.departureTime ||
+                trip.selectedFerry?.departureTime ||
+                trip.selectedFerry?.time ||
+                trip.selectedTrip?.departureTime ||
+                trip.selectedTrip?.time ||
+                trip.time ||
+                "",
+
 
             /* Passenger information */
 
@@ -1262,6 +1307,23 @@ const Payment = () => {
 
                             {normalizedTrip.destination || "N/A"}
 
+                        </strong>
+
+                    </div>
+
+
+                    {/* FERRY / VESSEL */}
+
+                    <div className="trip-row">
+
+                        <span>
+                            Ferry / Vessel
+                        </span>
+
+                        <strong>
+                            {normalizedTrip.vesselName ||
+                                normalizedTrip.ferryName ||
+                                "N/A"}
                         </strong>
 
                     </div>

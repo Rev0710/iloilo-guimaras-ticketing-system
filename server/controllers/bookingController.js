@@ -211,12 +211,7 @@ const getPendingPayments = async (req, res) => {
         const bookings =
             await Booking.find({
                 paymentStatus:
-                    "PENDING VERIFICATION",
-
-                boardingStatus: {
-                    $ne:
-                        "REJECTED"
-                }
+                    "PENDING VERIFICATION"
             })
             .sort({
                 createdAt: -1
@@ -253,12 +248,7 @@ const getVerifiedPayments = async (req, res) => {
         const bookings =
             await Booking.find({
                 paymentStatus:
-                    "VERIFIED",
-
-                boardingStatus: {
-                    $ne:
-                        "REJECTED"
-                }
+                    "VERIFIED"
             })
             .sort({
                 updatedAt: -1
@@ -402,6 +392,47 @@ const normalizeText = (value) => {
         .trim()
         .replace(/\s+/g, " ")
         .toLowerCase();
+};
+
+
+// =========================================================
+// NORMALIZE BOOKING DATE
+// =========================================================
+//
+// Existing bookings may contain dates in different display
+// formats (for example YYYY-MM-DD or MM/DD/YYYY). The capacity
+// calculation must treat equivalent dates as the same day.
+//
+const normalizeBookingDate = (value) => {
+
+    if (value === null || value === undefined || value === "") {
+        return "";
+    }
+
+    const text = String(value).trim();
+
+    // YYYY-MM-DD (also safely handles an ISO date prefix).
+    const isoMatch = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+
+    if (isoMatch) {
+        return `${isoMatch[1]}-${String(isoMatch[2]).padStart(2, "0")}-${String(isoMatch[3]).padStart(2, "0")}`;
+    }
+
+    // MM/DD/YYYY or M/D/YYYY.
+    const slashMatch = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+
+    if (slashMatch) {
+        return `${slashMatch[3]}-${String(slashMatch[1]).padStart(2, "0")}-${String(slashMatch[2]).padStart(2, "0")}`;
+    }
+
+    // MM-DD-YYYY or M-D-YYYY.
+    const dashMatch = text.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+
+    if (dashMatch) {
+        return `${dashMatch[3]}-${String(dashMatch[1]).padStart(2, "0")}-${String(dashMatch[2]).padStart(2, "0")}`;
+    }
+
+    return text;
 };
 
 
@@ -701,9 +732,6 @@ const getBookingCapacity = async (req, res) => {
         const bookings =
             await Booking.find({
 
-                date:
-                    requestedDate,
-
                 status: {
                     $ne:
                         "CANCELLED"
@@ -716,6 +744,15 @@ const getBookingCapacity = async (req, res) => {
 
             })
             .lean();
+
+        // Keep the capacity calculation compatible with existing
+        // bookings regardless of how their date was formatted.
+        const activeBookingsForDate =
+            bookings.filter(
+                (booking) =>
+                    normalizeBookingDate(booking?.date) ===
+                    normalizeBookingDate(requestedDate)
+            );
 
 
         // =====================================================
@@ -736,8 +773,8 @@ const getBookingCapacity = async (req, res) => {
         );
 
         console.log(
-            "Total active bookings:",
-            bookings.length
+            "Total active bookings for requested date:",
+            activeBookingsForDate.length
         );
 
 
@@ -779,7 +816,7 @@ const getBookingCapacity = async (req, res) => {
                     // =================================================
 
                     const ferryBookings =
-                        bookings.filter(
+                        activeBookingsForDate.filter(
                             (booking) => {
 
                                 // =====================================
@@ -1122,16 +1159,24 @@ const getBookingCapacity = async (req, res) => {
                         ) === true;
 
 
-                    const automaticallyFull =
+                    // Passenger capacity closes the ferry for all online
+                    // passenger bookings. Motorcycle capacity does NOT.
+                    // A ferry with 10/10 motorcycles can still accept
+                    // passenger-only bookings while passenger slots remain.
+                    const passengerFull =
                         passengers >=
-                            PASSENGER_CAPACITY ||
-                        vehicles >=
-                            MOTORCYCLE_CAPACITY;
+                        PASSENGER_CAPACITY;
 
+                    const motorcycleFull =
+                        vehicles >=
+                        MOTORCYCLE_CAPACITY;
+
+                    const automaticallyFull =
+                        passengerFull;
 
                     const bookingClosed =
                         manualClosed ||
-                        automaticallyFull;
+                        passengerFull;
 
 
                     // =================================================
@@ -1184,6 +1229,12 @@ const getBookingCapacity = async (req, res) => {
 
                         automaticallyFull:
                             automaticallyFull,
+
+                        passengerFull:
+                            passengerFull,
+
+                        motorcycleFull:
+                            motorcycleFull,
 
                         bookingClosed:
                             bookingClosed
@@ -1452,12 +1503,7 @@ const getBookingStatistics = async (req, res) => {
             await Booking.countDocuments({
 
                 paymentStatus:
-                    "PENDING VERIFICATION",
-
-                boardingStatus: {
-                    $ne:
-                        "REJECTED"
-                }
+                    "PENDING VERIFICATION"
 
             });
 
@@ -1466,12 +1512,7 @@ const getBookingStatistics = async (req, res) => {
             await Booking.countDocuments({
 
                 paymentStatus:
-                    "VERIFIED",
-
-                boardingStatus: {
-                    $ne:
-                        "REJECTED"
-                }
+                    "VERIFIED"
 
             });
 
@@ -1479,16 +1520,8 @@ const getBookingStatistics = async (req, res) => {
         const rejectedPayments =
             await Booking.countDocuments({
 
-                $or: [
-                    {
-                        paymentStatus:
-                            "REJECTED"
-                    },
-                    {
-                        boardingStatus:
-                            "REJECTED"
-                    }
-                ]
+                paymentStatus:
+                    "REJECTED"
 
             });
 

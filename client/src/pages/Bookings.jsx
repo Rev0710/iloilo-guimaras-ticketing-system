@@ -265,6 +265,50 @@ const Bookings = () => {
 
 
     // =========================================================
+    // ACCOUNT-SPECIFIC BOOKING STORAGE
+    // =========================================================
+
+    const getAccountBookingKey = () => {
+
+        const storedUser =
+            localStorage.getItem("username") ||
+            sessionStorage.getItem("username") ||
+            localStorage.getItem("email") ||
+            sessionStorage.getItem("email");
+
+        if (storedUser) {
+            return `guimarasgo_bookings_${String(storedUser).trim().toLowerCase()}`;
+        }
+
+        const rawUser =
+            sessionStorage.getItem("user") ||
+            localStorage.getItem("user") ||
+            sessionStorage.getItem("student") ||
+            localStorage.getItem("student");
+
+        if (rawUser) {
+            try {
+                const user = JSON.parse(rawUser);
+                const identifier =
+                    user?.email ||
+                    user?.username ||
+                    user?.userId ||
+                    user?._id ||
+                    user?.id;
+
+                if (identifier) {
+                    return `guimarasgo_bookings_${String(identifier).trim().toLowerCase()}`;
+                }
+            } catch (error) {
+                // Preserve the existing flow when user data is not JSON.
+            }
+        }
+
+        return "guimarasgo_bookings_guest";
+    };
+
+
+    // =========================================================
     // SAVE BOOKING DATA TO SESSION STORAGE
     // =========================================================
 
@@ -286,6 +330,16 @@ const Bookings = () => {
                 /*
                  * SAVE ALL BOOKINGS
                  */
+
+                const accountBookingKey =
+                    getAccountBookingKey();
+
+                localStorage.setItem(
+                    accountBookingKey,
+                    JSON.stringify(
+                        updatedBookings
+                    )
+                );
 
                 sessionStorage.setItem(
                     "allBookings",
@@ -392,10 +446,29 @@ const Bookings = () => {
                      * =================================================
                      */
 
-                    const saved =
-                        sessionStorage.getItem(
-                            "allBookings"
+                    const accountBookingKey =
+                        getAccountBookingKey();
+
+                    let saved =
+                        localStorage.getItem(
+                            accountBookingKey
                         );
+
+                    // Migrate older session-only bookings for the
+                    // currently logged-in account once.
+                    if (!saved) {
+                        saved =
+                            sessionStorage.getItem(
+                                "allBookings"
+                            );
+
+                        if (saved) {
+                            localStorage.setItem(
+                                accountBookingKey,
+                                saved
+                            );
+                        }
+                    }
 
 
                     let localBookings =
@@ -800,10 +873,20 @@ const Bookings = () => {
                  * Get existing bookings
                  */
 
-                const saved =
-                    sessionStorage.getItem(
-                        "allBookings"
+                const accountBookingKey =
+                    getAccountBookingKey();
+
+                let saved =
+                    localStorage.getItem(
+                        accountBookingKey
                     );
+
+                if (!saved) {
+                    saved =
+                        sessionStorage.getItem(
+                            "allBookings"
+                        );
+                }
 
 
                 let allBookings =
@@ -876,6 +959,13 @@ const Bookings = () => {
                 /*
                  * Save all bookings
                  */
+
+                localStorage.setItem(
+                    getAccountBookingKey(),
+                    JSON.stringify(
+                        updatedBookings
+                    )
+                );
 
                 sessionStorage.setItem(
                     "allBookings",
@@ -1124,10 +1214,20 @@ const Bookings = () => {
 
             try {
 
-                const saved =
-                    sessionStorage.getItem(
-                        "allBookings"
+                const accountBookingKey =
+                    getAccountBookingKey();
+
+                let saved =
+                    localStorage.getItem(
+                        accountBookingKey
                     );
+
+                if (!saved) {
+                    saved =
+                        sessionStorage.getItem(
+                            "allBookings"
+                        );
+                }
 
 
                 let allBookings =
@@ -1197,6 +1297,13 @@ const Bookings = () => {
                 /*
                  * Save all bookings
                  */
+
+                localStorage.setItem(
+                    getAccountBookingKey(),
+                    JSON.stringify(
+                        remainingBookings
+                    )
+                );
 
                 sessionStorage.setItem(
                     "allBookings",

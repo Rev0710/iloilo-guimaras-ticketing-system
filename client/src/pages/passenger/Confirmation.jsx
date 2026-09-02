@@ -99,6 +99,40 @@ const Confirmation = () => {
                     savedBookingData.to ||
                     "Guimaras",
 
+                /*
+                 * =================================================
+                 * FERRY / VESSEL
+                 * =================================================
+                 */
+
+                ferryId:
+                    savedBookingData.ferryId ||
+                    savedBookingData.selectedFerry?.id ||
+                    savedBookingData.selectedTrip?.id ||
+                    "",
+
+                ferryName:
+                    savedBookingData.ferryName ||
+                    savedBookingData.vesselName ||
+                    savedBookingData.vessel ||
+                    savedBookingData.ferry ||
+                    savedBookingData.selectedFerry?.ferryName ||
+                    savedBookingData.selectedFerry?.vesselName ||
+                    savedBookingData.selectedTrip?.ferryName ||
+                    savedBookingData.selectedTrip?.vesselName ||
+                    "",
+
+                vesselName:
+                    savedBookingData.vesselName ||
+                    savedBookingData.ferryName ||
+                    savedBookingData.vessel ||
+                    savedBookingData.ferry ||
+                    savedBookingData.selectedFerry?.vesselName ||
+                    savedBookingData.selectedFerry?.ferryName ||
+                    savedBookingData.selectedTrip?.vesselName ||
+                    savedBookingData.selectedTrip?.ferryName ||
+                    "",
+
 
                 /*
                  * DATE / TIME
@@ -112,6 +146,11 @@ const Confirmation = () => {
                 time:
                     savedBookingData.time ||
                     savedBookingData.departureTime ||
+                    "N/A",
+
+                departureTime:
+                    savedBookingData.departureTime ||
+                    savedBookingData.time ||
                     "N/A",
 
 
@@ -550,10 +589,40 @@ const Confirmation = () => {
         40;
 
 
+    const vehicleTypeForFare =
+        booking?.vehicleType ||
+        booking?.vehicle ||
+        booking?.vehicleDetails?.type ||
+        "No Motorcycle";
+
+    const vehicleTypeForFareValue =
+        String(
+            vehicleTypeForFare
+        )
+            .trim()
+            .toLowerCase();
+
+    const isNoMotorcycleForFare =
+        vehicleTypeForFareValue === "no motorcycle" ||
+        vehicleTypeForFareValue === "nomotorcycle" ||
+        vehicleTypeForFareValue === "no vehicle" ||
+        vehicleTypeForFareValue === "none" ||
+        vehicleTypeForFareValue === "passenger only" ||
+        vehicleTypeForFareValue === "passenger-only" ||
+        vehicleTypeForFareValue === "passenger" ||
+        vehicleTypeForFareValue === "";
+
+    const isMotorcycleForFare =
+        !isNoMotorcycleForFare &&
+        (
+            vehicleTypeForFareValue === "motorcycle" ||
+            vehicleTypeForFareValue.includes("motorcycle")
+        );
+
     const motorcycleFare =
         Number(
-            booking?.motorcycleFare ||
-            150
+            booking?.motorcycleFare ??
+            (isMotorcycleForFare ? 150 : 0)
         );
 
 
@@ -572,16 +641,21 @@ const Confirmation = () => {
         );
 
 
-    const totalPaid =
+    const savedTotalFare =
         Number(
             booking?.totalFare ??
             booking?.totalPaid ??
-            (
+            0
+        );
+
+    const totalPaid =
+        savedTotalFare > 0
+            ? savedTotalFare
+            : (
                 passengerFare +
                 motorcycleFare +
                 ppaFee
-            )
-        );
+            );
 
 
     /*
@@ -637,7 +711,7 @@ Gender:
 ${booking.passengerGender || "N/A"}
 
 Passengers:
-${passengers} Adult${passengers > 1 ? "s" : ""}
+${passengers}
 
 Route:
 ${booking.origin} Port to ${booking.destination} Port
@@ -1233,6 +1307,26 @@ ${booking.status || "CONFIRMED"}
                     formatTime(
                         booking.time
                     )
+                }`,
+                margin,
+                detailsY
+            );
+
+
+            detailsY += 8;
+
+
+            pdf.text(
+                `Ferry / Vessel: ${
+                    booking.vesselName ||
+                    booking.ferryName ||
+                    booking.vessel ||
+                    booking.ferry ||
+                    booking.selectedFerry?.vesselName ||
+                    booking.selectedFerry?.ferryName ||
+                    booking.selectedTrip?.vesselName ||
+                    booking.selectedTrip?.ferryName ||
+                    "N/A"
                 }`,
                 margin,
                 detailsY
@@ -2082,10 +2176,7 @@ ${booking.status || "CONFIRMED"}
                             </small>
 
                             <strong>
-                                {passengers} Adult
-                                {passengers > 1
-                                    ? "s"
-                                    : ""}
+                                {passengers}
                             </strong>
 
                         </div>
@@ -2122,6 +2213,29 @@ ${booking.status || "CONFIRMED"}
                                     booking.passengerGender ||
                                     "N/A"
                                 }
+                            </strong>
+
+                        </div>
+
+
+                        <div
+                            className="info-box"
+                        >
+
+                            <small>
+                                Ferry / Vessel
+                            </small>
+
+                            <strong>
+                                {booking.vesselName ||
+                                    booking.ferryName ||
+                                    booking.vessel ||
+                                    booking.ferry ||
+                                    booking.selectedFerry?.vesselName ||
+                                    booking.selectedFerry?.ferryName ||
+                                    booking.selectedTrip?.vesselName ||
+                                    booking.selectedTrip?.ferryName ||
+                                    "N/A"}
                             </strong>
 
                         </div>
