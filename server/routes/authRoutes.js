@@ -5,7 +5,8 @@ const {
     login,
     getMe,
     updateProfile,
-    changePassword
+    changePassword,
+    updateNotificationPreference
 } = require("../controllers/authController");
 
 const protect = require("../middleware/authMiddleware");
@@ -39,6 +40,7 @@ router.post(
 
 router.get(
     "/me",
+    protect,
     getMe
 );
 
@@ -63,5 +65,16 @@ router.put(
     protect,
     changePassword
 );
+
+// =========================================================
+// UPDATE NOTIFICATION PREFERENCE
+// =========================================================
+
+router.put(
+    "/notifications",
+    protect,
+    updateNotificationPreference
+);
+
 
 module.exports = router;

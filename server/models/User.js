@@ -30,6 +30,11 @@ const userSchema = new mongoose.Schema(
         profilePicture: {
             type: String,
             default: ""
+        },
+
+        notificationsEnabled: {
+            type: Boolean,
+            default: false
         }
     },
     {

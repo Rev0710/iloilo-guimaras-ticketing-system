@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL ||
+    "http://localhost:5000/api";
+
 const Profile = () => {
     const navigate = useNavigate();
 
@@ -41,38 +45,113 @@ const Profile = () => {
 
 useEffect(() => {
 
-    try {
+    const loadCurrentUser = async () => {
+        try {
+            const token =
+                localStorage.getItem("token") ||
+                sessionStorage.getItem("token");
 
-        const savedUser =
-            localStorage.getItem("user") ||
-            sessionStorage.getItem("user");
+            if (!token) {
+                return;
+            }
 
-        if (!savedUser) {
-            return;
+            const response = await fetch(
+                `${API_BASE_URL}/auth/me`,
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization:
+                            `Bearer ${token}`
+                    }
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok || !data.user) {
+                throw new Error(
+                    data.message ||
+                    "Unable to load your account."
+                );
+            }
+
+            const serverUser = data.user;
+
+            setUser({
+                name:
+                    serverUser.fullName || "",
+                email:
+                    serverUser.email || "",
+                phone:
+                    serverUser.phoneNumber || ""
+            });
+
+            setNotifications(
+                serverUser.notificationsEnabled === true &&
+                "Notification" in window &&
+                Notification.permission === "granted"
+            );
+
+            const storage =
+                localStorage.getItem("token")
+                    ? localStorage
+                    : sessionStorage;
+
+            storage.setItem(
+                "user",
+                JSON.stringify({
+                    id: serverUser.id,
+                    fullName: serverUser.fullName,
+                    email: serverUser.email,
+                    phoneNumber: serverUser.phoneNumber,
+                    notificationsEnabled:
+                        serverUser.notificationsEnabled === true
+                })
+            );
+        } catch (error) {
+            console.error(
+                "Unable to load logged-in user from backend:",
+                error
+            );
+
+            // Existing local/session fallback.
+            try {
+                const savedUser =
+                    localStorage.getItem("user") ||
+                    sessionStorage.getItem("user");
+
+                if (!savedUser) {
+                    return;
+                }
+
+                const parsedUser = JSON.parse(savedUser);
+
+                setUser({
+                    name:
+                        parsedUser.fullName || "",
+                    email:
+                        parsedUser.email || "",
+                    phone:
+                        parsedUser.phoneNumber || ""
+                });
+
+                if (
+                    parsedUser.notificationsEnabled === true &&
+                    "Notification" in window &&
+                    Notification.permission === "granted"
+                ) {
+                    setNotifications(true);
+                }
+            } catch (fallbackError) {
+                console.error(
+                    "Unable to load saved user information:",
+                    fallbackError
+                );
+            }
         }
+    };
 
-        const parsedUser =
-            JSON.parse(savedUser);
-
-        setUser({
-            name:
-                parsedUser.fullName || "",
-
-            email:
-                parsedUser.email || "",
-
-            phone:
-                parsedUser.phoneNumber || ""
-        });
-
-    } catch (error) {
-
-        console.error(
-            "Unable to load logged-in user:",
-            error
-        );
-
-    }
+    loadCurrentUser();
 
 }, []);
 
@@ -102,17 +181,7 @@ useEffect(() => {
     // CHECK NOTIFICATION PERMISSION
     // =========================================================
 
-    useEffect(() => {
-        if ("Notification" in window) {
-            if (Notification.permission === "granted") {
-                setNotifications(true);
-            } else {
-                setNotifications(false);
-            }
-        }
-    }, []);
-
-    // =========================================================
+        // =========================================================
     // CLOSE MODAL
     // =========================================================
 
@@ -190,7 +259,7 @@ useEffect(() => {
 
         const response =
             await fetch(
-                "http://localhost:5000/api/auth/profile",
+                `${API_BASE_URL}/auth/profile`,
                 {
                     method: "PUT",
 
@@ -257,7 +326,9 @@ useEffect(() => {
                 data.user.email,
 
             phoneNumber:
-                data.user.phoneNumber
+                data.user.phoneNumber,
+            notificationsEnabled:
+                data.user.notificationsEnabled === true
         };
 
         if (
@@ -331,205 +402,297 @@ useEffect(() => {
     // NOTIFICATIONS
     // =========================================================
 
-    const handleNotificationToggle = async () => {
-        if (!("Notification" in window)) {
-            setActiveModal("notificationUnavailable");
+    const saveNotificationPreference = async (enabled) => {
+    const token =
+        localStorage.getItem("token") ||
+        sessionStorage.getItem("token");
 
-            setModalMessage(
-                "Your current browser does not support web notifications."
-            );
+    if (!token) {
+        throw new Error(
+            "Your session has expired. Please log in again."
+        );
+    }
 
-            return;
+    const response = await fetch(
+        `${API_BASE_URL}/auth/notifications`,
+        {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization:
+                    `Bearer ${token}`
+            },
+            body: JSON.stringify({ enabled })
         }
+    );
 
-        // TURN OFF
-        if (notifications) {
-            setNotifications(false);
+    const data = await response.json();
 
-            return;
-        }
+    if (!response.ok) {
+        throw new Error(
+            data.message ||
+            "Unable to update notification preference."
+        );
+    }
 
-        // ALREADY ALLOWED
-        if (Notification.permission === "granted") {
-            setNotifications(true);
+    const storage = localStorage.getItem("token")
+        ? localStorage
+        : sessionStorage;
 
-            setActiveModal("notificationEnabled");
+    const savedUser = storage.getItem("user");
 
-            setModalMessage(
-                "Notifications are already allowed on this device."
-            );
-
-            return;
-        }
-
-        // BLOCKED
-        if (Notification.permission === "denied") {
-            setActiveModal("notificationBlocked");
-
-            setModalMessage(
-                "Notifications are currently blocked. Please allow notifications from your browser or device settings."
-            );
-
-            return;
-        }
-
-        // REQUEST DEVICE / BROWSER PERMISSION
+    if (savedUser) {
         try {
-            const permission =
-                await Notification.requestPermission();
-
-            if (permission === "granted") {
-                setNotifications(true);
-
-                setActiveModal("notificationEnabled");
-
-                setModalMessage(
-                    "Notifications have been successfully enabled."
-                );
-
-                // Optional test notification
-                new Notification("GuimarasGo", {
-                    body:
-                        "Notifications are now enabled. You can receive booking updates and alerts.",
-                });
-            } else {
-                setNotifications(false);
-
-                setActiveModal("notificationDenied");
-
-                setModalMessage(
-                    "Notifications were not enabled. You can change this later in your browser or device settings."
-                );
-            }
+            const parsedUser = JSON.parse(savedUser);
+            parsedUser.notificationsEnabled =
+                data.user?.notificationsEnabled === true;
+            storage.setItem(
+                "user",
+                JSON.stringify(parsedUser)
+            );
         } catch (error) {
             console.error(
-                "Notification permission error:",
+                "Unable to update saved notification preference:",
                 error
             );
+        }
+    }
 
+    return data;
+};
+
+const handleNotificationToggle = async () => {
+    if (!("Notification" in window)) {
+        setActiveModal("notificationUnavailable");
+        setModalMessage(
+            "Your current browser does not support web notifications."
+        );
+        return;
+    }
+
+    if (notifications) {
+        try {
+            await saveNotificationPreference(false);
             setNotifications(false);
-
-            setActiveModal("notificationUnavailable");
-
+            setActiveModal("notificationDisabled");
             setModalMessage(
-                "We could not request notification permission from this device."
+                "Notifications have been turned off for your GuimarasGo account."
+            );
+        } catch (error) {
+            console.error(
+                "Notification preference error:",
+                error
+            );
+            setActiveModal("notificationUnavailable");
+            setModalMessage(
+                error.message ||
+                "Unable to update notification preference."
             );
         }
-    };
+        return;
+    }
+
+    if (Notification.permission === "granted") {
+        try {
+            await saveNotificationPreference(true);
+            setNotifications(true);
+            setActiveModal("notificationEnabled");
+            setModalMessage(
+                "Notifications are now allowed on this device and enabled for your GuimarasGo account."
+            );
+        } catch (error) {
+            console.error(
+                "Notification preference error:",
+                error
+            );
+            setNotifications(false);
+            setActiveModal("notificationUnavailable");
+            setModalMessage(
+                error.message ||
+                "Unable to update notification preference."
+            );
+        }
+        return;
+    }
+
+    if (Notification.permission === "denied") {
+        setNotifications(false);
+        setActiveModal("notificationBlocked");
+        setModalMessage(
+            "Notifications are currently blocked by your browser or device. Please allow notifications for this website in your browser settings, then try again."
+        );
+        return;
+    }
+
+    try {
+        const permission =
+            await Notification.requestPermission();
+
+        if (permission === "granted") {
+            await saveNotificationPreference(true);
+            setNotifications(true);
+            setActiveModal("notificationEnabled");
+            setModalMessage(
+                "Notifications have been successfully enabled for your GuimarasGo account."
+            );
+
+            new Notification("GuimarasGo", {
+                body:
+                    "Notifications are now enabled. You can receive booking updates and alerts.",
+            });
+        } else {
+            setNotifications(false);
+
+            try {
+                await saveNotificationPreference(false);
+            } catch (preferenceError) {
+                console.error(
+                    "Unable to save blocked notification preference:",
+                    preferenceError
+                );
+            }
+
+            setActiveModal("notificationDenied");
+            setModalMessage(
+                "Notifications were not enabled. You can allow them later from your browser or device settings."
+            );
+        }
+    } catch (error) {
+        console.error(
+            "Notification permission error:",
+            error
+        );
+        setNotifications(false);
+        setActiveModal("notificationUnavailable");
+        setModalMessage(
+            error.message ||
+            "We could not request notification permission from this device."
+        );
+    }
+};
 
     // =========================================================
     // SETTINGS
     // =========================================================
 
     const handleSettings = () => {
-        setPasswordForm({
-            currentPassword: "",
-            newPassword: "",
-            confirmPassword: "",
-        });
+    setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+    });
+    setModalMessage("");
+    setActiveModal("settings");
+};
 
-        setActiveModal("settings");
-    };
+const passwordRequirements = {
+    minLength:
+        passwordForm.newPassword.length >= 8,
+    uppercase:
+        /[A-Z]/.test(passwordForm.newPassword),
+    lowercase:
+        /[a-z]/.test(passwordForm.newPassword),
+    number:
+        /\\d/.test(passwordForm.newPassword),
+    special:
+        /[^A-Za-z0-9]/.test(passwordForm.newPassword),
+};
 
-    const handleChangePassword = async (event) => {
+const isStrongPassword =
+    passwordRequirements.minLength &&
+    passwordRequirements.uppercase &&
+    passwordRequirements.lowercase &&
+    passwordRequirements.number &&
+    passwordRequirements.special;
+
+const passwordsMatch =
+    passwordForm.newPassword.length > 0 &&
+    passwordForm.newPassword === passwordForm.confirmPassword;
+
+const canUpdatePassword =
+    Boolean(passwordForm.currentPassword) &&
+    isStrongPassword &&
+    passwordsMatch;
+
+const handleChangePassword = async (event) => {
     event.preventDefault();
+    setModalMessage("");
 
-    if (
-        !passwordForm.currentPassword ||
-        !passwordForm.newPassword ||
-        !passwordForm.confirmPassword
-    ) {
+    if (!passwordForm.currentPassword) {
         setModalMessage(
-            "Please complete all password fields."
+            "Please enter your current password."
         );
-
         return;
     }
 
-    if (
-        passwordForm.newPassword !==
-        passwordForm.confirmPassword
-    ) {
+    if (!isStrongPassword) {
+        setModalMessage(
+            "Please complete all new password requirements before updating your password."
+        );
+        return;
+    }
+
+    if (!passwordsMatch) {
         setModalMessage(
             "The new password and confirmation password do not match."
         );
-
-        return;
-    }
-
-    if (
-        passwordForm.newPassword.length < 8
-    ) {
-        setModalMessage(
-            "Your new password must contain at least 8 characters."
-        );
-
         return;
     }
 
     try {
-
         const token =
             localStorage.getItem("token") ||
             sessionStorage.getItem("token");
 
         if (!token) {
-
             setModalMessage(
                 "Your session has expired. Please log in again."
             );
-
             return;
         }
 
-        // =====================================
-        // SEND PASSWORD CHANGE TO BACKEND
-        // =====================================
+        const response = await fetch(
+            `${API_BASE_URL}/auth/password`,
+            {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization:
+                        `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    currentPassword:
+                        passwordForm.currentPassword,
+                    newPassword:
+                        passwordForm.newPassword
+                })
+            }
+        );
 
-        const response =
-            await fetch(
-                "http://localhost:5000/api/auth/password",
-                {
-                    method: "PUT",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json",
-
-                        Authorization:
-                            `Bearer ${token}`
-                    },
-
-                    body: JSON.stringify({
-                        currentPassword:
-                            passwordForm.currentPassword,
-
-                        newPassword:
-                            passwordForm.newPassword
-                    })
-                }
-            );
-
-        const data =
-            await response.json();
-
-        // =====================================
-        // BACKEND ERROR
-        // =====================================
+        const data = await response.json();
 
         if (!response.ok) {
-
             setModalMessage(
                 data.message ||
                 "Unable to update your password."
             );
-
             return;
         }
 
-        // =====================================
-        // SUCCESS
-        // =====================================
+        if (data.token) {
+            if (localStorage.getItem("token")) {
+                localStorage.setItem(
+                    "token",
+                    data.token
+                );
+            }
+            if (sessionStorage.getItem("token")) {
+                sessionStorage.setItem(
+                    "token",
+                    data.token
+                );
+            }
+        }
 
         setPasswordForm({
             currentPassword: "",
@@ -538,18 +701,14 @@ useEffect(() => {
         });
 
         setActiveModal("success");
-
         setModalMessage(
             "Your password has been successfully updated. Your old password can no longer be used."
         );
-
     } catch (error) {
-
         console.error(
             "Password Update Error:",
             error
         );
-
         setModalMessage(
             "Unable to connect to the server. Please make sure the backend is running."
         );
@@ -3517,6 +3676,21 @@ textarea {
    PASSWORD REQUIREMENTS
 ========================================================= */
 
+.password-requirements .requirement-met {
+    color: #15803d;
+}
+
+.password-requirements .requirement-met span:first-child {
+    font-weight: 700;
+}
+
+.password-update-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
 .password-requirements {
 
     display: flex;
@@ -4603,11 +4777,11 @@ textarea {
 
                         {passwordForm.newPassword.length === 0
                             ? "Weak"
-                            : passwordForm.newPassword.length < 8
-                            ? "Weak"
-                            : passwordForm.newPassword.length < 12
+                            : isStrongPassword
+                            ? "Strong"
+                            : passwordForm.newPassword.length >= 8
                             ? "Medium"
-                            : "Strong"
+                            : "Weak"
                         }
                     </span>
 
@@ -4616,44 +4790,39 @@ textarea {
 
                     <div className="password-requirements">
 
-                        <div>
+                        <div className={passwordRequirements.minLength ? "requirement-met" : ""}>
                             <span>
-                                ●
+                                {passwordRequirements.minLength ? "✓" : "●"}
                             </span>
-
-                            <span>
-                                At least 8 characters
-                            </span>
+                            <span>At least 8 characters</span>
                         </div>
 
-                        <div>
+                        <div className={passwordRequirements.uppercase ? "requirement-met" : ""}>
                             <span>
-                                ●
+                                {passwordRequirements.uppercase ? "✓" : "●"}
                             </span>
-
-                            <span>
-                                One uppercase letter
-                            </span>
+                            <span>One uppercase letter</span>
                         </div>
 
-                        <div>
+                        <div className={passwordRequirements.lowercase ? "requirement-met" : ""}>
                             <span>
-                                ●
+                                {passwordRequirements.lowercase ? "✓" : "●"}
                             </span>
-
-                            <span>
-                                One number
-                            </span>
+                            <span>One lowercase letter</span>
                         </div>
 
-                        <div>
+                        <div className={passwordRequirements.number ? "requirement-met" : ""}>
                             <span>
-                                ●
+                                {passwordRequirements.number ? "✓" : "●"}
                             </span>
+                            <span>One number</span>
+                        </div>
 
+                        <div className={passwordRequirements.special ? "requirement-met" : ""}>
                             <span>
-                                One special character
+                                {passwordRequirements.special ? "✓" : "●"}
                             </span>
+                            <span>One special character</span>
                         </div>
 
                     </div>
@@ -4703,6 +4872,7 @@ textarea {
                 <button
                     type="submit"
                     className="password-update-button"
+                    disabled={!canUpdatePassword}
                 >
                     Update Password
                 </button>
@@ -5020,6 +5190,35 @@ textarea {
 
                 </div>
 
+            )}
+
+
+            {/* =========================================================
+               NOTIFICATION DISABLED
+            ========================================================= */}
+
+            {activeModal === "notificationDisabled" && (
+                <div
+                    className="profile-modal-overlay"
+                    onMouseDown={handleBackdropClick}
+                >
+                    <div className="profile-modal">
+                        <div className="confirmation-content">
+                            <div className="confirmation-icon logout-confirmation-icon">
+                                🔕
+                            </div>
+                            <h2>Notifications Disabled</h2>
+                            <p>{modalMessage}</p>
+                            <button
+                                type="button"
+                                className="modal-button primary"
+                                onClick={closeModal}
+                            >
+                                Got It
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
 
 

@@ -19,6 +19,21 @@ const createToken = (user) => {
     );
 };
 
+// ========================================
+// PASSWORD STRENGTH VALIDATION
+// ========================================
+
+const isStrongPassword = (password) => {
+    return (
+        typeof password === "string" &&
+        password.length >= 8 &&
+        /[A-Z]/.test(password) &&
+        /[a-z]/.test(password) &&
+        /\d/.test(password) &&
+        /[^A-Za-z0-9]/.test(password)
+    );
+};
+
 
 // ========================================
 // REGISTER
@@ -50,11 +65,11 @@ const register = async (req, res) => {
             });
         }
 
-        // Password length validation
-        if (password.length < 8) {
+        // Password strength validation
+        if (!isStrongPassword(password)) {
             return res.status(400).json({
                 message:
-                    "Password must contain at least 8 characters."
+                    "Password must be at least 8 characters and include an uppercase letter, lowercase letter, number, and special character."
             });
         }
 
@@ -255,7 +270,9 @@ const login = async (req, res) => {
                 fullName: user.fullName,
                 email: user.email,
                 phoneNumber:
-                    user.phoneNumber
+                    user.phoneNumber,
+                notificationsEnabled:
+                    user.notificationsEnabled === true
             }
         });
 
@@ -301,7 +318,9 @@ const getMe = async (req, res) => {
                 fullName: user.fullName,
                 email: user.email,
                 phoneNumber:
-                    user.phoneNumber
+                    user.phoneNumber,
+                notificationsEnabled:
+                    user.notificationsEnabled === true
             }
         });
 
@@ -414,7 +433,9 @@ const updateProfile = async (req, res) => {
                 fullName: user.fullName,
                 email: user.email,
                 phoneNumber:
-                    user.phoneNumber
+                    user.phoneNumber,
+                notificationsEnabled:
+                    user.notificationsEnabled === true
             }
         });
 
@@ -461,10 +482,10 @@ const changePassword = async (req, res) => {
             });
         }
 
-        if (newPassword.length < 8) {
+        if (!isStrongPassword(newPassword)) {
             return res.status(400).json({
                 message:
-                    "New password must contain at least 8 characters."
+                    "New password must be at least 8 characters and include an uppercase letter, lowercase letter, number, and special character."
             });
         }
 
@@ -561,6 +582,74 @@ const changePassword = async (req, res) => {
 
 
 // ========================================
+// UPDATE NOTIFICATION PREFERENCE
+// ========================================
+
+const updateNotificationPreference = async (req, res) => {
+    try {
+        const userId =
+            req.user.userId;
+
+        const enabled =
+            req.body?.enabled;
+
+        if (typeof enabled !== "boolean") {
+            return res.status(400).json({
+                message:
+                    "Notification preference must be true or false."
+            });
+        }
+
+        const user =
+            await User.findByIdAndUpdate(
+                userId,
+                {
+                    notificationsEnabled:
+                        enabled
+                },
+                {
+                    returnDocument: "after",
+                    runValidators: true
+                }
+            ).select("-password");
+
+        if (!user) {
+            return res.status(404).json({
+                message:
+                    "User account not found."
+            });
+        }
+
+        return res.status(200).json({
+            message:
+                enabled
+                    ? "Notifications enabled successfully."
+                    : "Notifications disabled successfully.",
+            user: {
+                id: user._id,
+                fullName: user.fullName,
+                email: user.email,
+                phoneNumber:
+                    user.phoneNumber,
+                notificationsEnabled:
+                    user.notificationsEnabled === true
+            }
+        });
+    } catch (error) {
+        console.error(
+            "Update Notification Preference Error:",
+            error
+        );
+
+        return res.status(500).json({
+            message:
+                "Server error while updating notification preference."
+        });
+    }
+};
+
+
+// ========================================
 // EXPORT
 // ========================================
 
@@ -569,5 +658,6 @@ module.exports = {
     login,
     getMe,
     updateProfile,
-    changePassword
+    changePassword,
+    updateNotificationPreference
 };
