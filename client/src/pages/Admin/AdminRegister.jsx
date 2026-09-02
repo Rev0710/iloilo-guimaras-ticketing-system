@@ -303,19 +303,14 @@ const AdminRegister = () => {
                     display: inline-flex;
                     align-items: center;
                     justify-content: center;
-
                     margin-bottom: 18px;
-                    padding: 8px 14px;
-
+                    padding: 10px 20px;
                     border: 1px solid #dddddd;
                     border-radius: 8px;
-
                     background: white;
                     color: #555555;
-
                     font-size: 13px;
                     font-weight: 600;
-
                     cursor: pointer;
                     transition: 0.2s ease;
                 }
@@ -386,7 +381,7 @@ const AdminRegister = () => {
                     height: 45px;
 
                     padding:
-                        0 13px;
+                        0 20px;
 
                     border:
                         1px solid #ddd;
