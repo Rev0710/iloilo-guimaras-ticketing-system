@@ -265,10 +265,16 @@ const AdminDashboard = () => {
                     await response.json();
 
                 if (!response.ok) {
-                    throw new Error(
-                        data.message ||
-                        "Unable to load administrator."
-                    );
+                    const authError =
+                        new Error(
+                            data.message ||
+                            "Unable to load administrator."
+                        );
+
+                    authError.status =
+                        response.status;
+
+                    throw authError;
                 }
 
                 setAdmin(data.admin);
@@ -280,17 +286,31 @@ const AdminDashboard = () => {
                     error
                 );
 
-                localStorage.removeItem(
-                    "adminToken"
-                );
+                // Only end the admin session when the backend
+                // explicitly says the credentials are unauthorized.
+                // Temporary network/server errors must NOT log the
+                // administrator out.
+                if (
+                    error?.status === 401 ||
+                    error?.status === 403
+                ) {
+                    localStorage.removeItem(
+                        "adminToken"
+                    );
 
-                localStorage.removeItem(
-                    "adminData"
-                );
+                    localStorage.removeItem(
+                        "adminData"
+                    );
 
-                navigate("/admin-login", {
-                    replace: true
-                });
+                    navigate("/admin-login", {
+                        replace: true
+                    });
+                } else {
+                    showNotification(
+                        "Unable to verify the admin session right now. Your login is still saved. Please try again.",
+                        "error"
+                    );
+                }
 
             } finally {
                 setLoading(false);
@@ -2291,8 +2311,7 @@ const AdminDashboard = () => {
                                             <div><span>Payment Status</span><strong>{bookingSearchResult.paymentStatus || "—"}</strong></div>
                                             <div><span>Required Amount</span><strong>₱{Number(bookingSearchResult.requiredAmount || 0).toLocaleString()}</strong></div>
                                             <div><span>Total Paid</span><strong>{bookingSearchResult.totalPaid == null ? "—" : `₱${Number(bookingSearchResult.totalPaid).toLocaleString()}`}</strong></div>
-                                            <div><span>Boarding Status</span><strong>{bookingSearchResult.timedOutAt ? "TIMED OUT" : (bookingSearchResult.boardingStatus || "—")}</strong></div>
-                                            <div><span>Arrival / Time Out</span><strong>{bookingSearchResult.timedOutAt ? new Date(bookingSearchResult.timedOutAt).toLocaleString() : "—"}</strong></div>
+                                            <div><span>Boarding Status</span><strong>{bookingSearchResult.boardingStatus || "—"}</strong></div>
                                         </div>
 
                                         {bookingSearchResult.paymentProof?.url && (

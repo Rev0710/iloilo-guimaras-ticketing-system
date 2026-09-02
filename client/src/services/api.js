@@ -43,10 +43,16 @@ api.interceptors.request.use(
         const staffToken =
             localStorage.getItem(
                 "staffToken"
+            ) ||
+            sessionStorage.getItem(
+                "staffToken"
             );
 
         const adminToken =
             localStorage.getItem(
+                "adminToken"
+            ) ||
+            sessionStorage.getItem(
                 "adminToken"
             );
 
@@ -59,10 +65,24 @@ api.interceptors.request.use(
             );
 
 
-        const token =
-            staffToken ||
-            adminToken ||
-            userToken;
+        // Keep each role's token isolated from the other roles.
+        // This prevents an old staff token from being sent to
+        // an admin endpoint (and vice versa).
+        const pathname =
+            window.location.pathname;
+
+        let token;
+
+        if (pathname.startsWith("/staff")) {
+            token = staffToken;
+        } else if (pathname.startsWith("/admin")) {
+            token = adminToken;
+        } else {
+            token =
+                staffToken ||
+                adminToken ||
+                userToken;
+        }
 
 
         if (token) {
@@ -113,10 +133,16 @@ api.interceptors.response.use(
             const staffToken =
                 localStorage.getItem(
                     "staffToken"
+                ) ||
+                sessionStorage.getItem(
+                    "staffToken"
                 );
 
             const adminToken =
                 localStorage.getItem(
+                    "adminToken"
+                ) ||
+                sessionStorage.getItem(
                     "adminToken"
                 );
 
@@ -128,14 +154,24 @@ api.interceptors.response.use(
                     "token"
                 );
 
+            const pathname =
+                window.location.pathname;
+
 
             // -----------------------------------------
             // STAFF SESSION
             // -----------------------------------------
 
-            if (staffToken) {
+            if (
+                pathname.startsWith("/staff") &&
+                staffToken
+            ) {
 
                 localStorage.removeItem(
+                    "staffToken"
+                );
+
+                sessionStorage.removeItem(
                     "staffToken"
                 );
 
@@ -144,12 +180,12 @@ api.interceptors.response.use(
                 );
 
                 if (
-                    window.location.pathname !==
-                    "/staff-login"
+                    pathname !==
+                    "/staff/login"
                 ) {
 
                     window.location.href =
-                        "/staff-login";
+                        "/staff/login";
 
                 }
 
@@ -159,13 +195,24 @@ api.interceptors.response.use(
             // ADMIN SESSION
             // -----------------------------------------
 
-            else if (adminToken) {
+            else if (
+                pathname.startsWith("/admin") &&
+                adminToken
+            ) {
 
                 localStorage.removeItem(
                     "adminToken"
                 );
 
                 localStorage.removeItem(
+                    "adminData"
+                );
+
+                sessionStorage.removeItem(
+                    "adminToken"
+                );
+
+                sessionStorage.removeItem(
                     "adminData"
                 );
 
