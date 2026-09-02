@@ -479,8 +479,11 @@ const Bookings = () => {
                      * =================================================
                      * GET LOCAL BOOKINGS FIRST
                      * =================================================
+                     *
+                     * Local storage is kept as a cache/fallback so
+                     * existing booking, cancellation, and Time Out
+                     * behavior continues to work.
                      */
-
                     const accountBookingKey =
                         getAccountBookingKey();
 
@@ -543,12 +546,200 @@ const Bookings = () => {
 
 
                     /*
-                     * If there are no local bookings,
-                     * there is nothing to synchronize.
+                     * =================================================
+                     * GET THE LOGGED-IN USER'S BOOKINGS FROM MONGODB
+                     * =================================================
+                     *
+                     * This is the important cross-device fix.
+                     *
+                     * Bookings are owned by the authenticated user's
+                     * userId in MongoDB. Therefore the current device
+                     * does not need to have the booking in its local
+                     * storage.
+                     *
+                     * The existing /api/bookings/my endpoint only
+                     * returns bookings belonging to the current
+                     * authenticated passenger.
                      */
+                    const token =
+                        localStorage.getItem("token") ||
+                        sessionStorage.getItem("token") ||
+                        "";
 
+                    let serverBookings =
+                        [];
+
+                    if (token) {
+
+                        try {
+
+                            const response =
+                                await fetch(
+                                    `${API_URL}/api/bookings/my`,
+                                    {
+                                        headers: {
+                                            Authorization:
+                                                `Bearer ${token}`,
+                                            Accept:
+                                                "application/json"
+                                        }
+                                    }
+                                );
+
+
+                            if (response.ok) {
+
+                                const data =
+                                    await response.json();
+
+
+                                if (
+                                    data.success &&
+                                    Array.isArray(
+                                        data.bookings
+                                    )
+                                ) {
+
+                                    serverBookings =
+                                        data.bookings;
+
+                                }
+
+                            } else {
+
+                                console.warn(
+                                    `Unable to load account bookings. HTTP ${response.status}`
+                                );
+
+                            }
+
+                        } catch (error) {
+
+                            console.warn(
+                                "Unable to load account bookings from MongoDB:",
+                                error
+                            );
+
+                        }
+
+                    }
+
+
+                    /*
+                     * =================================================
+                     * MERGE MONGODB + LOCAL BOOKINGS
+                     * =================================================
+                     *
+                     * MongoDB is the source of truth for bookings that
+                     * exist on the account. Local-only bookings are
+                     * retained so older/cancelled local records do not
+                     * disappear unexpectedly.
+                     *
+                     * MongoDB records replace their matching local
+                     * records, which also keeps the latest:
+                     * - payment status
+                     * - boarding status
+                     * - timedOutAt
+                     * - vessel information
+                     * - payment information
+                     */
+                    const localByReference =
+                        new Map(
+                            localBookings
+                                .filter(
+                                    (booking) =>
+                                        booking?.bookingReference
+                                )
+                                .map(
+                                    (booking) => [
+                                        String(
+                                            booking.bookingReference
+                                        ).trim().toLowerCase(),
+                                        booking
+                                    ]
+                                )
+                        );
+
+
+                    const serverReferences =
+                        new Set(
+                            serverBookings
+                                .filter(
+                                    (booking) =>
+                                        booking?.bookingReference
+                                )
+                                .map(
+                                    (booking) =>
+                                        String(
+                                            booking.bookingReference
+                                        ).trim().toLowerCase()
+                                )
+                        );
+
+
+                    const mergedBookings =
+                        serverBookings.map(
+                            (serverBooking) => {
+
+                                const reference =
+                                    String(
+                                        serverBooking?.bookingReference ||
+                                        ""
+                                    ).trim().toLowerCase();
+
+                                const localBooking =
+                                    localByReference.get(
+                                        reference
+                                    );
+
+                                return {
+                                    ...(localBooking || {}),
+                                    ...serverBooking
+                                };
+
+                            }
+                        );
+
+
+                    /*
+                     * Keep local-only bookings as a fallback.
+                     * This is especially important for existing
+                     * records that were created before account
+                     * ownership was stored in MongoDB.
+                     */
+                    localBookings.forEach(
+                        (localBooking) => {
+
+                            const reference =
+                                String(
+                                    localBooking?.bookingReference ||
+                                    ""
+                                ).trim().toLowerCase();
+
+                            if (
+                                reference &&
+                                !serverReferences.has(
+                                    reference
+                                )
+                            ) {
+
+                                mergedBookings.push(
+                                    localBooking
+                                );
+
+                            }
+
+                        }
+                    );
+
+
+                    /*
+                     * =================================================
+                     * IF THERE ARE NO BOOKINGS
+                     * =================================================
+                     */
                     if (
-                        localBookings.length ===
+                        mergedBookings.length ===
                         0
                     ) {
 
@@ -561,55 +752,58 @@ const Bookings = () => {
                     }
 
 
-                    // =================================================
-                    // REFRESH EACH BOOKING FROM MONGODB
-                    // =================================================
-
+                    /*
+                     * =================================================
+                     * REFRESH EACH BOOKING FROM MONGODB
+                     * =================================================
+                     *
+                     * Keep the existing reference lookup because it
+                     * provides the latest status for the Time Out
+                     * notification and preserves the existing flow.
+                     *
+                     * Only refresh bookings that came from the local
+                     * cache. Server bookings are already fresh, but
+                     * refreshing them is harmless and preserves the
+                     * existing behavior.
+                     */
                     const updatedBookings =
                         await Promise.all(
 
-                            localBookings.map(
+                            mergedBookings.map(
                                 async (
                                     localBooking
                                 ) => {
 
-                                    /*
-                                     * -------------------------------------------------
-                                     * We need the MongoDB _id.
-                                     * -------------------------------------------------
-                                     */
-
                                     const bookingReference =
-                                                localBooking?.bookingReference;
+                                        localBooking?.bookingReference;
 
-                                            if (!bookingReference) {
-                                                return localBooking;
-                                            }
+                                    if (
+                                        !bookingReference
+                                    ) {
+                                        return localBooking;
+                                    }
 
-                                            try {
-                                                const response =
-                                                    await fetch(
-                                                        `${API_URL}/api/bookings/reference/${encodeURIComponent(
-                                                            bookingReference
-                                                        )}`,
-                                                        {
-                                                            headers: {
-                                                                Authorization: `Bearer ${
-                                                                    localStorage.getItem("token") ||
-                                                                    sessionStorage.getItem("token") ||
-                                                                    ""
-                                                                }`,
-                                                                Accept: "application/json"
-                                                            }
-                                                        }
-                                                    );
+                                    try {
+
+                                        const response =
+                                            await fetch(
+                                                `${API_URL}/api/bookings/reference/${encodeURIComponent(
+                                                    bookingReference
+                                                )}`,
+                                                {
+                                                    headers: {
+                                                        Authorization:
+                                                            `Bearer ${token}`,
+                                                        Accept:
+                                                            "application/json"
+                                                    }
+                                                }
+                                            );
+
+
                                         if (
                                             !response.ok
                                         ) {
-
-                                            console.warn(
-                                                `Unable to refresh booking ${localBooking.bookingReference}. HTTP ${response.status}`
-                                            );
 
                                             return localBooking;
 
@@ -625,16 +819,9 @@ const Bookings = () => {
                                             data.booking
                                         ) {
 
-                                            /*
-                                             * MongoDB is the latest source.
-                                             */
-
                                             return {
-
                                                 ...localBooking,
-
                                                 ...data.booking
-
                                             };
 
                                         }
@@ -644,11 +831,13 @@ const Bookings = () => {
 
                                     } catch (error) {
 
-                                        console.error(
-                                            `Unable to refresh booking ${localBooking.bookingReference}:`,
-                                            error
-                                        );
-
+                                        /*
+                                         * Do not remove a booking just
+                                         * because the individual refresh
+                                         * failed. The already-loaded
+                                         * MongoDB/local record remains
+                                         * available.
+                                         */
                                         return localBooking;
 
                                     }
@@ -668,6 +857,7 @@ const Bookings = () => {
                      */
                     const newlyTimedOutBooking =
                         updatedBookings.find((updatedBooking) => {
+
                             if (
                                 !updatedBooking?.timedOutAt ||
                                 !updatedBooking?.bookingReference
@@ -675,6 +865,16 @@ const Bookings = () => {
                                 return false;
                             }
 
+
+                            /*
+                             * Compare against the locally known version.
+                             *
+                             * If the passenger is opening the same account
+                             * on a different device for the first time, an
+                             * already-completed Time Out should not suddenly
+                             * trigger an old popup. The popup is intended for
+                             * a newly detected Time Out.
+                             */
                             const previousBooking =
                                 localBookings.find(
                                     (localBooking) =>
@@ -682,31 +882,50 @@ const Bookings = () => {
                                         updatedBooking.bookingReference
                                 );
 
+
                             const noticeKey =
                                 `guimarasgo_arrival_notice_${String(
                                     updatedBooking.bookingReference
                                 ).trim().toLowerCase()}`;
 
+
                             return (
+                                previousBooking &&
                                 !previousBooking?.timedOutAt &&
-                                !sessionStorage.getItem(noticeKey)
+                                !sessionStorage.getItem(
+                                    noticeKey
+                                )
                             );
+
                         });
 
-                    if (newlyTimedOutBooking) {
+
+                    if (
+                        newlyTimedOutBooking
+                    ) {
+
                         const noticeKey =
                             `guimarasgo_arrival_notice_${String(
                                 newlyTimedOutBooking.bookingReference
                             ).trim().toLowerCase()}`;
 
-                        sessionStorage.setItem(noticeKey, "shown");
+
+                        sessionStorage.setItem(
+                            noticeKey,
+                            "shown"
+                        );
+
 
                         setArrivalNotice({
+
                             bookingReference:
                                 newlyTimedOutBooking.bookingReference,
+
                             timedOutAt:
                                 newlyTimedOutBooking.timedOutAt
+
                         });
+
                     }
 
 
@@ -715,7 +934,6 @@ const Bookings = () => {
                      * SAVE UPDATED BOOKINGS
                      * =================================================
                      */
-
                     saveBookingData(
                         updatedBookings
                     );
@@ -726,7 +944,6 @@ const Bookings = () => {
                      * UPDATE REACT STATE
                      * =================================================
                      */
-
                     setBookings(
                         [
                             ...updatedBookings
@@ -743,12 +960,18 @@ const Bookings = () => {
 
 
                     /*
-                     * Fall back to sessionStorage
+                     * Fall back to the existing local/session
+                     * storage behavior if the server is unavailable.
                      */
-
                     try {
 
+                        const accountBookingKey =
+                            getAccountBookingKey();
+
                         const saved =
+                            localStorage.getItem(
+                                accountBookingKey
+                            ) ||
                             sessionStorage.getItem(
                                 "allBookings"
                             );
