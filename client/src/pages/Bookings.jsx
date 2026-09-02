@@ -38,6 +38,12 @@ const Bookings = () => {
     const [loading, setLoading] =
         useState(false);
 
+    // =========================================================
+    // ARRIVAL / TIME OUT NOTIFICATION
+    // =========================================================
+    const [arrivalNotice, setArrivalNotice] =
+        useState(null);
+
 
     // =========================================================
     // GET BOOKING STATUS
@@ -75,6 +81,11 @@ const Bookings = () => {
             "REJECTED"
         ) {
             return "REJECTED";
+        }
+
+        // Arrival/time out is the final passenger-facing state.
+        if (booking?.timedOutAt) {
+            return "TIMED OUT";
         }
 
         /*
@@ -177,6 +188,13 @@ const Bookings = () => {
 
         if (
             status ===
+            "TIMED OUT"
+        ) {
+            return "Timed Out";
+        }
+
+        if (
+            status ===
             "ON BOARD"
         ) {
             return "On Board";
@@ -238,6 +256,13 @@ const Bookings = () => {
             "REJECTED"
         ) {
             return "status-rejected";
+        }
+
+        if (
+            status ===
+            "TIMED OUT"
+        ) {
+            return "status-paid";
         }
 
         if (
@@ -632,6 +657,57 @@ const Bookings = () => {
                             )
 
                         );
+
+
+                    /*
+                     * =================================================
+                     * ARRIVAL / TIME OUT NOTIFICATION
+                     * =================================================
+                     * Show a one-time passenger notification after staff
+                     * confirms arrival/time out.
+                     */
+                    const newlyTimedOutBooking =
+                        updatedBookings.find((updatedBooking) => {
+                            if (
+                                !updatedBooking?.timedOutAt ||
+                                !updatedBooking?.bookingReference
+                            ) {
+                                return false;
+                            }
+
+                            const previousBooking =
+                                localBookings.find(
+                                    (localBooking) =>
+                                        localBooking?.bookingReference ===
+                                        updatedBooking.bookingReference
+                                );
+
+                            const noticeKey =
+                                `guimarasgo_arrival_notice_${String(
+                                    updatedBooking.bookingReference
+                                ).trim().toLowerCase()}`;
+
+                            return (
+                                !previousBooking?.timedOutAt &&
+                                !sessionStorage.getItem(noticeKey)
+                            );
+                        });
+
+                    if (newlyTimedOutBooking) {
+                        const noticeKey =
+                            `guimarasgo_arrival_notice_${String(
+                                newlyTimedOutBooking.bookingReference
+                            ).trim().toLowerCase()}`;
+
+                        sessionStorage.setItem(noticeKey, "shown");
+
+                        setArrivalNotice({
+                            bookingReference:
+                                newlyTimedOutBooking.bookingReference,
+                            timedOutAt:
+                                newlyTimedOutBooking.timedOutAt
+                        });
+                    }
 
 
                     /*
@@ -1523,7 +1599,9 @@ const Bookings = () => {
                         status ===
                         "CONFIRMED" ||
                         status ===
-                        "COMPLETED"
+                        "COMPLETED" ||
+                        status ===
+                        "TIMED OUT"
                     );
 
                 }
@@ -3847,20 +3925,47 @@ const Bookings = () => {
                                                         Boarding Status
                                                     </small>
                                                     <strong>
-                                                        {String(
-                                                            booking.boardingStatus ||
-                                                            "NOT BOARDED"
-                                                        ) === "ON BOARD"
-                                                            ? "On Board"
+                                                        {booking.timedOutAt
+                                                            ? "Timed Out"
                                                             : String(
                                                                 booking.boardingStatus ||
                                                                 "NOT BOARDED"
-                                                            ) === "REJECTED"
-                                                                ? "Rejected"
-                                                                : "Not Boarded"}
+                                                            ) === "ON BOARD"
+                                                                ? "On Board"
+                                                                : String(
+                                                                    booking.boardingStatus ||
+                                                                    "NOT BOARDED"
+                                                                ) === "REJECTED"
+                                                                    ? "Rejected"
+                                                                    : "Not Boarded"}
                                                     </strong>
                                                 </div>
                                             </div>
+
+
+                                            {/* =================================================
+                                                ARRIVAL / TIME OUT
+                                            ================================================= */}
+
+                                            {booking.timedOutAt && (
+                                                <div
+                                                    style={{
+                                                        marginTop: "15px",
+                                                        padding: "12px 14px",
+                                                        background: "#f0fdf4",
+                                                        border: "1px solid #bbf7d0",
+                                                        borderRadius: "10px",
+                                                        color: "#166534",
+                                                        fontSize: "12px",
+                                                        lineHeight: "1.5"
+                                                    }}
+                                                >
+                                                    <strong>Arrival / Time Out Confirmed</strong>
+                                                    <div style={{ marginTop: "4px" }}>
+                                                        Arrival time: {new Date(booking.timedOutAt).toLocaleString()}
+                                                    </div>
+                                                </div>
+                                            )}
 
 
                                             {/* =================================================
@@ -3945,6 +4050,8 @@ const Bookings = () => {
                                                         status !==
                                                             "ON BOARD" &&
                                                         status !==
+                                                            "TIMED OUT" &&
+                                                        status !==
                                                             "CONFIRMED" &&
                                                         status !==
                                                             "COMPLETED" && (
@@ -3981,6 +4088,57 @@ const Bookings = () => {
                 </div>
 
             </main>
+
+
+            {/* =========================================================
+                ARRIVAL / TIME OUT SUCCESS MODAL
+            ========================================================= */}
+
+            {arrivalNotice && (
+                <div
+                    className="modal-overlay"
+                    onClick={() => setArrivalNotice(null)}
+                >
+                    <div
+                        className="cancel-modal"
+                        onClick={(event) => event.stopPropagation()}
+                        style={{ textAlign: "center" }}
+                    >
+                        <div
+                            className="cancel-icon"
+                            style={{
+                                background: "#dcfce7",
+                                color: "#166534"
+                            }}
+                        >
+                            ✓
+                        </div>
+
+                        <h2>Arrival Confirmed</h2>
+
+                        <p>
+                            Thank you for Boarding, Hope you Enjoy!
+                            <br />
+                            Book again. Thanks!
+                        </p>
+
+                        <span className="cancel-reference">
+                            {arrivalNotice.bookingReference || "Booking"}
+                        </span>
+
+                        <div className="modal-actions">
+                            <button
+                                type="button"
+                                className="confirm-cancel"
+                                style={{ background: "#16a34a" }}
+                                onClick={() => setArrivalNotice(null)}
+                            >
+                                Thank You
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
 
             {/* =========================================================

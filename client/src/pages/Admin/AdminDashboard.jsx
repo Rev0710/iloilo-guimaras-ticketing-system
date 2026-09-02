@@ -2291,7 +2291,8 @@ const AdminDashboard = () => {
                                             <div><span>Payment Status</span><strong>{bookingSearchResult.paymentStatus || "—"}</strong></div>
                                             <div><span>Required Amount</span><strong>₱{Number(bookingSearchResult.requiredAmount || 0).toLocaleString()}</strong></div>
                                             <div><span>Total Paid</span><strong>{bookingSearchResult.totalPaid == null ? "—" : `₱${Number(bookingSearchResult.totalPaid).toLocaleString()}`}</strong></div>
-                                            <div><span>Boarding Status</span><strong>{bookingSearchResult.boardingStatus || "—"}</strong></div>
+                                            <div><span>Boarding Status</span><strong>{bookingSearchResult.timedOutAt ? "TIMED OUT" : (bookingSearchResult.boardingStatus || "—")}</strong></div>
+                                            <div><span>Arrival / Time Out</span><strong>{bookingSearchResult.timedOutAt ? new Date(bookingSearchResult.timedOutAt).toLocaleString() : "—"}</strong></div>
                                         </div>
 
                                         {bookingSearchResult.paymentProof?.url && (

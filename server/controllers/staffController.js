@@ -226,6 +226,92 @@ const verifyBoarding = async (req, res) => {
 
 
 // =========================================================
+// TIME OUT / CONFIRM ARRIVAL
+// =========================================================
+//
+// Staff scans the same ticket again after the passenger
+// arrives at the destination, then confirms the arrival time.
+// Route:
+// PUT /api/staff/bookings/:id/timeout
+//
+// =========================================================
+
+const timeOutBooking = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid booking ID."
+            });
+        }
+
+        const booking = await Booking.findById(id);
+
+        if (!booking) {
+            return res.status(404).json({
+                success: false,
+                message: "Booking not found."
+            });
+        }
+
+        if (booking.paymentStatus !== "VERIFIED") {
+            return res.status(400).json({
+                success: false,
+                message: "Payment has not been verified. Arrival cannot be confirmed."
+            });
+        }
+
+        if (booking.status !== "CONFIRMED") {
+            return res.status(400).json({
+                success: false,
+                message: "This booking is not confirmed."
+            });
+        }
+
+        if (booking.boardingStatus === "REJECTED") {
+            return res.status(400).json({
+                success: false,
+                message: "This passenger was rejected for boarding."
+            });
+        }
+
+        if (booking.boardingStatus !== "ON BOARD") {
+            return res.status(400).json({
+                success: false,
+                message: "Passenger must be marked as onboard before confirming arrival."
+            });
+        }
+
+        if (booking.timedOutAt) {
+            return res.status(400).json({
+                success: false,
+                message: "Passenger arrival has already been confirmed.",
+                booking
+            });
+        }
+
+        booking.timedOutAt = new Date();
+        await booking.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Passenger arrival and time out confirmed successfully.",
+            booking
+        });
+    } catch (error) {
+        console.error("Time out booking error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to confirm passenger arrival."
+        });
+    }
+};
+
+
+// =========================================================
 // REJECT BOARDING
 // =========================================================
 //
@@ -591,6 +677,8 @@ module.exports = {
     getBookingByReferenceForStaff,
 
     verifyBoarding,
+
+    timeOutBooking,
 
     rejectBoarding,
 

@@ -296,6 +296,18 @@ const bookingSchema = new mongoose.Schema(
             default: null
         },
 
+        // =========================================================
+        // ARRIVAL / TIME OUT
+        // =========================================================
+        // Set by staff when the passenger reaches the destination
+        // and the ticket is scanned for the second time.
+        // Existing bookings remain compatible because this is optional.
+
+        timedOutAt: {
+            type: Date,
+            default: null
+        },
+
         // =========================
         // STAFF REJECTION
         // =========================

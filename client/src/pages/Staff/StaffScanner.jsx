@@ -90,11 +90,15 @@ function extractBookingReference(qrText) {
 // BOARDING STATUS LABEL
 // =========================================================
 
-function getBoardingStatusLabel(status) {
+function getBoardingStatusLabel(status, timedOutAt) {
     const normalizedStatus =
         String(status || "")
             .trim()
             .toUpperCase();
+
+    if (timedOutAt) {
+        return "Timed Out";
+    }
 
     if (normalizedStatus === "ON BOARD") {
         return "Onboard";
@@ -643,6 +647,68 @@ function StaffScanner() {
 
         } finally {
 
+            setLoadingBooking(false);
+        }
+    };
+
+
+    // =========================================================
+    // CONFIRM ARRIVAL / TIME OUT
+    // =========================================================
+    // The same QR ticket is scanned again after the passenger
+    // reaches the destination. The staff then confirms the
+    // actual arrival time.
+
+    const confirmArrivalTimeOut = async () => {
+        if (!booking?._id) {
+            setError(
+                "Booking information is missing."
+            );
+            return;
+        }
+
+        if (booking.boardingStatus !== "ON BOARD") {
+            setError(
+                "Passenger must be marked as onboard before confirming arrival."
+            );
+            return;
+        }
+
+        if (booking.timedOutAt) {
+            setError(
+                "Passenger arrival has already been confirmed."
+            );
+            return;
+        }
+
+        try {
+            setLoadingBooking(true);
+            setError("");
+            setMessage("");
+
+            const response = await api.put(
+                `/staff/bookings/${booking._id}/timeout`
+            );
+
+            if (response.data?.booking) {
+                setBooking(response.data.booking);
+            }
+
+            setMessage(
+                response.data?.message ||
+                "Passenger arrival and time out confirmed successfully."
+            );
+        } catch (err) {
+            console.error(
+                "Arrival time out error:",
+                err
+            );
+
+            setError(
+                err.response?.data?.message ||
+                "Unable to confirm passenger arrival."
+            );
+        } finally {
             setLoadingBooking(false);
         }
     };
@@ -1429,7 +1495,8 @@ function StaffScanner() {
                                     label="Boarding Status"
                                     value={
                                         getBoardingStatusLabel(
-                                            booking.boardingStatus
+                                            booking.boardingStatus,
+                                            booking.timedOutAt
                                         )
                                     }
                                 />
@@ -1651,6 +1718,70 @@ function StaffScanner() {
                                         </div>
 
                                     )}
+
+
+                                {/* =================================================
+                                    TIME OUT / ARRIVAL
+                                ================================================= */}
+
+                                {booking.boardingStatus ===
+                                    "ON BOARD" &&
+                                    !booking.timedOutAt && (
+                                        <div
+                                            style={{
+                                                background: "#eff6ff",
+                                                color: "#1d4ed8",
+                                                padding: "12px",
+                                                borderRadius: "8px",
+                                                fontSize: "14px",
+                                                lineHeight: "1.5"
+                                            }}
+                                        >
+                                            ✓ Passenger is onboard. Scan the same ticket again when the passenger arrives at the destination, then confirm the arrival time below.
+                                        </div>
+                                    )}
+
+                                {booking.boardingStatus ===
+                                    "ON BOARD" &&
+                                    !booking.timedOutAt && (
+                                        <button
+                                            onClick={confirmArrivalTimeOut}
+                                            disabled={loadingBooking}
+                                            style={{
+                                                padding: "13px",
+                                                border: "none",
+                                                borderRadius: "8px",
+                                                background: loadingBooking
+                                                    ? "#93c5fd"
+                                                    : "#2563eb",
+                                                color: "#ffffff",
+                                                fontWeight: "600",
+                                                cursor: loadingBooking
+                                                    ? "not-allowed"
+                                                    : "pointer"
+                                            }}
+                                        >
+                                            {loadingBooking
+                                                ? "Confirming Arrival..."
+                                                : "✓ Confirm Arrival / Time Out"}
+                                        </button>
+                                    )}
+
+                                {booking.timedOutAt && (
+                                    <div
+                                        style={{
+                                            background: "#dcfce7",
+                                            color: "#166534",
+                                            padding: "12px",
+                                            borderRadius: "8px",
+                                            fontSize: "14px",
+                                            fontWeight: "600",
+                                            lineHeight: "1.5"
+                                        }}
+                                    >
+                                        ✓ Arrival confirmed. Time out: {new Date(booking.timedOutAt).toLocaleString()}
+                                    </div>
+                                )}
 
 
                                 {/* =================================================

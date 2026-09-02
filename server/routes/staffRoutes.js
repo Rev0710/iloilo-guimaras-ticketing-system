@@ -17,6 +17,7 @@ const staffAuth = require("../middleware/staffAuth");
 const {
     getBookingByReferenceForStaff,
     verifyBoarding,
+    timeOutBooking,
     rejectBoarding,
     getTodayBoardingBookings,
     getBoardingStatistics
@@ -86,6 +87,19 @@ router.put(
     "/bookings/:id/board",
     staffAuth,
     verifyBoarding
+);
+
+
+// =========================================================
+// TIME OUT / CONFIRM ARRIVAL
+// =========================================================
+// PUT /api/staff/bookings/:id/timeout
+// =========================================================
+
+router.put(
+    "/bookings/:id/timeout",
+    staffAuth,
+    timeOutBooking
 );
 
 
