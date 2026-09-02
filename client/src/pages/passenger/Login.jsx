@@ -46,9 +46,8 @@ const Login = () => {
             // =====================================================
             // ONE LOGIN FORM
             // =====================================================
-            // The same credentials are checked against the existing
-            // authentication endpoints. No new account system is
-            // created and the existing backend routes remain intact.
+            // Check the existing authentication systems one by one.
+            // No existing backend authentication route is removed.
             // =====================================================
 
             const loginRequest = async (endpoint) => {
@@ -83,7 +82,7 @@ const Login = () => {
             };
 
             // =====================================================
-            // CLEAR PREVIOUS SESSIONS BEFORE CHECKING THE ACCOUNT
+            // CLEAR PREVIOUS ROLE SESSIONS
             // =====================================================
 
             localStorage.removeItem("token");
@@ -100,8 +99,7 @@ const Login = () => {
             sessionStorage.removeItem("adminToken");
             sessionStorage.removeItem("adminData");
 
-            // Old client-side booking cache must never be carried
-            // into another passenger account.
+            // Keep the existing passenger booking-cache cleanup.
             sessionStorage.removeItem("allBookings");
             sessionStorage.removeItem("recentBookings");
             sessionStorage.removeItem("confirmedBooking");
@@ -144,8 +142,7 @@ const Login = () => {
                     show: true,
                     type: "success",
                     title: "Login Successful",
-                    message:
-                        "You have successfully signed in.",
+                    message: "You have successfully signed in.",
                     redirecting: true,
                 });
 
@@ -172,7 +169,7 @@ const Login = () => {
 
                 localStorage.setItem(
                     "adminData",
-                    JSON.stringify(data.admin)
+                    JSON.stringify(data.admin || data.user || {})
                 );
 
                 setPopup({
@@ -194,8 +191,16 @@ const Login = () => {
             // =====================================================
             // 3. STAFF LOGIN
             // =====================================================
+            // IMPORTANT:
+            // The existing Staff backend is mounted at:
+            // /api/staff-auth
+            // and its login route is:
+            // /login
+            // Therefore the complete endpoint is:
+            // /api/staff-auth/login
+            // =====================================================
 
-            const staffResult = await loginRequest("/staff/login");
+            const staffResult = await loginRequest("/staff-auth/login");
 
             if (staffResult.response.ok) {
                 const data = staffResult.data;
@@ -207,9 +212,7 @@ const Login = () => {
 
                 localStorage.setItem(
                     "staff",
-                    JSON.stringify(
-                        data.staff || data.user || {}
-                    )
+                    JSON.stringify(data.staff || data.user || {})
                 );
 
                 setPopup({
@@ -229,20 +232,15 @@ const Login = () => {
             }
 
             // =====================================================
-            // ALL LOGIN TYPES FAILED
+            // ALL LOGIN ATTEMPTS FAILED
             // =====================================================
-
-            const errorMessage =
-                userResult.data?.message ||
-                adminResult.data?.message ||
-                staffResult.data?.message ||
-                "Invalid email or password.";
 
             setPopup({
                 show: true,
                 type: "error",
                 title: "Login Failed",
-                message: errorMessage,
+                message:
+                    "Invalid email or password.",
                 redirecting: false,
             });
 

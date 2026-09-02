@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL ||
+    "http://localhost:5000/api";
+
+
 const AdminRegister = () => {
 
     const navigate = useNavigate();
@@ -41,7 +46,7 @@ const AdminRegister = () => {
 
             const response =
                 await fetch(
-                    "http://localhost:5000/api/admin/register",
+                    `${API_BASE_URL}/admin/register`,
                     {
                         method: "POST",
 
