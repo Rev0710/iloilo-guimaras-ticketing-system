@@ -63,6 +63,55 @@ const Confirmation = () => {
                 );
 
 
+            // =================================================
+            // RECOVER SELECTED FERRY / VESSEL
+            // =================================================
+            // Older booking records may not contain the vessel
+            // fields even though the selected ferry was saved
+            // during the booking process. Use the saved ferry
+            // session data only as a safe fallback.
+            // =================================================
+
+            let savedSelectedFerry = null;
+
+            try {
+                const selectedFerry =
+                    sessionStorage.getItem(
+                        "selectedFerry"
+                    );
+
+                if (selectedFerry) {
+                    savedSelectedFerry =
+                        JSON.parse(selectedFerry);
+                }
+            } catch (ferryError) {
+                console.error(
+                    "Unable to recover selected ferry:",
+                    ferryError
+                );
+            }
+
+
+            let savedTripDetails = null;
+
+            try {
+                const tripDetails =
+                    sessionStorage.getItem(
+                        "tripDetails"
+                    );
+
+                if (tripDetails) {
+                    savedTripDetails =
+                        JSON.parse(tripDetails);
+                }
+            } catch (tripError) {
+                console.error(
+                    "Unable to recover trip details:",
+                    tripError
+                );
+            }
+
+
             /*
              * =================================================
              * NORMALIZED BOOKING
@@ -109,6 +158,9 @@ const Confirmation = () => {
                     savedBookingData.ferryId ||
                     savedBookingData.selectedFerry?.id ||
                     savedBookingData.selectedTrip?.id ||
+                    savedSelectedFerry?.ferryId ||
+                    savedSelectedFerry?.id ||
+                    savedTripDetails?.ferryId ||
                     "",
 
                 ferryName:
@@ -120,6 +172,10 @@ const Confirmation = () => {
                     savedBookingData.selectedFerry?.vesselName ||
                     savedBookingData.selectedTrip?.ferryName ||
                     savedBookingData.selectedTrip?.vesselName ||
+                    savedSelectedFerry?.ferryName ||
+                    savedSelectedFerry?.vesselName ||
+                    savedTripDetails?.ferryName ||
+                    savedTripDetails?.vesselName ||
                     "",
 
                 vesselName:
@@ -131,6 +187,10 @@ const Confirmation = () => {
                     savedBookingData.selectedFerry?.ferryName ||
                     savedBookingData.selectedTrip?.vesselName ||
                     savedBookingData.selectedTrip?.ferryName ||
+                    savedSelectedFerry?.vesselName ||
+                    savedSelectedFerry?.ferryName ||
+                    savedTripDetails?.vesselName ||
+                    savedTripDetails?.ferryName ||
                     "",
 
 

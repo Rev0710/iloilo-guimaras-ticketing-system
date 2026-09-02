@@ -136,6 +136,10 @@ const createBooking = async (
             destination,
             date,
             time,
+            ferryId,
+            ferryName,
+            vesselName,
+            departureTime,
             passengerName,
             passengerAge,
             passengerGender,
@@ -185,6 +189,14 @@ const createBooking = async (
                 date,
 
                 time,
+
+                ferryId: ferryId || "",
+
+                ferryName: ferryName || vesselName || "",
+
+                vesselName: vesselName || ferryName || "",
+
+                departureTime: departureTime || time || "",
 
                 passengerName,
 
