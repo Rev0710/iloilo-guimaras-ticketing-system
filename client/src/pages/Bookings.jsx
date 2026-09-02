@@ -816,6 +816,9 @@ const Bookings = () => {
 
     useEffect(() => {
 
+        // Load bookings once when the page is opened.
+        // No automatic polling or visibility refresh is used.
+        // The user can refresh the website whenever they want.
         loadBookings();
 
         const refreshBookings = () => {
@@ -827,65 +830,14 @@ const Bookings = () => {
             refreshBookings
         );
 
-        // Check the server periodically while the passenger is on
-        // the Bookings page so a staff time-out is reflected
-        // automatically without requiring a manual page refresh.
-        const timeOutRefresh = window.setInterval(() => {
-            if (document.visibilityState === "visible") {
-                loadBookings();
-            }
-        }, 3000);
-
         return () => {
             window.removeEventListener(
                 "bookingUpdated",
                 refreshBookings
             );
-            window.clearInterval(timeOutRefresh);
         };
 
     }, [loadBookings]);
-
-
-    // =========================================================
-    // REFRESH WHEN USER RETURNS TO THIS PAGE
-    // =========================================================
-
-    useEffect(() => {
-
-        const handleVisibility =
-            () => {
-
-                if (
-                    document.visibilityState ===
-                    "visible"
-                ) {
-
-                    loadBookings();
-
-                }
-
-            };
-
-
-        document.addEventListener(
-            "visibilitychange",
-            handleVisibility
-        );
-
-
-        return () => {
-
-            document.removeEventListener(
-                "visibilitychange",
-                handleVisibility
-            );
-
-        };
-
-    }, [
-        loadBookings
-    ]);
 
     // =========================================================
     // VIEW BOOKING
