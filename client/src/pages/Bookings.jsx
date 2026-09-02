@@ -816,27 +816,35 @@ const Bookings = () => {
 
     useEffect(() => {
 
-    loadBookings();
-
-    const refreshBookings = () => {
         loadBookings();
-    };
 
-    window.addEventListener(
-        "bookingUpdated",
-        refreshBookings
-    );
+        const refreshBookings = () => {
+            loadBookings();
+        };
 
-    return () => {
-
-        window.removeEventListener(
+        window.addEventListener(
             "bookingUpdated",
             refreshBookings
         );
 
-    };
+        // Check the server periodically while the passenger is on
+        // the Bookings page so a staff time-out is reflected
+        // automatically without requiring a manual page refresh.
+        const timeOutRefresh = window.setInterval(() => {
+            if (document.visibilityState === "visible") {
+                loadBookings();
+            }
+        }, 3000);
 
-}, []);
+        return () => {
+            window.removeEventListener(
+                "bookingUpdated",
+                refreshBookings
+            );
+            window.clearInterval(timeOutRefresh);
+        };
+
+    }, [loadBookings]);
 
 
     // =========================================================
