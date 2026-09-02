@@ -20,7 +20,8 @@ app.use(
     cors({
         origin: [
             "http://localhost:5173",
-            "http://localhost:5174"
+            "http://localhost:5174",
+            "https://mobile-base-ticketing-system-5sy2.vercel.app"
         ],
         credentials: true
     })
