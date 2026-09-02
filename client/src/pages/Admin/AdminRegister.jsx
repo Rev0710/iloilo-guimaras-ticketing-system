@@ -105,6 +105,16 @@ const AdminRegister = () => {
 
             <div className="admin-auth-card">
 
+                <button
+                    type="button"
+                    className="back-button"
+                    onClick={() =>
+                        navigate("/register")
+                    }
+                >
+                    ← Back
+                </button>
+
                 <div className="admin-logo">
                     GO
                 </div>
@@ -287,6 +297,32 @@ const AdminRegister = () => {
                             0,
                             0.10
                         );
+                }
+
+                .back-button {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    margin-bottom: 18px;
+                    padding: 8px 14px;
+
+                    border: 1px solid #dddddd;
+                    border-radius: 8px;
+
+                    background: white;
+                    color: #555555;
+
+                    font-size: 13px;
+                    font-weight: 600;
+
+                    cursor: pointer;
+                    transition: 0.2s ease;
+                }
+
+                .back-button:hover {
+                    border-color: #f5a623;
+                    color: #f5a623;
                 }
 
                 .admin-logo {
