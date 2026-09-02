@@ -8,6 +8,10 @@ import BookTrip from "./pages/passenger/BookTrip";
 import Payment from "./pages/passenger/Payment";
 import MayaPayment from "./pages/passenger/MayaPayment";
 import Confirmation from "./pages/passenger/confirmation";
+
+
+
+
 import Bookings from "./pages/Bookings";
 import Profile from "./pages/passenger/Profile";
 import Login from "./pages/passenger/Login";
