@@ -478,9 +478,12 @@ const BookTrip = () => {
             ) {
 
                 result.push(
-                    createPassenger(
-                        existingPassengerDetails[index]
-                    )
+                    createPassenger({
+                        ...existingPassengerDetails[index],
+                        ...(index === 0 && accountOwnerName
+                            ? { name: accountOwnerName }
+                            : {})
+                    })
                 );
 
             }
@@ -499,6 +502,7 @@ const BookTrip = () => {
                 result.push({
 
                     name:
+                        accountOwnerName ||
                         previousTrip.passengerName ||
                         "",
 
@@ -846,10 +850,21 @@ const BookTrip = () => {
 
     const selectOrigin = (value) => {
         setOrigin(value);
+
+        // Clear an existing destination if it matches the new origin.
+        if (value === destination) {
+            setDestination("");
+        }
+
         setOriginPickerOpen(false);
     };
 
     const selectDestination = (value) => {
+        // The destination must always be different from the origin.
+        if (value === origin) {
+            return;
+        }
+
         setDestination(value);
         setDestinationPickerOpen(false);
     };
@@ -4977,6 +4992,8 @@ const BookTrip = () => {
                                                     type="button"
                                                     role="option"
                                                     aria-selected={origin === option}
+                                                    aria-disabled={destination === option}
+                                                    disabled={destination === option}
                                                     className={`route-option ${origin === option ? "selected" : ""}`}
                                                     onClick={() => selectOrigin(option)}
                                                 >
@@ -5058,6 +5075,8 @@ const BookTrip = () => {
                                                     type="button"
                                                     role="option"
                                                     aria-selected={destination === option}
+                                                    aria-disabled={origin === option}
+                                                    disabled={origin === option}
                                                     className={`route-option ${destination === option ? "selected" : ""}`}
                                                     onClick={() => selectDestination(option)}
                                                 >
@@ -5862,7 +5881,11 @@ const BookTrip = () => {
                                                             }
                                                             type="text"
                                                             className="passenger-input"
-                                                            placeholder="Enter passenger full name"
+                                                            placeholder={
+                                                                index === 0 && accountOwnerName
+                                                                    ? "Registered account name"
+                                                                    : "Enter passenger full name"
+                                                            }
                                                             value={
                                                                 passenger.name
                                                             }
@@ -5876,6 +5899,14 @@ const BookTrip = () => {
                                                                         .target
                                                                         .value
                                                                 )
+                                                            }
+                                                            readOnly={
+                                                                index === 0 && !!accountOwnerName
+                                                            }
+                                                            title={
+                                                                index === 0 && accountOwnerName
+                                                                    ? "Passenger 1 uses the name from your registered account."
+                                                                    : undefined
                                                             }
                                                             autoComplete="name"
                                                         />
