@@ -43,57 +43,65 @@ const Login = () => {
         try {
             setLoading(true);
 
-            const response = await fetch(
-                `${API_BASE_URL}/auth/login`,
-                {
-                    method: "POST",
+            // =====================================================
+            // ONE LOGIN FORM
+            // =====================================================
+            // The same credentials are checked against the existing
+            // authentication endpoints. No new account system is
+            // created and the existing backend routes remain intact.
+            // =====================================================
 
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
+            const loginRequest = async (endpoint) => {
+                const response = await fetch(
+                    `${API_BASE_URL}${endpoint}`,
+                    {
+                        method: "POST",
 
-                    body: JSON.stringify({
-                        email,
-                        password,
-                    }),
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+
+                        body: JSON.stringify({
+                            email,
+                            password,
+                        }),
+                    }
+                );
+
+                let data = {};
+
+                try {
+                    data = await response.json();
+                } catch {
+                    data = {};
                 }
-            );
 
-            const data = await response.json();
-
-            // =====================================================
-            // LOGIN ERROR
-            // =====================================================
-
-            if (!response.ok) {
-                setPopup({
-                    show: true,
-                    type: "error",
-                    title: "Login Failed",
-                    message:
-                        data.message ||
-                        "Invalid email or password.",
-                    redirecting: false,
-                });
-
-                return;
-            }
+                return {
+                    response,
+                    data,
+                };
+            };
 
             // =====================================================
-            // CLEAR ANY PREVIOUS PASSENGER SESSION
-            // =====================================================
-            // This prevents account A's token/cache from being reused
-            // when account B logs in on the same browser.
+            // CLEAR PREVIOUS SESSIONS BEFORE CHECKING THE ACCOUNT
             // =====================================================
 
             localStorage.removeItem("token");
             localStorage.removeItem("user");
+            localStorage.removeItem("staffToken");
+            localStorage.removeItem("staff");
+            localStorage.removeItem("adminToken");
+            localStorage.removeItem("adminData");
+
             sessionStorage.removeItem("token");
             sessionStorage.removeItem("user");
+            sessionStorage.removeItem("staffToken");
+            sessionStorage.removeItem("staff");
+            sessionStorage.removeItem("adminToken");
+            sessionStorage.removeItem("adminData");
 
             // Old client-side booking cache must never be carried
-            // into another passenger account. MongoDB is now the
-            // source of truth for the logged-in user's bookings.
+            // into another passenger account.
             sessionStorage.removeItem("allBookings");
             sessionStorage.removeItem("recentBookings");
             sessionStorage.removeItem("confirmedBooking");
@@ -102,51 +110,141 @@ const Login = () => {
             sessionStorage.removeItem("paymentStatus");
 
             // =====================================================
-            // SAVE JWT TOKEN
+            // 1. PASSENGER / USER LOGIN
             // =====================================================
 
-            if (rememberMe) {
-                localStorage.setItem(
-                    "token",
-                    data.token
-                );
+            const userResult = await loginRequest("/auth/login");
 
-                localStorage.setItem(
-                    "user",
-                    JSON.stringify(data.user)
-                );
-            } else {
-                sessionStorage.setItem(
-                    "token",
-                    data.token
-                );
+            if (userResult.response.ok) {
+                const data = userResult.data;
 
-                sessionStorage.setItem(
-                    "user",
-                    JSON.stringify(data.user)
-                );
+                if (rememberMe) {
+                    localStorage.setItem(
+                        "token",
+                        data.token
+                    );
+
+                    localStorage.setItem(
+                        "user",
+                        JSON.stringify(data.user)
+                    );
+                } else {
+                    sessionStorage.setItem(
+                        "token",
+                        data.token
+                    );
+
+                    sessionStorage.setItem(
+                        "user",
+                        JSON.stringify(data.user)
+                    );
+                }
+
+                setPopup({
+                    show: true,
+                    type: "success",
+                    title: "Login Successful",
+                    message:
+                        "You have successfully signed in.",
+                    redirecting: true,
+                });
+
+                setTimeout(() => {
+                    navigate("/dashboard");
+                }, 2000);
+
+                return;
             }
 
             // =====================================================
-            // SUCCESS POPUP
+            // 2. ADMIN LOGIN
             // =====================================================
+
+            const adminResult = await loginRequest("/admin/login");
+
+            if (adminResult.response.ok) {
+                const data = adminResult.data;
+
+                localStorage.setItem(
+                    "adminToken",
+                    data.token
+                );
+
+                localStorage.setItem(
+                    "adminData",
+                    JSON.stringify(data.admin)
+                );
+
+                setPopup({
+                    show: true,
+                    type: "success",
+                    title: "Login Successful",
+                    message:
+                        "Administrator account verified. Redirecting to the Admin Dashboard.",
+                    redirecting: true,
+                });
+
+                setTimeout(() => {
+                    navigate("/admin-dashboard");
+                }, 2000);
+
+                return;
+            }
+
+            // =====================================================
+            // 3. STAFF LOGIN
+            // =====================================================
+
+            const staffResult = await loginRequest("/staff/login");
+
+            if (staffResult.response.ok) {
+                const data = staffResult.data;
+
+                localStorage.setItem(
+                    "staffToken",
+                    data.token
+                );
+
+                localStorage.setItem(
+                    "staff",
+                    JSON.stringify(
+                        data.staff || data.user || {}
+                    )
+                );
+
+                setPopup({
+                    show: true,
+                    type: "success",
+                    title: "Login Successful",
+                    message:
+                        "Staff account verified. Redirecting to the Staff Scanner.",
+                    redirecting: true,
+                });
+
+                setTimeout(() => {
+                    navigate("/staff/scanner");
+                }, 2000);
+
+                return;
+            }
+
+            // =====================================================
+            // ALL LOGIN TYPES FAILED
+            // =====================================================
+
+            const errorMessage =
+                userResult.data?.message ||
+                adminResult.data?.message ||
+                staffResult.data?.message ||
+                "Invalid email or password.";
 
             setPopup({
                 show: true,
-                type: "success",
-                title: "Login Successful",
-                message:
-                    "You have successfully signed in.",
-                redirecting: true,
+                type: "error",
+                title: "Login Failed",
+                message: errorMessage,
+                redirecting: false,
             });
-
-            // =====================================================
-            // REDIRECT AFTER 2 SECONDS
-            // =====================================================
-
-            setTimeout(() => {
-                navigate("/dashboard");
-            }, 2000);
 
         } catch (error) {
             console.error("Login Error:", error);

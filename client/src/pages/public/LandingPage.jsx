@@ -492,38 +492,16 @@ const LandingPage = () => {
                             Travel Smarter Across Guimaras.
                         </p>
 
-                        {/* LOGIN BUTTONS */}
+                        {/* LOGIN */}
 
                         <div className="login-buttons">
-
-                            {/* TOURIST LOGIN */}
 
                             <button
                                 type="button"
                                 className="primary-button"
-                                onClick={() => navigate("/Login")}
+                                onClick={() => navigate("/login")}
                             >
-                                Log In as Tourist
-                            </button>
-
-                            {/* STAFF LOGIN */}
-
-                            <button
-                                type="button"
-                                className="staff-button"
-                                onClick={() => navigate("/staff/login")}
-                            >
-                                Log In as Staff
-                            </button>
-
-                            {/* ADMIN LOGIN */}
-
-                            <button
-                                type="button"
-                                className="admin-button"
-                                onClick={() => navigate("/admin-login")}
-                            >
-                                Log In as Admin
+                                Login
                             </button>
 
                         </div>
