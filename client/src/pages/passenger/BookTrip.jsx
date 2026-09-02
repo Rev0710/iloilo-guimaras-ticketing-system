@@ -369,6 +369,36 @@ const BookTrip = () => {
 
 
     // =====================================================
+    // BOOKING WARNING POPUP
+    // =====================================================
+
+    const [bookingWarning, setBookingWarning] =
+        useState({
+            show: false,
+            title: "",
+            message: ""
+        });
+
+
+    const showBookingWarning = (title, message) => {
+        setBookingWarning({
+            show: true,
+            title,
+            message
+        });
+    };
+
+
+    const closeBookingWarning = () => {
+        setBookingWarning({
+            show: false,
+            title: "",
+            message: ""
+        });
+    };
+
+
+    // =====================================================
     // PASSENGER LIMIT
     // =====================================================
 
@@ -733,9 +763,12 @@ const BookTrip = () => {
                     return [
                         {
                             ...owner,
+                            // Always use the registered account name
+                            // when Solo is selected.
                             name:
+                                accountOwnerName ||
                                 owner.name ||
-                                accountOwnerName
+                                ""
                         }
                     ];
                 }
@@ -849,23 +882,28 @@ const BookTrip = () => {
     ];
 
     const selectOrigin = (value) => {
-        setOrigin(value);
-
-        // Clear an existing destination if it matches the new origin.
-        if (value === destination) {
-            setDestination("");
+        // Allow direct route swapping when the chosen origin is the
+        // current destination. This avoids the old dropdown deadlock.
+        if (value === destination && origin) {
+            setOrigin(destination);
+            setDestination(origin);
+        } else {
+            setOrigin(value);
         }
 
         setOriginPickerOpen(false);
     };
 
     const selectDestination = (value) => {
-        // The destination must always be different from the origin.
-        if (value === origin) {
-            return;
+        // Allow direct route swapping when the chosen destination is
+        // the current origin. Origin and destination will stay different.
+        if (value === origin && destination) {
+            setDestination(origin);
+            setOrigin(destination);
+        } else {
+            setDestination(value);
         }
 
-        setDestination(value);
         setDestinationPickerOpen(false);
     };
 
@@ -1126,7 +1164,66 @@ const BookTrip = () => {
     }
 
 
+    const getManilaCurrentMinutes = () => {
+        const currentParts = new Intl.DateTimeFormat(
+            "en-US",
+            {
+                timeZone: "Asia/Manila",
+                hour: "2-digit",
+                minute: "2-digit",
+                hourCycle: "h23"
+            }
+        ).formatToParts(new Date());
+
+        const currentHour = Number(
+            currentParts.find((part) => part.type === "hour")?.value || 0
+        );
+
+        const currentMinute = Number(
+            currentParts.find((part) => part.type === "minute")?.value || 0
+        );
+
+        return currentHour * 60 + currentMinute;
+    };
+
+
+    const getTimeMinutes = (value) => {
+        const normalized = normalizeTime(value);
+
+        if (!normalized) {
+            return null;
+        }
+
+        const [hours, minutes] = normalized.split(":").map(Number);
+
+        return hours * 60 + minutes;
+    };
+
+
+    const isSameDayPassengerTimeTooSoon = (value) => {
+        if (vehicleChoice !== "noMotorcycle" || date !== today) {
+            return false;
+        }
+
+        const departureMinutes = getTimeMinutes(value);
+
+        if (departureMinutes === null) {
+            return false;
+        }
+
+        return departureMinutes - getManilaCurrentMinutes() < 180;
+    };
+
+
     const selectTime = (value) => {
+        if (isSameDayPassengerTimeTooSoon(value)) {
+            showBookingWarning(
+                "Departure Too Soon",
+                "Same-day passenger-only bookings must be made at least 3 hours before the ferry departure time. Please choose a later departure."
+            );
+
+            return;
+        }
 
         setTime(value);
         setTimePickerOpen(false);
@@ -1220,75 +1317,9 @@ const BookTrip = () => {
 
             if (date === today) {
 
-                const currentParts =
-                    new Intl.DateTimeFormat(
-                        "en-US",
-                        {
-                            timeZone:
-                                "Asia/Manila",
-                            hour:
-                                "2-digit",
-                            minute:
-                                "2-digit",
-                            hourCycle:
-                                "h23"
-                        }
-                    ).formatToParts(
-                        new Date()
-                    );
-
-                const currentHour =
-                    Number(
-                        currentParts.find(
-                            (part) =>
-                                part.type ===
-                                "hour"
-                        )?.value || 0
-                    );
-
-                const currentMinute =
-                    Number(
-                        currentParts.find(
-                            (part) =>
-                                part.type ===
-                                "minute"
-                        )?.value || 0
-                    );
-
-                const selectedNormalizedTime =
-                    normalizeTime(time);
-
-                const selectedTimeParts =
-                    selectedNormalizedTime
-                        .split(":");
-
-                const departureHour =
-                    Number(
-                        selectedTimeParts[0]
-                    );
-
-                const departureMinute =
-                    Number(
-                        selectedTimeParts[1]
-                    );
-
-                const currentMinutes =
-                    currentHour * 60 +
-                    currentMinute;
-
-                const departureMinutes =
-                    departureHour * 60 +
-                    departureMinute;
-
-                const minutesUntilDeparture =
-                    departureMinutes -
-                    currentMinutes;
-
-                if (
-                    minutesUntilDeparture <
-                    180
-                ) {
-                    alert(
+                if (isSameDayPassengerTimeTooSoon(time)) {
+                    showBookingWarning(
+                        "Departure Too Soon",
                         "Same-day passenger-only bookings must be made at least 3 hours before the ferry departure time. Please choose a later departure."
                     );
 
@@ -1690,6 +1721,33 @@ const BookTrip = () => {
 
         <>
 
+            {bookingWarning.show && (
+                <div
+                    className="booking-warning-overlay"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="booking-warning-title"
+                >
+                    <div className="booking-warning-card">
+                        <div className="booking-warning-icon" aria-hidden="true">!</div>
+                        <h3 id="booking-warning-title">
+                            {bookingWarning.title}
+                        </h3>
+                        <p>
+                            {bookingWarning.message}
+                        </p>
+                        <button
+                            type="button"
+                            className="booking-warning-button"
+                            onClick={closeBookingWarning}
+                        >
+                            Okay
+                        </button>
+                    </div>
+                </div>
+            )}
+
+
             <style>{`
 
                 * {
@@ -1718,6 +1776,83 @@ const BookTrip = () => {
 
                     color:
                         #222222;
+                }
+
+
+                /* =================================================
+                   BOOKING WARNING POPUP
+                ================================================= */
+
+                .booking-warning-overlay {
+                    position: fixed;
+                    inset: 0;
+                    z-index: 200;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 20px;
+                    background: rgba(17, 24, 39, .48);
+                    backdrop-filter: blur(3px);
+                }
+
+                .booking-warning-card {
+                    width: min(100%, 440px);
+                    padding: 28px 26px 24px;
+                    border: 1px solid #f3d2b7;
+                    border-radius: 18px;
+                    background: #ffffff;
+                    box-shadow: 0 24px 70px rgba(17, 24, 39, .22);
+                    text-align: center;
+                    animation: bookingWarningAppear .18s ease-out;
+                }
+
+                .booking-warning-icon {
+                    width: 52px;
+                    height: 52px;
+                    margin: 0 auto 14px;
+                    display: grid;
+                    place-items: center;
+                    border-radius: 50%;
+                    background: #fff1e5;
+                    color: #f28c28;
+                    font-size: 24px;
+                    font-weight: 800;
+                }
+
+                .booking-warning-card h3 {
+                    margin: 0;
+                    color: #222222;
+                    font-size: 20px;
+                    font-weight: 800;
+                }
+
+                .booking-warning-card p {
+                    margin: 10px 0 20px;
+                    color: #6b7280;
+                    font-size: 13px;
+                    line-height: 1.6;
+                }
+
+                .booking-warning-button {
+                    width: 100%;
+                    min-height: 44px;
+                    border: 0;
+                    border-radius: 10px;
+                    background: #f28c28;
+                    color: #ffffff;
+                    font: inherit;
+                    font-size: 13px;
+                    font-weight: 800;
+                    cursor: pointer;
+                }
+
+                .booking-warning-button:hover {
+                    background: #ea7612;
+                }
+
+                @keyframes bookingWarningAppear {
+                    from { opacity: 0; transform: translateY(8px) scale(.98); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
                 }
 
 
@@ -4288,6 +4423,15 @@ const BookTrip = () => {
                     font-size: 11px;
                 }
 
+                .same-day-time-note {
+                    display: block;
+                    margin-top: 5px;
+                    color: #ea6f0b;
+                    font-size: 10px;
+                    line-height: 1.4;
+                }
+
+
                 .time-options-grid {
                     max-height: 280px;
                     overflow-y: auto;
@@ -4296,6 +4440,19 @@ const BookTrip = () => {
                     grid-template-columns: repeat(3, minmax(0, 1fr));
                     gap: 7px;
                 }
+
+                .time-option-disabled {
+                    opacity: .45;
+                    cursor: not-allowed;
+                    background: #f7f7f7;
+                }
+
+                .time-option-disabled:hover {
+                    border-color: #e5e7eb;
+                    background: #f7f7f7;
+                    color: inherit;
+                }
+
 
                 .time-option {
                     min-height: 42px;
@@ -4992,8 +5149,7 @@ const BookTrip = () => {
                                                     type="button"
                                                     role="option"
                                                     aria-selected={origin === option}
-                                                    aria-disabled={destination === option}
-                                                    disabled={destination === option}
+                                                    aria-disabled={false}
                                                     className={`route-option ${origin === option ? "selected" : ""}`}
                                                     onClick={() => selectOrigin(option)}
                                                 >
@@ -5075,8 +5231,7 @@ const BookTrip = () => {
                                                     type="button"
                                                     role="option"
                                                     aria-selected={destination === option}
-                                                    aria-disabled={origin === option}
-                                                    disabled={origin === option}
+                                                    aria-disabled={false}
                                                     className={`route-option ${destination === option ? "selected" : ""}`}
                                                     onClick={() => selectDestination(option)}
                                                 >
@@ -5571,6 +5726,9 @@ const BookTrip = () => {
                                                     <div>
                                                         <strong>Select departure time</strong>
                                                         <span>Available from 3:30 AM to 7:30 PM</span>
+                                                        {vehicleChoice === "noMotorcycle" && date === today && (
+                                                            <small className="same-day-time-note">Same-day passenger bookings require at least 3 hours before departure.</small>
+                                                        )}
                                                     </div>
                                                 </div>
 
@@ -5581,7 +5739,8 @@ const BookTrip = () => {
                                                             type="button"
                                                             role="option"
                                                             aria-selected={option.value === time}
-                                                            className={`time-option ${option.value === time ? "selected" : ""}`}
+                                                            className={`time-option ${option.value === time ? "selected" : ""} ${isSameDayPassengerTimeTooSoon(option.value) ? "time-option-disabled" : ""}`}
+                                                            aria-disabled={isSameDayPassengerTimeTooSoon(option.value)}
                                                             onClick={() => selectTime(option.value)}
                                                         >
                                                             <span>{option.label}</span>
@@ -5601,7 +5760,7 @@ const BookTrip = () => {
                                             <span>Selected ferry:</span>
                                             <strong>{ferryName}</strong>
                                             <span>—</span>
-                                            <span>{formatDisplayTime(ferryDepartureTime || time)}</span>
+                                            <span>{formatDisplayTime(time || ferryDepartureTime)}</span>
                                         </div>
 
                                     </div>
